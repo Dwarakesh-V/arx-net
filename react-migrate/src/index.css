@@ -1,0 +1,336 @@
+/* =========================================
+   1. GLOBAL RESETS & VARIABLES
+   ========================================= */
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-decoration: none;
+    outline: none;
+
+    /* Global Colors */
+    --accent: #ffc66d;
+    --accent-inverted: #003992;
+    --bg-primary: #1d1d1d;
+    --bg-secondary: #141414;
+    --text-primary: #fff;
+    --inverted-text: #000;
+    --checkmark-color: #000;
+    --highlight-button-color: #424242;
+
+    /* Graph Colors (Used by D3) */
+    --edge-color: #a3bf60;
+    --edge-hover-color: #9e7bb0;
+    --node-color: #ffc66d;
+    --node-hover-color: #7a9ec2;
+    --node-label-color: #000;
+    --edge-weight-color: #fff;
+    --grid-line-color: #3c3d3c;
+    --drag-node-color: #7a9ec2;
+
+    color: var(--text-primary);
+}
+
+html, body, #root {
+    height: 100%;
+    width: 100%;
+    background-color: var(--bg-primary);
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent body scroll */
+}
+
+/* =========================================
+   2. SCROLLBARS
+   ========================================= */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+    background-color: #3f3f3f;
+    border-radius: 10px;
+    border: 2px solid var(--bg-primary);
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+/* =========================================
+   3. INPUTS & CONTROLS
+   ========================================= */
+input[type="text"], input[type="number"] {
+    display: block;
+    width: calc(100% - 20px);
+    background: none;
+    border: 1.5px solid var(--accent);
+    padding: 10px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    position: relative;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    vertical-align: middle;
+    background-color: #545454;
+    border: none;
+    border-radius: 1px;
+    margin: 0px 5px 3px 15px;
+    cursor: pointer;
+}
+input[type="checkbox"]:hover {
+    background-color: #7e7e7e;
+}
+input[type="checkbox"]:checked {
+    background-color: var(--accent);
+}
+input[type="checkbox"]:checked::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%) rotate(40deg);
+    width: 3px;
+    height: 8px;
+    border: solid var(--checkmark-color);
+    border-width: 0 3px 3px 0;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* Images */
+img {
+    height: 20px;
+    width: 20px;
+    filter: invert(1);
+}
+
+/* =========================================
+   4. LAYOUT: SIDEBAR & MAIN
+   ========================================= */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Replaces old .container styling for Sidebar */
+.container {
+    position: relative; /* Changed from absolute for Flexbox layout */
+    width: 300px;
+    min-width: 300px;
+    height: 100%;
+    background-color: var(--bg-secondary);
+    padding: 10px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #333;
+    overflow-y: auto;
+}
+
+.main-workspace {
+    flex-grow: 1;
+    position: relative;
+    background-color: var(--bg-primary);
+    overflow: hidden;
+}
+
+/* =========================================
+   5. GRAPH GENERATOR UI
+   ========================================= */
+#generateGraph,
+#generateRandomGraph {
+    font-size: medium;
+    width: calc(100% - 20px);
+    color: var(--inverted-text);
+    background-color: var(--accent);
+    border: 1.5px solid transparent;
+    border-radius: 3px;
+    margin: 20px 0px 10px 0px;
+    padding: 5px 10px;
+    transition: background-color 0.3s, color 0.3s, border 0.3s;
+}
+
+#generateGraph:hover,
+#generateRandomGraph:hover {
+    background-color: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.input-row input {
+    width: 60px;
+    margin-right: 10px;
+}
+.input-row label {
+    margin-right: 5px;
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+/* =========================================
+   6. OUTLINER (Bottom Toolbar)
+   ========================================= */
+.outliner {
+    margin-top: auto;
+    padding: 10px;
+    border-top: 1px solid #333;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.outliner button {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    border: none;
+    border-radius: 3px;
+}
+.outliner button:hover {
+    background-color: var(--highlight-button-color);
+}
+
+/* =========================================
+   7. GRAPH WINDOW STYLES
+   ========================================= */
+.graphContainer {
+    position: absolute;
+    background-color: var(--bg-primary);
+    border: 2px solid var(--bg-secondary);
+    box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.5);
+    border-radius: 7px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.graphHeader {
+    display: flex;
+    background-color: var(--bg-secondary);
+    justify-content: space-between;
+    align-items: center;
+    white-space: nowrap;
+    padding: 5px 10px;
+    height: 40px;
+    flex-shrink: 0; /* Don't shrink header */
+}
+
+/* Header Buttons */
+.graphHeader button {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1.1em;
+}
+.graphHeader button:hover {
+    color: var(--accent);
+}
+
+.graphContent {
+    flex-grow: 1;
+    background-color: var(--bg-primary);
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Resize Handles */
+.resize-handle {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    z-index: 20;
+}
+.resize-handle.bottom-right {
+    bottom: 0;
+    right: 0;
+    cursor: se-resize;
+    background: linear-gradient(135deg, transparent 50%, #666 50%);
+}
+
+/* =========================================
+   8. COMPATIBILITY LAYER (React Polyfills)
+   ========================================= */
+/* Maps the React component classNames to match your original styling */
+
+.window-header {
+    display: flex;
+    background-color: var(--bg-secondary);
+    justify-content: space-between;
+    align-items: center;
+    white-space: nowrap;
+    padding: 0 5px 0 10px;
+    height: 35px;
+    border-bottom: 1px solid #333;
+}
+
+.window-content {
+    flex-grow: 1;
+    background-color: var(--bg-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Floating Context Menu */
+.floating-menu {
+    position: fixed;
+    background-color: var(--bg-secondary);
+    padding: 5px 0;
+    border-radius: 4px;
+    z-index: 9999;
+    border: 1px solid #444;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    min-width: 150px;
+}
+
+.floating-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 8px 15px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.floating-menu button:hover {
+    background-color: var(--accent);
+    color: var(--inverted-text);
+}
+
+/* Modal / About Box */
+.aboutDiv {
+    display: block; 
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    max-width: 90%;
+    background-color: var(--bg-secondary);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 20px;
+    z-index: 2000;
+}
