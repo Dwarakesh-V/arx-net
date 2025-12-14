@@ -1,0 +1,261 @@
+import React, { useEffect, useRef } from 'react';
+import * as d3 from 'd3';
+import type { Node, Edge } from '../types';
+import {
+  createSimulation,
+  updateForces,
+  setEdgePositions,
+  dragBehavior
+} from '../lib/graphRenderer'; // From previous step
+import { getGraphExtent } from '../lib/viewUtils'; // From previous step
+
+interface GraphCanvasProps {
+  nodes: Node[];
+  edges: Edge[];
+  isDirected: boolean;
+  isWeighted: boolean;
+  useForce: boolean;
+  showGrid: boolean;
+  onNodeContextMenu?: (event: React.MouseEvent, node: Node) => void;
+  onEdgeContextMenu?: (event: React.MouseEvent, edge: Edge) => void;
+}
+
+export const GraphCanvas: React.FC<GraphCanvasProps> = ({
+  nodes, edges, isDirected, isWeighted, useForce, showGrid,
+  onNodeContextMenu, onEdgeContextMenu
+}) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const contentRef = useRef<SVGGElement>(null); // The group that moves when panning
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const simulationRef = useRef<d3.Simulation<Node, undefined> | null>(null);
+  const zoomBehavior = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+
+  // --- Initialize D3 Graph ---
+  useEffect(() => {
+    if (!svgRef.current || !wrapperRef.current || !contentRef.current) return;
+
+    const width = wrapperRef.current.clientWidth;
+    const height = wrapperRef.current.clientHeight;
+
+    const svg = d3.select(svgRef.current);
+    const contentGroup = d3.select(contentRef.current);
+
+    // 1. Setup Zoom Behavior
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      // Filter: Middle Mouse OR (Left Mouse + Ctrl) OR Wheel
+      .filter((event) => {
+        return event.button === 1 || (event.button === 0 && event.ctrlKey) || event.type === 'wheel';
+      })
+      .on('zoom', (event) => {
+        contentGroup.attr('transform', event.transform);
+      });
+
+    zoomBehavior.current = zoom;
+    svg.call(zoom).on("dblclick.zoom", null); // Disable d3's default double-click zoom
+
+    // 2. Define Grid Pattern (Efficient)
+    // We add this to <defs> in the SVG, not the content group
+    svg.select('defs').remove(); // Clean old defs
+    const defs = svg.append('defs');
+
+    const pattern = defs.append('pattern')
+      .attr('id', 'grid-pattern')
+      .attr('width', 40)
+      .attr('height', 40)
+      .attr('patternUnits', 'userSpaceOnUse');
+
+    pattern.append('path')
+      .attr('d', 'M 40 0 L 0 0 0 40')
+      .attr('fill', 'none')
+      .attr('stroke', 'var(--grid-line-color)')
+      .attr('stroke-width', 1);
+
+    // 3. Clear Previous Graph Elements
+    contentGroup.selectAll("*").remove();
+
+    // 4. Create Layers inside Content Group
+    // Order determines z-index (painters algorithm)
+    const edgeLayer = contentGroup.append('g').attr('class', 'edge-layer');
+    const nodeLayer = contentGroup.append('g').attr('class', 'node-layer');
+    const labelLayer = contentGroup.append('g').attr('class', 'label-layer');
+
+    // 5. Setup Simulation
+    const simulation = createSimulation(nodes, width, height);
+    simulationRef.current = simulation;
+
+    // 6. Draw Edges
+    const links = edgeLayer.selectAll('.link')
+      .data(edges)
+      .join('path')
+      .attr('class', 'link')
+      .attr('stroke', 'var(--edge-color)')
+      .attr('stroke-width', 1.5)
+      .attr('fill', 'none')
+      .attr('marker-end', (d: any) => isDirected ? `url(#arrow-${d.source.id}-${d.target.id})` : null)
+      .on('contextmenu', (event, d) => {
+        onEdgeContextMenu?.(event, d as unknown as Edge);
+      });
+
+    // 7. Define Markers (Arrowheads)
+    if (isDirected) {
+      edges.forEach((e: any) => {
+        const sId = typeof e.source === 'object' ? e.source.id : e.source;
+        const tId = typeof e.target === 'object' ? e.target.id : e.target;
+        const id = `arrow-${sId}-${tId}`;
+
+        // Prevent duplicate markers
+        if (defs.select(`#${id}`).empty()) {
+          defs.append('marker')
+            .attr('id', id)
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 25)
+            .attr('refY', 0)
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', 'var(--edge-color)');
+        }
+      });
+    }
+
+    // 8. Draw Nodes
+    const circles = nodeLayer
+      // FIX: Add <SVGCircleElement, any> here to strictly type the selection
+      .selectAll<SVGCircleElement, any>('circle')
+      .data(nodes, (d: any) => d.id)
+      .join('circle')
+      .attr('r', 20)
+      .attr('fill', 'var(--node-color)')
+      .style('cursor', 'pointer')
+      .call(dragBehavior(simulation, useForce))
+      .on('contextmenu', (event, d) => {
+        onNodeContextMenu?.(event, d as unknown as Node);
+      });
+
+    // 9. Draw Labels
+    const labels = labelLayer.selectAll('text')
+      .data(nodes)
+      .join('text')
+      .text((d: any) => d.id)
+      .attr('dy', 3)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'var(--node-label-color)')
+      .style('pointer-events', 'none')
+      .style('font-weight', 'bold');
+
+    let edgeLabels: any = null;
+    if (isWeighted) {
+      edgeLabels = labelLayer.selectAll('.edge-label')
+        .data(edges)
+        .join('text')
+        .attr('class', 'edge-label')
+        .text((d: any) => d.weight)
+        .attr('fill', 'var(--edge-weight-color)')
+        .style('font-size', '18px');
+    }
+
+    // 10. Tick Function
+    simulation.on('tick', () => {
+      setEdgePositions(links, edgeLabels, circles, labels, isDirected, isWeighted);
+    });
+
+    // 11. Start Forces
+    updateForces(simulation, edges, useForce, width, height);
+
+    // 12. Handle "Center Graph" on Double Click
+    svg.on("dblclick", (event) => {
+      if (event.target.tagName !== 'svg' && event.target.tagName !== 'rect') return;
+
+      // Destructure with renaming
+      const { x, y, width: gWidth, height: gHeight } = getGraphExtent(nodes);
+
+      // FIX: Provide fallbacks (|| 1) to prevent 'undefined' or division by zero
+      // If gWidth is undefined/0, treat it as 1 to avoid breaking Math.max
+      const safeWidth = gWidth || 1;
+      const safeHeight = gHeight || 1;
+
+      const scale = 0.9 / Math.max(safeWidth / width, safeHeight / height);
+
+      svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity
+          .translate(width / 2, height / 2)
+          .scale(Math.min(scale, 1))
+          .translate(-x, -y)
+      );
+    });
+
+    // Cleanup
+    return () => {
+      simulation.stop();
+    };
+  }, [nodes, edges, isDirected, isWeighted]); // Re-run if graph structure changes
+
+  // --- Dynamic Updates (No full re-render) ---
+  useEffect(() => {
+    if (simulationRef.current && wrapperRef.current) {
+      updateForces(
+        simulationRef.current,
+        edges,
+        useForce,
+        wrapperRef.current.clientWidth,
+        wrapperRef.current.clientHeight
+      );
+    }
+  }, [useForce]);
+
+  // --- Zoom Helper Functions ---
+  const handleZoomIn = () => {
+    if (svgRef.current && zoomBehavior.current) {
+      d3.select(svgRef.current).transition().call(zoomBehavior.current.scaleBy, 1.2);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (svgRef.current && zoomBehavior.current) {
+      d3.select(svgRef.current).transition().call(zoomBehavior.current.scaleBy, 0.8);
+    }
+  };
+
+  return (
+    <div ref={wrapperRef} className="graph-content" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+
+      {/* 1. SVG Canvas */}
+      <svg ref={svgRef} width="100%" height="100%" style={{ cursor: 'default' }}>
+
+        {/* 2. Grid Background (Fixed to view, uses pattern) */}
+        {showGrid && (
+          <rect width="100%" height="100%" fill="url(#grid-pattern)" style={{ pointerEvents: 'none' }} />
+        )}
+
+        {/* 3. Graph Content (Moves with Pan/Zoom) */}
+        <g ref={contentRef} />
+
+      </svg>
+
+      {/* 4. Zoom Controls Overlay */}
+      <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', gap: '5px', zIndex: 20 }}>
+        <button onClick={handleZoomIn} style={zoomButtonStyle}>+</button>
+        <button onClick={handleZoomOut} style={zoomButtonStyle}>-</button>
+      </div>
+    </div>
+  );
+};
+
+// Simple style object for the buttons
+const zoomButtonStyle: React.CSSProperties = {
+  width: '30px',
+  height: '30px',
+  background: '#444',
+  color: 'white',
+  border: '1px solid #666',
+  borderRadius: '4px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '18px'
+};
