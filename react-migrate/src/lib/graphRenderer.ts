@@ -6,9 +6,13 @@ import { smoothFunction } from './graphUtils';
 
 export const createSimulation = (nodes: Node[], width: number, height: number) => {
   return d3.forceSimulation(nodes)
-    .force('charge', d3.forceManyBody().strength(-300))
+    .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .stop(); 
+    // FIX: Add Weak Gravity (forceX/forceY) to keep disconnected nodes from flying away
+    .force('x', d3.forceX(width / 2).strength(0.05)) 
+    .force('y', d3.forceY(height / 2).strength(0.05))
+    .force('collide', d3.forceCollide().radius(30).iterations(2))
+    .stop();
 };
 
 export const updateForces = (
@@ -18,21 +22,45 @@ export const updateForces = (
   width: number, 
   height: number
 ) => {
+  const safeWidth = width || 500;
+  const safeHeight = height || 500;
+  const centerX = safeWidth / 2;
+  const centerY = safeHeight / 2;
+
+  // Update Center and Gravity targets
+  simulation.force('center', d3.forceCenter(centerX, centerY));
+  simulation.force('x', d3.forceX(centerX).strength(0.05));
+  simulation.force('y', d3.forceY(centerY).strength(0.05));
+
+  const linkForce = d3.forceLink(edges).id((d: any) => d.id).distance(150);
+
   if (useForce) {
-    simulation.force('charge', d3.forceManyBody().strength(-300));
-    simulation.force('link', d3.forceLink(edges).id((d: any) => d.id).distance(300));
-    simulation.force('center', d3.forceCenter(width / 2, height / 2));
+    simulation.force('link', linkForce);
+    simulation.force('charge', d3.forceManyBody().strength(-500));
+    simulation.force('collide', d3.forceCollide().radius(30));
     simulation.alpha(1).restart();
   } else {
+    // Physics OFF Mode
+    simulation.force('link', linkForce);
+    simulation.force('charge', d3.forceManyBody().strength(-500));
+    simulation.force('collide', d3.forceCollide().radius(30));
+    
+    // Warmup ticks to stabilize layout
+    simulation.tick(300); 
+
+    // Stop movement
     simulation.force('charge', null);
     simulation.force('link', null);
     simulation.force('center', null);
+    simulation.force('collide', null);
+    simulation.force('x', null); // Stop gravity too
+    simulation.force('y', null);
+    
     simulation.stop();
   }
 };
 
-// --- 2. Positioning & Drawing ---
-
+// --- 2. Positioning & Drawing (No changes needed here) ---
 export const setEdgePositions = (
   linkSelection: d3.Selection<any, any, any, any>,
   edgeLabelSelection: d3.Selection<any, any, any, any>,
@@ -41,40 +69,29 @@ export const setEdgePositions = (
   directed: boolean,
   weighted: boolean
 ) => {
-  
-  // 1. Update Link Paths
   linkSelection.attr('d', (d: any) => {
     if (d.selfLoop) {
       const { x, y } = d.source;
       const r = 30; 
-      // Draw visible self-loop as elliptical arc
       return `M${x},${y - 25 - r} a${r},${r} 0 1,1 0,${2 * r} a${r},${r} 0 1,1 0,${-2 * r}`;
     } 
-    
     if (d.bidirectional) {
       const dx = d.target.x - d.source.x;
       const dy = d.target.y - d.source.y;
       const dr = Math.sqrt(dx * dx + dy * dy) * 1.2;
       return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
     }
-
     return `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`;
   });
 
-  // 2. Rotate Arrows
   if (directed) {
     linkSelection.each(function(d: any) {
       const dx = d.target.x - d.source.x;
       const dy = d.target.y - d.source.y;
       const length = Math.sqrt(dx * dx + dy * dy);
-      
-      // Select the specific marker for this edge
-      // Note: In D3 v6+, we select by ID directly
       const sId = typeof d.source === 'object' ? d.source.id : d.source;
       const tId = typeof d.target === 'object' ? d.target.id : d.target;
-      const uniqueId = `#arrow-${sId}-${tId}`;
-      
-      const marker = d3.select(uniqueId);
+      const marker = d3.select(`#arrow-${sId}-${tId}`);
       
       if (!marker.empty()) {
         if (d.selfLoop) {
@@ -89,7 +106,6 @@ export const setEdgePositions = (
     });
   }
 
-  // 3. Position Weights
   if (weighted && edgeLabelSelection) {
     edgeLabelSelection
       .attr('x', (d: any) => {
@@ -98,10 +114,8 @@ export const setEdgePositions = (
          const dy = d.target.y - d.source.y;
          const length = Math.sqrt(dx * dx + dy * dy);
          const angle = Math.atan2(dy, dx);
-
          if (d.selfLoop) return midpointX - 5;
          if (d.bidirectional) return midpointX + Math.sin(angle) * length / 10;
-         
          return midpointX; 
       })
       .attr('y', (d: any) => {
@@ -110,15 +124,12 @@ export const setEdgePositions = (
          const dy = d.target.y - d.source.y;
          const length = Math.sqrt(dx * dx + dy * dy);
          const angle = Math.atan2(dy, dx);
-
          if (d.selfLoop) return midpointY - 27;
          if (d.bidirectional) return midpointY - Math.cos(angle) * length / 10;
-
          return midpointY;
       });
   }
 
-  // 4. Position Nodes & Labels
   nodeSelection.attr('cx', (d: any) => d.x).attr('cy', (d: any) => d.y);
   labelSelection.attr('x', (d: any) => d.x).attr('y', (d: any) => d.y);
 };
@@ -127,9 +138,14 @@ export const setEdgePositions = (
 
 export const dragBehavior = (simulation: d3.Simulation<Node, undefined>, useForce: boolean) => {
   
-  // FIX: Explicitly type 'this' as SVGCircleElement to solve ts(2683)
   function dragstarted(this: SVGCircleElement, event: any, d: any) {
-    if (!event.active && useForce) simulation.alphaTarget(0.3).restart();
+    // IMPORTANT FIX: 
+    // Always restart the simulation on drag start, even if useForce is false.
+    // Why? Because we need the 'tick' event to fire so the lines follow the node.
+    // If useForce is false, forces are null (from updateForces), so nodes won't repel,
+    // but the rendering loop will run.
+    simulation.alphaTarget(0.3).restart();
+    
     d.fx = d.x;
     d.fy = d.y;
     d3.select(this).attr('fill', 'var(--drag-node-color)');
@@ -141,7 +157,7 @@ export const dragBehavior = (simulation: d3.Simulation<Node, undefined>, useForc
   }
 
   function dragended(this: SVGCircleElement, event: any, d: any) {
-    if (!event.active && useForce) simulation.alphaTarget(0);
+    if (!event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
     d3.select(this).attr('fill', 'var(--node-color)');

@@ -8,7 +8,7 @@ import { Outliner } from './components/Outliner';
 import { AboutModal } from './components/AboutModal';
 
 // --- Import Logic & Hooks ---
-import { useGraphManager } from './hooks/useGraphManager'; // FIX: This solves "Cannot find name useGraphManager"
+import { useGraphManager } from './hooks/useGraphManager'; 
 import { parseEdges } from './lib/graphUtils';
 import { getGridPosition } from './lib/layoutUtils';
 import { generateRandomGraphData } from './lib/randomGraphGenerator';
@@ -16,9 +16,9 @@ import { generateRandomGraphData } from './lib/randomGraphGenerator';
 function App() {
   // 1. Hooks
   const { 
-    graphs, viewMode, toggleViewMode, 
+    graphs, viewMode, toggleViewMode,
     requestClearAll, toggleAllVisibility, toggleSnap,
-    addGraph // FIX: Destructure addGraph here
+    addGraph, removeGraph
   } = useGraphManager();
 
   const [showAbout, setShowAbout] = useState(false);
@@ -26,20 +26,19 @@ function App() {
 
   // 2. Handlers
   const handleNewGraph = (data: any) => {
-    // Parse the input string "AB5, BC4" into real edge objects
+    // Parse input
     const edges = parseEdges(data.rawEdges, data.isDirected);
     
     // Extract unique nodes
     const nodeIds = new Set<string>();
     edges.forEach(e => {
-        // Handle potentially object-based sources if re-parsing existing data
         const s = typeof e.source === 'object' ? (e.source as any).id : e.source;
         const t = typeof e.target === 'object' ? (e.target as any).id : e.target;
         nodeIds.add(s);
         nodeIds.add(t);
     });
 
-    // Add explicit vertices from input
+    // Add manual vertices
     if (data.rawVertices) {
         data.rawVertices.split(',').forEach((v: string) => {
             const trimmed = v.trim();
@@ -47,7 +46,7 @@ function App() {
         });
     }
 
-    // Create Nodes with random positions
+    // Create Nodes with random positions to prevent stacking
     const nodes = Array.from(nodeIds).map(id => ({
         id,
         x: Math.random() * 400 + 50,
@@ -66,7 +65,6 @@ function App() {
 
   const handleRandomGraph = (config: any) => {
     const data = generateRandomGraphData(config);
-    // Reuse the handler above to process the random string data
     handleNewGraph({
       ...data,
       name: `Random ${graphs.length + 1}`,
@@ -83,8 +81,10 @@ function App() {
            <button onClick={() => setShowAbout(true)} title="About">
              <img src="/images/about.png" alt="About" />
            </button>
-           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Toggle Sidebar">
-             <img src="/images/sidebarclose.png" alt="Toggle" />
+           
+           {/* Close Sidebar Button (Inside Sidebar) */}
+           <button onClick={() => setIsSidebarOpen(false)} title="Close Sidebar">
+             <img src="/images/sidebarclose.png" alt="Close" />
            </button>
         </div>
 
@@ -104,9 +104,34 @@ function App() {
       </div>
 
       {/* --- Main Workspace --- */}
-      <main className="main-workspace">
+      <main className="main-workspace" style={{ position: 'relative' }}>
+        
+        {/* FIX: Floating Open Sidebar Button (Only visible when sidebar is closed) */}
+        {!isSidebarOpen && (
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            title="Open Sidebar"
+            style={{ 
+              position: 'absolute', 
+              top: 10, 
+              left: 10, 
+              zIndex: 200, 
+              background: 'var(--bg-secondary)',
+              border: '1px solid #444',
+              borderRadius: '4px',
+              padding: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            <img 
+              src="/images/sidebarclose.png" 
+              alt="Open" 
+              style={{ transform: 'rotate(180deg)', display: 'block' }} 
+            />
+          </button>
+        )}
+
         {graphs.map((graph, index) => {
-             // Calculate grid position if in 4-grid or 9-grid mode
              const forcedLayout = getGridPosition(index, viewMode);
 
              return (
@@ -114,15 +139,12 @@ function App() {
                  key={graph.id}
                  id={graph.id}
                  title={graph.name}
-                 // Use forced layout X/Y if active, otherwise use defaults
                  initialX={forcedLayout ? forcedLayout.x : (graph.x || 100 + (index * 30))}
                  initialY={forcedLayout ? forcedLayout.y : (graph.y || 100 + (index * 30))}
                  isActive={true} 
-                 onFocus={() => {}} // You can add setFocusedId(graph.id) here later
-                 onClose={() => { /* Add removeGraph(graph.id) to hook later */ }}
+                 onFocus={() => {}} 
+                 onClose={() => { removeGraph(graph.id); }}
                  isLocked={viewMode !== 'default'} 
-                 
-                 // Data Props
                  nodes={graph.nodes}
                  edges={graph.edges}
                  isDirected={graph.isDirected}
