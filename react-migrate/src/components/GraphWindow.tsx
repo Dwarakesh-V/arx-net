@@ -78,7 +78,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
       className={`graphContainer ${isActive ? 'active' : ''}`}
       style={{
         // Inline styles for dynamic positioning
-        position: 'absolute',
+        position: isFullScreen ? 'fixed' : 'absolute',
         left: position.x,
         top: position.y,
         width: position.width,

@@ -22,6 +22,10 @@ export const useGraphManager = () => {
     setGraphCount(id);
   };
 
+  const removeGraph = (id: number) => {
+    setGraphs(prev => prev.filter(g => g.id !== id));
+  };
+
   const clearAllGraphs = useCallback(() => {
     setGraphs([]);
     setGraphCount(0);
@@ -51,6 +55,7 @@ export const useGraphManager = () => {
     graphs,
     graphCount,
     addGraph,
+    removeGraph,
     clearAllGraphs,
     viewMode,
     toggleViewMode,

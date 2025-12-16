@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import type { Node, Edge } from '../types';
-import {
-  createSimulation,
-  updateForces,
-  setEdgePositions,
-  dragBehavior
-} from '../lib/graphRenderer'; // From previous step
-import { getGraphExtent } from '../lib/viewUtils'; // From previous step
+import { 
+  createSimulation, 
+  updateForces, 
+  setEdgePositions, 
+  dragBehavior 
+} from '../lib/graphRenderer'; 
+import { getGraphExtent } from '../lib/viewUtils';
 
 interface GraphCanvasProps {
   nodes: Node[];
@@ -21,11 +21,11 @@ interface GraphCanvasProps {
 }
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
-  nodes, edges, isDirected, isWeighted, useForce, showGrid,
+  nodes, edges, isDirected, isWeighted, useForce, showGrid, 
   onNodeContextMenu, onEdgeContextMenu
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const contentRef = useRef<SVGGElement>(null); // The group that moves when panning
+  const contentRef = useRef<SVGGElement>(null); 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<d3.Simulation<Node, undefined> | null>(null);
   const zoomBehavior = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
@@ -36,7 +36,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     const width = wrapperRef.current.clientWidth;
     const height = wrapperRef.current.clientHeight;
-
+    
     const svg = d3.select(svgRef.current);
     const contentGroup = d3.select(contentRef.current);
 
@@ -45,20 +45,19 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .scaleExtent([0.1, 4])
       // Filter: Middle Mouse OR (Left Mouse + Ctrl) OR Wheel
       .filter((event) => {
-        return event.button === 1 || (event.button === 0 && event.ctrlKey) || event.type === 'wheel';
+         return event.button === 1 || (event.button === 0 && event.ctrlKey) || event.type === 'wheel';
       })
       .on('zoom', (event) => {
         contentGroup.attr('transform', event.transform);
       });
 
     zoomBehavior.current = zoom;
-    svg.call(zoom).on("dblclick.zoom", null); // Disable d3's default double-click zoom
+    svg.call(zoom).on("dblclick.zoom", null); 
 
-    // 2. Define Grid Pattern (Efficient)
-    // We add this to <defs> in the SVG, not the content group
-    svg.select('defs').remove(); // Clean old defs
+    // 2. Define Grid Pattern
+    svg.select('defs').remove(); 
     const defs = svg.append('defs');
-
+    
     const pattern = defs.append('pattern')
       .attr('id', 'grid-pattern')
       .attr('width', 40)
@@ -73,9 +72,30 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     // 3. Clear Previous Graph Elements
     contentGroup.selectAll("*").remove();
+    const edgeMap = new Set<string>();
+    edges.forEach(e => {
+        // Handle object references vs string IDs
+        const s = typeof e.source === 'object' ? (e.source as any).id : e.source;
+        const t = typeof e.target === 'object' ? (e.target as any).id : e.target;
+        edgeMap.add(`${s}->${t}`);
+    });
 
-    // 4. Create Layers inside Content Group
-    // Order determines z-index (painters algorithm)
+    edges.forEach((e: any) => {
+        const s = typeof e.source === 'object' ? e.source.id : e.source;
+        const t = typeof e.target === 'object' ? e.target.id : e.target;
+        
+        // Check if the reverse edge exists
+        if (s !== t && edgeMap.has(`${t}->${s}`)) {
+            e.bidirectional = true;
+        } else {
+            e.bidirectional = false;
+        }
+        
+        // Also tag self-loops explicitly for easier handling
+        e.selfLoop = (s === t);
+    });
+
+    // 4. Create Layers 
     const edgeLayer = contentGroup.append('g').attr('class', 'edge-layer');
     const nodeLayer = contentGroup.append('g').attr('class', 'node-layer');
     const labelLayer = contentGroup.append('g').attr('class', 'label-layer');
@@ -94,37 +114,35 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr('fill', 'none')
       .attr('marker-end', (d: any) => isDirected ? `url(#arrow-${d.source.id}-${d.target.id})` : null)
       .on('contextmenu', (event, d) => {
-        onEdgeContextMenu?.(event, d as unknown as Edge);
+         onEdgeContextMenu?.(event, d as unknown as Edge);
       });
 
     // 7. Define Markers (Arrowheads)
     if (isDirected) {
-      edges.forEach((e: any) => {
-        const sId = typeof e.source === 'object' ? e.source.id : e.source;
-        const tId = typeof e.target === 'object' ? e.target.id : e.target;
-        const id = `arrow-${sId}-${tId}`;
-
-        // Prevent duplicate markers
-        if (defs.select(`#${id}`).empty()) {
-          defs.append('marker')
-            .attr('id', id)
-            .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 25)
-            .attr('refY', 0)
-            .attr('markerWidth', 8)
-            .attr('markerHeight', 8)
-            .attr('orient', 'auto')
-            .append('path')
-            .attr('d', 'M0,-5L10,0L0,5')
-            .attr('fill', 'var(--edge-color)');
-        }
-      });
+       edges.forEach((e: any) => {
+         const sId = typeof e.source === 'object' ? e.source.id : e.source;
+         const tId = typeof e.target === 'object' ? e.target.id : e.target;
+         const id = `arrow-${sId}-${tId}`;
+         
+         if (defs.select(`#${id}`).empty()) {
+            defs.append('marker')
+              .attr('id', id)
+              .attr('viewBox', '0 -5 10 10')
+              .attr('refX', 25)
+              .attr('refY', 0)
+              .attr('markerWidth', 8)
+              .attr('markerHeight', 8)
+              .attr('orient', 'auto')
+              .append('path')
+              .attr('d', 'M0,-5L10,0L0,5')
+              .attr('fill', 'var(--edge-color)');
+         }
+       });
     }
 
     // 8. Draw Nodes
     const circles = nodeLayer
-      // FIX: Add <SVGCircleElement, any> here to strictly type the selection
-      .selectAll<SVGCircleElement, any>('circle')
+      .selectAll<SVGCircleElement, any>('circle') // FIX: Single, correct selectAll call
       .data(nodes, (d: any) => d.id)
       .join('circle')
       .attr('r', 20)
@@ -132,7 +150,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .style('cursor', 'pointer')
       .call(dragBehavior(simulation, useForce))
       .on('contextmenu', (event, d) => {
-        onNodeContextMenu?.(event, d as unknown as Node);
+         onNodeContextMenu?.(event, d as unknown as Node);
       });
 
     // 9. Draw Labels
@@ -164,50 +182,48 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     // 11. Start Forces
     updateForces(simulation, edges, useForce, width, height);
+    setEdgePositions(links, edgeLabels, circles, labels, isDirected, isWeighted);
 
     // 12. Handle "Center Graph" on Double Click
     svg.on("dblclick", (event) => {
-      if (event.target.tagName !== 'svg' && event.target.tagName !== 'rect') return;
+       if (event.target.tagName !== 'svg' && event.target.tagName !== 'rect') return;
 
-      // Destructure with renaming
-      const { x, y, width: gWidth, height: gHeight } = getGraphExtent(nodes);
+       const { x, y, width: gWidth, height: gHeight } = getGraphExtent(nodes);
+       
+       // Safe fallbacks to prevent division by zero or NaN
+       const safeWidth = gWidth || 1;
+       const safeHeight = gHeight || 1;
 
-      // FIX: Provide fallbacks (|| 1) to prevent 'undefined' or division by zero
-      // If gWidth is undefined/0, treat it as 1 to avoid breaking Math.max
-      const safeWidth = gWidth || 1;
-      const safeHeight = gHeight || 1;
-
-      const scale = 0.9 / Math.max(safeWidth / width, safeHeight / height);
-
-      svg.transition().duration(750).call(
-        zoom.transform,
-        d3.zoomIdentity
-          .translate(width / 2, height / 2)
-          .scale(Math.min(scale, 1))
-          .translate(-x, -y)
-      );
+       const scale = 0.9 / Math.max(safeWidth / width, safeHeight / height);
+       
+       svg.transition().duration(750).call(
+         zoom.transform,
+         d3.zoomIdentity
+           .translate(width / 2, height / 2)
+           .scale(Math.min(scale, 1)) 
+           .translate(-x, -y)
+       );
     });
 
-    // Cleanup
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges, isDirected, isWeighted]); // Re-run if graph structure changes
+  }, [nodes, edges, isDirected, isWeighted]); 
 
-  // --- Dynamic Updates (No full re-render) ---
+  // --- Dynamic Updates ---
   useEffect(() => {
     if (simulationRef.current && wrapperRef.current) {
       updateForces(
-        simulationRef.current,
-        edges,
-        useForce,
-        wrapperRef.current.clientWidth,
+        simulationRef.current, 
+        edges, 
+        useForce, 
+        wrapperRef.current.clientWidth, 
         wrapperRef.current.clientHeight
       );
     }
   }, [useForce]);
 
-  // --- Zoom Helper Functions ---
+  // --- Zoom Helpers ---
   const handleZoomIn = () => {
     if (svgRef.current && zoomBehavior.current) {
       d3.select(svgRef.current).transition().call(zoomBehavior.current.scaleBy, 1.2);
@@ -222,21 +238,14 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
   return (
     <div ref={wrapperRef} className="graph-content" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-
-      {/* 1. SVG Canvas */}
+      
       <svg ref={svgRef} width="100%" height="100%" style={{ cursor: 'default' }}>
-
-        {/* 2. Grid Background (Fixed to view, uses pattern) */}
         {showGrid && (
           <rect width="100%" height="100%" fill="url(#grid-pattern)" style={{ pointerEvents: 'none' }} />
         )}
-
-        {/* 3. Graph Content (Moves with Pan/Zoom) */}
         <g ref={contentRef} />
-
       </svg>
 
-      {/* 4. Zoom Controls Overlay */}
       <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', gap: '5px', zIndex: 20 }}>
         <button onClick={handleZoomIn} style={zoomButtonStyle}>+</button>
         <button onClick={handleZoomOut} style={zoomButtonStyle}>-</button>
@@ -245,7 +254,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   );
 };
 
-// Simple style object for the buttons
 const zoomButtonStyle: React.CSSProperties = {
   width: '30px',
   height: '30px',
