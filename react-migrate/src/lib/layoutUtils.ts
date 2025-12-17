@@ -1,65 +1,51 @@
-// Helper to calculate position based on index (0, 1, 2...)
+// Define standard constraints
+const SIDEBAR_WIDTH = 300;
+const SNAP_SIZE = 50; // Pixels to snap to
+const GAP = 15; // Gap between windows in grid mode
+
 export const getGridPosition = (index: number, mode: 'default' | 'grid4' | 'grid9') => {
   if (mode === 'default') return null; // Let the window handle its own position
 
-  const viewportWidth = window.innerWidth;
+  // 1. Calculate Available Workspace
+  const viewportWidth = window.innerWidth - SIDEBAR_WIDTH;
   const viewportHeight = window.innerHeight;
-  // Assuming Sidebar is ~250px or 20% of screen. 
-  // Adjust 'startX' to account for your sidebar width
-  const startX = 300; 
-  
+
+  // 2. Define Columns based on mode
+  let cols = 1;
+  let rows = 1;
+
   if (mode === 'grid4') {
-    const width = (viewportWidth - startX) / 2;
-    const height = viewportHeight / 2;
-    const row = Math.floor(index / 2);
-    const col = index % 2;
-    
-    return {
-      x: startX + (col * width),
-      y: row * height,
-      width: width - 10, // -10 for gap
-      height: height - 10
-    };
+    cols = 2;
+    rows = 2;
+  } else if (mode === 'grid9') {
+    cols = 3;
+    rows = 3;
   }
 
-  if (mode === 'grid9') {
-    const width = (viewportWidth - startX) / 3;
-    const height = viewportHeight / 3;
-    const row = Math.floor(index / 3);
-    const col = index % 3;
+  // 3. Calculate Cell Dimensions
+  const cellWidth = (viewportWidth - (GAP * (cols + 1))) / cols;
+  const cellHeight = (viewportHeight - (GAP * (rows + 1))) / rows;
 
-    return {
-      x: startX + (col * width),
-      y: row * height,
-      width: width - 10,
-      height: height - 10
-    };
-  }
+  // 4. Determine Grid Coordinates (Row/Col)
+  // If we have more graphs than grid slots, we just keep wrapping them
+  const row = Math.floor(index / cols);
+  const col = index % cols;
 
-  return null;
+  return {
+    // Add Sidebar Width to X so it starts after the sidebar
+    x: SIDEBAR_WIDTH + GAP + (col * (cellWidth + GAP)),
+    y: GAP + (row * (cellHeight + GAP)),
+    width: cellWidth,
+    height: cellHeight
+  };
 };
 
-// Add this to your existing layoutUtils.ts
+// Simple utility to snap X/Y coordinates to a grid
+export const getSnapPosition = (x: number, y: number, isEnabled: boolean) => {
+    if (!isEnabled) return { x, y };
 
-export const getSnapPosition = (x: number, y: number, viewMode: 'default' | 'grid4' | 'grid9') => {
-    const parentWidth = window.innerWidth;
-    const parentHeight = window.innerHeight;
-
-    if (viewMode === 'grid4') {
-        // Snap to 4 corners
-        const snapX = (x / parentWidth) < 0.1875 ? 0 : 0.375 * parentWidth;
-        const snapY = (y / parentHeight) < 0.25 ? 0 : 0.5 * parentHeight;
-        return { x: snapX, y: snapY };
-    }
-    else if (viewMode === 'grid9') {
-        const snapXValues = [0, 0.25, 0.50].map(val => val * parentWidth);
-        const snapYValues = [0, 0.3333, 0.6666].map(val => val * parentHeight);
-
-        // Find closest
-        const snapX = snapXValues.reduce((prev, curr) => Math.abs(curr - x) < Math.abs(prev - x) ? curr : prev);
-        const snapY = snapYValues.reduce((prev, curr) => Math.abs(curr - y) < Math.abs(prev - y) ? curr : prev);
-        return { x: snapX, y: snapY };
-    }
-
-    return { x, y }; // No snapping
+    return {
+        x: Math.round(x / SNAP_SIZE) * SNAP_SIZE,
+        y: Math.round(y / SNAP_SIZE) * SNAP_SIZE
+    };
 };
