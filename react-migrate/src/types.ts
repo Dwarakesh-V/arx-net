@@ -25,5 +25,5 @@
     // view state specific to this graph window
     x?: number;
     y?: number;
-    isMinimized?: boolean;
+    isVisible: boolean;
     }

@@ -9,7 +9,7 @@ export const useGraphManager = () => {
   // --- REPLACING Lines 30-38 (View Modes) ---
   // Instead of separate booleans (view4gen, view9gen), use one mode
   const [viewMode, setViewMode] = useState<'default' | 'grid4' | 'grid9'>('default');
-  const [isSnapping, setIsSnapping] = useState(false);
+  const [isSnappingEnabled, setIsSnappingEnabled] = useState(false);
   const [areAllVisible, setAreAllVisible] = useState(true);
 
   // --- Actions (Functions to modify state) ---
@@ -31,7 +31,13 @@ export const useGraphManager = () => {
     setGraphCount(0);
   }, []);
 
-  const toggleSnap = () => setIsSnapping(prev => !prev);
+  const toggleGraphVisibility = useCallback((id: number) => {
+    setGraphs(prev => prev.map(g => 
+      g.id === id ? { ...g, isVisible: !g.isVisible } : g
+    ));
+  }, []);
+
+  const toggleSnap = () => setIsSnappingEnabled(prev => !prev);
 
   const toggleViewMode = (mode: 'grid4' | 'grid9') => {
     // Toggle logic: if clicking the active mode, turn it off
@@ -51,6 +57,13 @@ export const useGraphManager = () => {
     }
   };
 
+  // NEW: Add this function
+  const renameGraph = (id: number, newName: string) => {
+    setGraphs(prev => prev.map(g => 
+      g.id === id ? { ...g, name: newName } : g
+    ));
+  };
+
   return {
     graphs,
     graphCount,
@@ -59,11 +72,13 @@ export const useGraphManager = () => {
     clearAllGraphs,
     viewMode,
     toggleViewMode,
-    isSnapping,
+    isSnappingEnabled,
     toggleSnap,
     areAllVisible,
     setAreAllVisible,
     toggleAllVisibility,
-    requestClearAll
+    requestClearAll,
+    renameGraph,
+    toggleGraphVisibility,
   };
 };
