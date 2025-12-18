@@ -47,7 +47,7 @@ export const useGraphManager = () => {
 
   // New: Toggle visibility for ALL graphs
   const toggleAllVisibility = (shouldShow: boolean) => {
-    setGraphs(prev => prev.map(g => ({ ...g, isMinimized: !shouldShow })));
+    setGraphs(prev => prev.map(g => ({ ...g, isVisible: shouldShow })));
   };
 
   // New: Clear with confirmation
