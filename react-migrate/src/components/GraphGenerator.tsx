@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 
 // Define the shape of the random configuration
 interface RandomGraphConfig {
-  numNodes: number;
-  numEdges: number;
+  vertexCount: number;
+  edgeCount: number;
   minWeight: number;
   maxWeight: number;
-  isConnected: boolean;
+  ensureConnected: boolean;
   allowSelfLoops: boolean;
   allowDuplicates: boolean;
   isDirected: boolean;
@@ -33,12 +33,12 @@ export const GraphGenerator: React.FC<GraphGeneratorProps> = ({ onGenerate, onGe
   const [isWeighted, setIsWeighted] = useState(true);
 
   // --- Random Graph Inputs (Missing in your version) ---
-  const [numNodes, setNumNodes] = useState(10);
-  const [numEdges, setNumEdges] = useState(34);
+  const [vertexCount, setVertexCount] = useState(10);
+  const [edgeCount, setEdgeCount] = useState(34);
   const [minWeight, setMinWeight] = useState(1);
   const [maxWeight, setMaxWeight] = useState(20);
   
-  const [isConnected, setIsConnected] = useState(false);
+  const [ensureConnected, setEnsureConnected] = useState(false);
   const [allowSelfLoops, setAllowSelfLoops] = useState(false);
   const [allowDuplicates, setAllowDuplicates] = useState(false);
 
@@ -51,12 +51,12 @@ export const GraphGenerator: React.FC<GraphGeneratorProps> = ({ onGenerate, onGe
     // If self-loops allowed: Directed = n*n, Undirected = n*(n+1)/2
     let max = 0;
     if (isDirected) {
-      max = allowSelfLoops ? numNodes * numNodes : numNodes * (numNodes - 1);
+      max = allowSelfLoops ? vertexCount * vertexCount : vertexCount * (vertexCount - 1);
     } else {
-      max = allowSelfLoops ? (numNodes * (numNodes + 1)) / 2 : (numNodes * (numNodes - 1)) / 2;
+      max = allowSelfLoops ? (vertexCount * (vertexCount + 1)) / 2 : (vertexCount * (vertexCount - 1)) / 2;
     }
     setMaxRec(max);
-  }, [numNodes, isDirected, allowSelfLoops]);
+  }, [vertexCount, isDirected, allowSelfLoops]);
 
   // --- Handlers ---
   const handleGenerateClick = () => {
@@ -71,11 +71,11 @@ export const GraphGenerator: React.FC<GraphGeneratorProps> = ({ onGenerate, onGe
 
   const handleRandomClick = () => {
     onGenerateRandom({
-      numNodes,
-      numEdges,
+      vertexCount,
+      edgeCount,
       minWeight,
       maxWeight,
-      isConnected,
+      ensureConnected,
       allowSelfLoops,
       allowDuplicates,
       isDirected,
@@ -126,10 +126,10 @@ export const GraphGenerator: React.FC<GraphGeneratorProps> = ({ onGenerate, onGe
         {/* --- Random Graph Section (Restored) --- */}
         <div className="input-row">
           <label>Vertex count:</label>
-          <input type="number" value={numNodes} onChange={(e) => setNumNodes(Number(e.target.value))} />
+          <input type="number" value={vertexCount} onChange={(e) => setVertexCount(Number(e.target.value))} />
           
           <label>Edge count:</label>
-          <input type="number" value={numEdges} onChange={(e) => setNumEdges(Number(e.target.value))} />
+          <input type="number" value={edgeCount} onChange={(e) => setEdgeCount(Number(e.target.value))} />
         </div>
 
         <div className="input-row">
@@ -140,9 +140,11 @@ export const GraphGenerator: React.FC<GraphGeneratorProps> = ({ onGenerate, onGe
           <input type="number" value={maxWeight} onChange={(e) => setMaxWeight(Number(e.target.value))} />
         </div>
 
-        <label><input type="checkbox" checked={isConnected} onChange={(e) => setIsConnected(e.target.checked)} /> Connected</label><br />
+        <label><input type="checkbox" checked={ensureConnected} onChange={(e) => setEnsureConnected(e.target.checked)} /> Connected</label><br />
         <label><input type="checkbox" checked={allowSelfLoops} onChange={(e) => setAllowSelfLoops(e.target.checked)} /> Self loops</label><br />
         <label><input type="checkbox" checked={allowDuplicates} onChange={(e) => setAllowDuplicates(e.target.checked)} /> Duplicate edges</label><br />
+        <label><input type="checkbox" checked={isDirected} onChange={(e) => setIsDirected(e.target.checked)} /> Directed</label><br />
+        <label><input type="checkbox" checked={isWeighted} onChange={(e) => setIsWeighted(e.target.checked)} /> Weighted</label><br />
 
         <p id="minMaxRec">
            Max edge count for current vertex count: <b style={{ color: '#ffc66d' }}> {maxRec} </b>

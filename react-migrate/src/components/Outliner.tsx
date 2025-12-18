@@ -4,6 +4,13 @@ import type { GraphData } from '../types';
 interface OutlinerProps {
   graphs: GraphData[];
   activeGraphId: number | null;
+  
+  // State Props
+  currentLayout: 'default' | 'grid4' | 'grid9';
+  isSnapping: boolean;
+  areAllVisible: boolean;
+
+  // Actions
   onLayoutChange: (mode: 'grid4' | 'grid9') => void;
   onSnapToggle: () => void;
   onClearAll: () => void;
@@ -16,6 +23,9 @@ interface OutlinerProps {
 export const Outliner: React.FC<OutlinerProps> = ({ 
   graphs,
   activeGraphId,
+  currentLayout,
+  isSnapping,
+  areAllVisible,
   onLayoutChange, 
   onSnapToggle, 
   onClearAll, 
@@ -24,7 +34,6 @@ export const Outliner: React.FC<OutlinerProps> = ({
   onDeleteGraph,
   onRenameGraph,
 }) => {
-  // State for renaming logic
   const [editingId, setEditingId] = useState<number | null>(null);
   const [tempName, setTempName] = useState('');
 
@@ -46,34 +55,61 @@ export const Outliner: React.FC<OutlinerProps> = ({
   };
 
   return (
-    <div className="outliner">
-      {/* --- Toolbar Header --- */}
-      <div className="outliner-header">
-        <b style={{ marginRight: '10px', fontSize: '1.1em' }}>Graphs</b>
+    <div className="outliner" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      
+      {/* --- Toolbar Header (Single Row Layout) --- */}
+      <div className="outliner-header" style={{ flexShrink: 0, paddingBottom: '5px' }}>
         
-        <div className="outliner-controls">
-            <button title="Grid View 4" onClick={() => onLayoutChange('grid4')}>
-                <img src="/images/disable4g.png" alt="4" />
-            </button>
-            <button title="Grid View 9" onClick={() => onLayoutChange('grid9')}>
-                <img src="/images/disable9g.png" alt="9" />
-            </button>
-            <button title="Snap" onClick={onSnapToggle}>
-                <img src="/images/disablesnap.png" alt="Snap" />
-            </button>
-            <button title="Show/Hide All" onClick={onToggleVisibility}>
-                <img src="/images/show.png" alt="Eye" />
-            </button>
-            <button title="Delete All" onClick={onClearAll}>
-                <img src="/images/delete.png" alt="Del" />
-            </button>
+        {/* Flex container to align Title (Left) and Controls (Right) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '32px' }}>
+            
+            {/* Left Side: Title */}
+            <b style={{ fontSize: '1.1em', whiteSpace: 'nowrap' }}>Graphs</b>
+            
+            {/* Right Side: Buttons */}
+            <div className="outliner-controls" style={{ display: 'flex', gap: '5px' }}>
+                <button 
+                    title={currentLayout === 'grid4' ? "Disable Grid 4" : "Enable Grid 4"} 
+                    onClick={() => onLayoutChange('grid4')}
+                    className={currentLayout === 'grid4' ? 'active' : ''}
+                >
+                    <img src={currentLayout === 'grid4' ? "/images/enable4g.png" : "/images/disable4g.png"} alt="4" />
+                </button>
+
+                <button 
+                    title={currentLayout === 'grid9' ? "Disable Grid 9" : "Enable Grid 9"} 
+                    onClick={() => onLayoutChange('grid9')}
+                    className={currentLayout === 'grid9' ? 'active' : ''}
+                >
+                    <img src={currentLayout === 'grid9' ? "/images/enable9g.png" : "/images/disable9g.png"} alt="9" />
+                </button>
+
+                <button 
+                    title={isSnapping ? "Disable Snap" : "Enable Snap"} 
+                    onClick={onSnapToggle}
+                    className={isSnapping ? 'active' : ''}
+                >
+                    <img src={isSnapping ? "/images/enablesnap.png" : "/images/disablesnap.png"} alt="Snap" />
+                </button>
+
+                <button 
+                    title={areAllVisible ? "Hide All" : "Show All"} 
+                    onClick={onToggleVisibility}
+                >
+                    <img src={areAllVisible ? "/images/show.png" : "/images/hide.png"} alt="Eye" />
+                </button>
+
+                <button title="Delete All" onClick={onClearAll}>
+                    <img src="/images/delete.png" alt="Del" />
+                </button>
+            </div>
         </div>
+        
+        <hr style={{ borderColor: '#444', margin: '5px 0 0 0' }} />
       </div>
 
-      <hr style={{ borderColor: '#444', margin: '10px 0' }} />
-
       {/* --- Scrollable List --- */}
-      <div className="graph-list">
+      <div className="graph-list" style={{ flexGrow: 1, overflowY: 'auto', paddingTop: '10px' }}>
         {graphs.length === 0 && (
             <div style={{ color: '#666', fontStyle: 'italic', padding: '10px' }}>
                 No graphs created.
@@ -94,14 +130,8 @@ export const Outliner: React.FC<OutlinerProps> = ({
                 onChange={(e) => setTempName(e.target.value)}
                 onBlur={handleNameSave}
                 onKeyDown={handleKeyDown}
-                onClick={(e) => e.stopPropagation()} // Prevent triggering parent click
-                style={{ 
-                    width: '70%', 
-                    background: '#222', 
-                    border: '1px solid var(--accent)', 
-                    color: '#fff',
-                    padding: '2px 5px'
-                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: '70%', background: '#222', border: '1px solid var(--accent)', color: '#fff', padding: '2px 5px' }}
               />
             ) : (
               <span 
@@ -114,16 +144,11 @@ export const Outliner: React.FC<OutlinerProps> = ({
             )}
 
             <div className="item-actions">
-                <span style={{ fontSize: '0.8em', color: '#666', marginRight: '5px' }}>
-                    {graph.nodes.length}v
-                </span>
+                <span style={{ fontSize: '0.8em', color: '#666', marginRight: '5px' }}>{graph.nodes.length}v</span>
                 <button 
                     className="delete-btn"
                     title="Delete Graph"
-                    onClick={(e) => {
-                        e.stopPropagation(); // Stop click from selecting the graph
-                        onDeleteGraph(graph.id);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onDeleteGraph(graph.id); }}
                 >
                     ×
                 </button>

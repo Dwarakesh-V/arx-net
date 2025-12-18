@@ -16,9 +16,9 @@ import { generateRandomGraphData } from './lib/randomGraphGenerator';
 function App() {
   // 1. Hooks
   const {
-    graphs, viewMode, toggleViewMode, isSnappingEnabled,
+    graphs, viewMode, toggleViewMode, isSnappingEnabled, areAllVisible,
     requestClearAll, toggleAllVisibility, toggleSnap,
-    addGraph, removeGraph, renameGraph
+    addGraph, removeGraph, renameGraph, setAreAllVisible, toggleGraphVisibility,
   } = useGraphManager();
 
   const [showAbout, setShowAbout] = useState(false);
@@ -105,12 +105,18 @@ function App() {
           // Data Props
           graphs={graphs}
           activeGraphId={focusedGraphId}
-
+          currentLayout={viewMode}
+          isSnapping={isSnappingEnabled}
+          areAllVisible={areAllVisible}
           // View Controls
           onLayoutChange={toggleViewMode}
           onSnapToggle={toggleSnap}
           onClearAll={requestClearAll}
-          onToggleVisibility={() => toggleAllVisibility(true)}
+          onToggleVisibility={() => {
+            const newState = !areAllVisible;
+            setAreAllVisible(newState);
+            toggleAllVisibility(newState);
+          }}
 
           // Action Props
           onSelectGraph={(id) => setFocusedGraphId(id)}
@@ -160,12 +166,15 @@ function App() {
               isActive={true}
               onFocus={() => { }}
               onClose={() => { removeGraph(graph.id); }}
-              isLocked={viewMode !== 'default'}
+              onMinimize={() => { toggleGraphVisibility(graph.id); }}
               nodes={graph.nodes}
               edges={graph.edges}
               isDirected={graph.isDirected}
               isWeighted={graph.isWeighted}
               isSnapped={isSnappingEnabled}
+              viewMode={viewMode}
+              initialWidth={forcedLayout ? forcedLayout.width : undefined}
+              initialHeight={forcedLayout ? forcedLayout.height : undefined}
             />
           );
         })}

@@ -6,35 +6,34 @@ import { getSnapPosition } from '../lib/layoutUtils';
 interface GraphWindowProps {
   id: number;
   title: string;
-  initialX: number;
-  initialY: number;
-  initialWidth?: number;
-  initialHeight?: number;
+  
+  initialX: string | number;
+  initialY: string | number;
+  initialWidth?: string | number;
+  initialHeight?: string | number;
   
   isActive: boolean;
-  isLocked: boolean;
   isSnapped: boolean;
+  viewMode: 'default' | 'grid4' | 'grid9';
   
-  // --- Data Props ---
   nodes: Node[];
   edges: Edge[];
   isDirected: boolean;
   isWeighted: boolean;
 
-  // --- Actions ---
   onFocus: () => void;
   onClose: () => void;
-  // onMinimize is removed since we deleted the button
+  onMinimize: () => void;
 }
 
 export const GraphWindow: React.FC<GraphWindowProps> = ({ 
   title, initialX, initialY, initialWidth, initialHeight,
-  isActive, isLocked, isSnapped,
-  nodes, edges, isDirected, isWeighted,
-  onFocus, onClose 
+  isActive, isSnapped,
+  nodes, edges, isDirected, isWeighted, viewMode,
+  onFocus, onClose, onMinimize // <--- Destructure here
 }) => {
   
-  // 1. Local State for Position & Size
+  // Local State
   const [position, setPosition] = useState({ 
     x: initialX, 
     y: initialY, 
@@ -45,57 +44,50 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [preFullScreenPos, setPreFullScreenPos] = useState(position);
   
-  // Canvas Controls
+  const containerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
   const [useForce, setUseForce] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   
-  // Right-click menu state
   const [contextMenu, setContextMenu] = useState<{
-    x: number; 
-    y: number; 
-    type: 'node'|'edge'; 
-    data: any 
+    x: number; y: number; type: 'node'|'edge'; data: any 
   } | null>(null);
 
-  // Sync position when Parent Layout changes
   useEffect(() => {
-    if (isLocked) {
-      setPosition({
-        x: initialX,
-        y: initialY,
-        width: initialWidth || 600,
-        height: initialHeight || 450
-      });
-    }
-  }, [initialX, initialY, initialWidth, initialHeight, isLocked]);
+    setPosition({
+      x: initialX,
+      y: initialY,
+      width: initialWidth || 600,
+      height: initialHeight || 450
+    });
+  }, [initialX, initialY, initialWidth, initialHeight]);
 
   // --- Handlers ---
-  const headerRef = useRef<HTMLDivElement>(null);
-
   const handleDragStart = (e: React.MouseEvent) => {
-    if (isLocked || isFullScreen) return;
+    if (isFullScreen) return;
     e.preventDefault();
     onFocus();
 
+    const currentX = containerRef.current?.offsetLeft || 0;
+    const currentY = containerRef.current?.offsetTop || 0;
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
-    const startX = position.x;
-    const startY = position.y;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startMouseX;
       const dy = moveEvent.clientY - startMouseY;
       
-      let newX = startX + dx;
-      let newY = startY + dy;
+      const newX = currentX + dx;
+      const newY = currentY + dy;
 
-      const snapped = getSnapPosition(newX, newY, isSnapped);
+      const parent = (moveEvent.target as HTMLElement).closest('.main-workspace');
+      const parentW = parent ? parent.clientWidth : window.innerWidth;
+      const parentH = parent ? parent.clientHeight : window.innerHeight;
 
-      setPosition(prev => ({ 
-        ...prev, 
-        x: snapped.x, 
-        y: snapped.y 
-      }));
+      const snapped = getSnapPosition(newX, newY, isSnapped, viewMode, parentW, parentH);
+
+      setPosition(prev => ({ ...prev, x: snapped.x, y: snapped.y }));
     };
 
     const handleMouseUp = () => {
@@ -116,12 +108,10 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   };
 
   const handleResizeStart = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startW = position.width;
-      const startH = position.height;
+      e.stopPropagation(); e.preventDefault();
+      const startX = e.clientX; const startY = e.clientY;
+      const startW = containerRef.current?.offsetWidth || 600;
+      const startH = containerRef.current?.offsetHeight || 450;
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
           setPosition(prev => ({
@@ -130,116 +120,83 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
               height: Math.max(200, startH + (moveEvent.clientY - startY))
           }));
       };
-
       const handleMouseUp = () => {
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
       };
-
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
   };
 
+  // --- NEW HANDLER ---
+  const minimizeWindow = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent drag or focus
+    onMinimize();
+  };
+
   return (
     <div 
+      ref={containerRef} 
       className={`graphContainer ${isActive ? 'active' : ''}`}
       style={{
         position: isFullScreen ? 'fixed' : 'absolute',
         left: isFullScreen ? 0 : position.x,
         top: isFullScreen ? 0 : position.y,
         width: isFullScreen ? '100vw' : position.width,
-        // Removed logic for minimized height
         height: isFullScreen ? '100vh' : position.height,
-        
         zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10), 
         overflow: 'hidden',
-        transition: isLocked ? 'all 0.3s ease' : 'height 0.2s',
+        transition: 'height 0.2s, width 0.2s', 
       }}
-      onMouseDown={() => {
-        onFocus();
-        setContextMenu(null); 
-      }} 
+      onMouseDown={() => { onFocus(); setContextMenu(null); }} 
     >
-      {/* --- WINDOW HEADER --- */}
       <div 
         ref={headerRef}
         className="window-header" 
         onMouseDown={handleDragStart}
         onDoubleClick={toggleFullScreen}
-        style={{ cursor: isLocked ? 'default' : 'move' }}
+        style={{ cursor: 'move' }} 
       >
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center', overflow: 'hidden' }}>
           <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{title}</span>
-          
-          <label title="Toggle physics" style={{ fontSize: '0.85em', display: 'flex', alignItems: 'center' }}>
-              <input type="checkbox" checked={useForce} onChange={(e) => setUseForce(e.target.checked)} style={{ marginRight: '4px' }}/> 
-              Force
+          <label style={{ fontSize: '0.85em', display: 'flex', alignItems: 'center' }}>
+              <input type="checkbox" checked={useForce} onChange={(e) => setUseForce(e.target.checked)} style={{ marginRight: '4px' }}/> Force
           </label>
-          <label title="Toggle grid" style={{ fontSize: '0.85em', display: 'flex', alignItems: 'center' }}>
-              <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} style={{ marginRight: '4px' }}/> 
-              Grid
+          <label style={{ fontSize: '0.85em', display: 'flex', alignItems: 'center' }}>
+              <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} style={{ marginRight: '4px' }}/> Grid
           </label>
         </div>
 
         <div className="window-controls" style={{ display: 'flex', gap: '5px' }}>
-           <button onClick={toggleFullScreen} title="Toggle Fullscreen">
+          {/* MINIMIZE BUTTON */}
+          <button onClick={minimizeWindow} title="Minimize">_</button>
+          
+          <button onClick={toggleFullScreen} title="Toggle Fullscreen">
              {isFullScreen ? '↙' : '↗'}
-           </button>
-           
-           <button onClick={(e) => { e.stopPropagation(); onClose(); }} title="Close" className="close-btn">
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} title="Close" className="close-btn">
              ✕
-           </button>
+          </button>
         </div>
       </div>
 
-      {/* --- WINDOW CONTENT --- */}
       <div className="window-content" style={{ height: 'calc(100% - 40px)', position: 'relative' }}>
         <GraphCanvas 
-            nodes={nodes}
-            edges={edges}
-            isDirected={isDirected}
-            isWeighted={isWeighted}
-            useForce={useForce}
-            showGrid={showGrid}
-            onNodeContextMenu={(e, n) => {
-                e.preventDefault();
-                setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n });
-            }}
-            onEdgeContextMenu={(e, edge) => {
-                e.preventDefault();
-                setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge });
-            }}
+            nodes={nodes} edges={edges} isDirected={isDirected} isWeighted={isWeighted}
+            useForce={useForce} showGrid={showGrid}
+            onNodeContextMenu={(e, n) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n }); }}
+            onEdgeContextMenu={(e, edge) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge }); }}
         />
-        
-        {/* Context Menu */}
         {contextMenu && (
-        <div 
-            className="floating-menu"
-            style={{ top: contextMenu.y, left: contextMenu.x }}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div className="floating-menu" style={{ top: contextMenu.y, left: contextMenu.x }} onMouseDown={(e) => e.stopPropagation()}>
             <div style={{ padding: '8px', borderBottom: '1px solid #444', fontWeight: 'bold', color: 'var(--accent)' }}>
                 {contextMenu.type === 'node' ? `Node: ${contextMenu.data.id}` : 'Edge'}
             </div>
             <button onClick={() => alert("Delete logic coming soon")}>Delete</button>
         </div>
         )}
-
-        {/* Resize Handle (Bottom Right) */}
-        {!isFullScreen && !isLocked && (
-        <div 
-            className="resize-handle bottom-right" 
-            onMouseDown={handleResizeStart}
-            style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: '15px',
-                height: '15px',
-                cursor: 'nwse-resize',
-                zIndex: 20
-            }}
-        />
+        {!isFullScreen && (
+        <div className="resize-handle bottom-right" onMouseDown={handleResizeStart} style={{ position: 'absolute', bottom: 0, right: 0, width: '15px', height: '15px', cursor: 'nwse-resize', zIndex: 20 }}/>
         )}
       </div>
     </div>
