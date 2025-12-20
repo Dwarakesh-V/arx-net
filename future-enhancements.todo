@@ -1,2 +1,17 @@
 Scope for future releases:
 Multigraph visual updates
+
+
+React work:
+add vertex
+save as png
+save as edgelist
+load from edgelist
+
+delete vertex
+add edge
+
+delete edge
+change edge weight
+
+algorithms
