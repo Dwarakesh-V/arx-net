@@ -113,10 +113,10 @@ function App() {
           onSnapToggle={toggleSnap}
           onClearAll={requestClearAll}
           onToggleVisibility={() => {
-            const newState = !areAllVisible;
-            setAreAllVisible(newState);
-            toggleAllVisibility(newState);
+          setAreAllVisible(!areAllVisible);
+          toggleAllVisibility(!areAllVisible);
           }}
+          toggleGraphVisibility={toggleGraphVisibility}
 
           // Action Props
           onSelectGraph={(id) => setFocusedGraphId(id)}
@@ -153,31 +153,32 @@ function App() {
           </button>
         )}
 
-        {graphs.map((graph, index) => {
-          const forcedLayout = getGridPosition(index, viewMode);
-
-          return (
-            <GraphWindow
-              key={graph.id}
-              id={graph.id}
-              title={graph.name}
-              initialX={forcedLayout ? forcedLayout.x : (graph.x || 100 + (index * 30))}
-              initialY={forcedLayout ? forcedLayout.y : (graph.y || 100 + (index * 30))}
-              isActive={true}
-              onFocus={() => { }}
-              onClose={() => { removeGraph(graph.id); }}
-              onMinimize={() => { toggleGraphVisibility(graph.id); }}
-              nodes={graph.nodes}
-              edges={graph.edges}
-              isDirected={graph.isDirected}
-              isWeighted={graph.isWeighted}
-              isSnapped={isSnappingEnabled}
-              viewMode={viewMode}
-              initialWidth={forcedLayout ? forcedLayout.width : undefined}
-              initialHeight={forcedLayout ? forcedLayout.height : undefined}
-            />
-          );
-        })}
+        {graphs
+          .filter(graph => graph.isVisible)  // Only render visible graphs
+          .map((graph, index) => {
+            const forcedLayout = getGridPosition(index, viewMode);
+            return (
+              <GraphWindow
+                key={graph.id}
+                id={graph.id}
+                title={graph.name}
+                initialX={forcedLayout ? forcedLayout.x : (graph.x || 100 + (index * 30))}
+                initialY={forcedLayout ? forcedLayout.y : (graph.y || 100 + (index * 30))}
+                isActive={ focusedGraphId === graph.id }
+                onFocus={() => { }}
+                onClose={() => { removeGraph(graph.id); }}
+                onMinimize={() => { toggleGraphVisibility(graph.id); }}
+                nodes={graph.nodes}
+                edges={graph.edges}
+                isDirected={graph.isDirected}
+                isWeighted={graph.isWeighted}
+                isSnapped={isSnappingEnabled}
+                viewMode={viewMode}
+                initialWidth={forcedLayout ? forcedLayout.width : undefined}
+                initialHeight={forcedLayout ? forcedLayout.height : undefined}
+              />
+            );
+          })}
       </main>
 
       <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />

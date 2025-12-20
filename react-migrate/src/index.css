@@ -285,6 +285,23 @@ img {
     opacity: 1;
 }
 
+.minimize-btn {
+    background: transparent;
+    border: none;
+    color: #ff6b6b;
+    font-size: 1.2em;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 3px;
+    opacity: 0; /* Hidden by default */
+}
+.minimize-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+}
+.list-item:hover .minimize-btn {
+    opacity: 1;
+}
+
 /* =========================================
    7. GRAPH WINDOW STYLES
    ========================================= */
