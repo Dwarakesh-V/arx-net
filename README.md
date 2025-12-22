@@ -40,7 +40,7 @@ All algorithms are rewritten in TypeScript and return clean, structured results 
 
 
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Category | Technology |
 |----------|------------|

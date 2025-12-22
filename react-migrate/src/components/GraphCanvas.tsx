@@ -18,11 +18,14 @@ interface GraphCanvasProps {
   showGrid: boolean;
   onNodeContextMenu?: (event: React.MouseEvent, node: Node) => void;
   onEdgeContextMenu?: (event: React.MouseEvent, edge: Edge) => void;
+  
+  // --- ADDED PROP ---
+  onCanvasContextMenu?: (event: React.MouseEvent) => void; 
 }
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   nodes, edges, isDirected, isWeighted, useForce, showGrid, 
-  onNodeContextMenu, onEdgeContextMenu
+  onNodeContextMenu, onEdgeContextMenu, onCanvasContextMenu // <--- Destructure here
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const contentRef = useRef<SVGGElement>(null); 
@@ -91,7 +94,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
             e.bidirectional = false;
         }
         
-        // Also tag self-loops explicitly for easier handling
         e.selfLoop = (s === t);
     });
 
@@ -114,6 +116,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr('fill', 'none')
       .attr('marker-end', (d: any) => isDirected ? `url(#arrow-${d.source.id}-${d.target.id})` : null)
       .on('contextmenu', (event, d) => {
+         // Stop event so it doesn't trigger the canvas context menu
+         event.stopPropagation();
+         event.preventDefault();
          onEdgeContextMenu?.(event, d as unknown as Edge);
       });
 
@@ -142,7 +147,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     // 8. Draw Nodes
     const circles = nodeLayer
-      .selectAll<SVGCircleElement, any>('circle') // FIX: Single, correct selectAll call
+      .selectAll<SVGCircleElement, any>('circle') 
       .data(nodes, (d: any) => d.id)
       .join('circle')
       .attr('r', 20)
@@ -150,6 +155,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .style('cursor', 'pointer')
       .call(dragBehavior(simulation, useForce))
       .on('contextmenu', (event, d) => {
+         // Stop event so it doesn't trigger the canvas context menu
+         event.stopPropagation();
+         event.preventDefault();
          onNodeContextMenu?.(event, d as unknown as Node);
       });
 
@@ -186,11 +194,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     // 12. Handle "Center Graph" on Double Click
     svg.on("dblclick", (event) => {
+       // Only allow centering if clicking background
        if (event.target.tagName !== 'svg' && event.target.tagName !== 'rect') return;
 
        const { x, y, width: gWidth, height: gHeight } = getGraphExtent(nodes);
-       
-       // Safe fallbacks to prevent division by zero or NaN
        const safeWidth = gWidth || 1;
        const safeHeight = gHeight || 1;
 
@@ -239,7 +246,21 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   return (
     <div ref={wrapperRef} className="graph-content" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
       
-      <svg ref={svgRef} width="100%" height="100%" style={{ cursor: 'default' }}>
+      <svg 
+        ref={svgRef} 
+        width="100%" 
+        height="100%" 
+        style={{ cursor: 'default' }}
+        // --- ADDED: Context Menu Handler ---
+        onContextMenu={(e) => {
+            // Only trigger if we clicked the SVG or the Grid Rect directly
+            // (Nodes/Edges have their own handlers that call stopPropagation)
+            if (onCanvasContextMenu) {
+                // We don't need strict target checks because nodes/edges stop propagation
+                onCanvasContextMenu(e);
+            }
+        }}
+      >
         {showGrid && (
           <rect width="100%" height="100%" fill="url(#grid-pattern)" style={{ pointerEvents: 'none' }} />
         )}
