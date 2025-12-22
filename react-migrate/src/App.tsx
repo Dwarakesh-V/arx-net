@@ -16,9 +16,10 @@ import { generateRandomGraphData } from './lib/randomGraphGenerator';
 function App() {
   // 1. Hooks
   const {
-    graphs, viewMode, toggleViewMode, isSnappingEnabled, areAllVisible,
-    requestClearAll, toggleAllVisibility, toggleSnap,
+    graphs, viewMode, toggleViewMode, isSnappingEnabled, areAllVisible, addVertex,
+    requestClearAll, toggleAllVisibility, toggleSnap, addEdge, deleteEdge, deleteVertex,
     addGraph, removeGraph, renameGraph, setAreAllVisible, toggleGraphVisibility,
+    updateEdgeWeight
   } = useGraphManager();
 
   const [showAbout, setShowAbout] = useState(false);
@@ -113,8 +114,8 @@ function App() {
           onSnapToggle={toggleSnap}
           onClearAll={requestClearAll}
           onToggleVisibility={() => {
-          setAreAllVisible(!areAllVisible);
-          toggleAllVisibility(!areAllVisible);
+            setAreAllVisible(!areAllVisible);
+            toggleAllVisibility(!areAllVisible);
           }}
           toggleGraphVisibility={toggleGraphVisibility}
 
@@ -164,10 +165,15 @@ function App() {
                 title={graph.name}
                 initialX={forcedLayout ? forcedLayout.x : (graph.x || 100 + (index * 30))}
                 initialY={forcedLayout ? forcedLayout.y : (graph.y || 100 + (index * 30))}
-                isActive={ focusedGraphId === graph.id }
+                isActive={focusedGraphId === graph.id}
                 onFocus={() => { }}
                 onClose={() => { removeGraph(graph.id); }}
                 onMinimize={() => { toggleGraphVisibility(graph.id); }}
+                onAddEdge={(source, target, weight) => {addEdge(graph.id, source, target, weight);}}
+                onDeleteEdge={(edgeId) => {deleteEdge(graph.id, edgeId);}}
+                onDeleteVertex={(nodeId) => {deleteVertex(graph.id, nodeId);}}
+                onAddVertex={(newNode,x,y) => {addVertex(graph.id, newNode, x, y);}}
+                onUpdateEdgeWeight={(edgeId, newWeight) => {updateEdgeWeight(graph.id, edgeId, newWeight);}}
                 nodes={graph.nodes}
                 edges={graph.edges}
                 isDirected={graph.isDirected}

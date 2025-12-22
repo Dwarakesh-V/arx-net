@@ -1,23 +1,22 @@
 import { useState, useCallback } from 'react';
-import type { GraphData } from '../types';
+// 1. ALIAS THE IMPORT to avoid conflict with HTML 'Node'
+import type { GraphData, Node, Edge } from '../types';
 
 export const useGraphManager = () => {
-  // --- REPLACING Lines 69-74 (Graph Management) ---
   const [graphs, setGraphs] = useState<GraphData[]>([]);
   const [graphCount, setGraphCount] = useState(0);
 
-  // --- REPLACING Lines 30-38 (View Modes) ---
-  // Instead of separate booleans (view4gen, view9gen), use one mode
+  // --- View Modes ---
   const [viewMode, setViewMode] = useState<'default' | 'grid4' | 'grid9'>('default');
   const [isSnappingEnabled, setIsSnappingEnabled] = useState(false);
   const [areAllVisible, setAreAllVisible] = useState(true);
 
-  // --- Actions (Functions to modify state) ---
+  // --- Actions ---
 
   const addGraph = (newGraph: Omit<GraphData, 'id'>) => {
     const id = graphCount + 1;
-    const graphWithId = { ...newGraph, id };
-    
+    // When adding, respect global visibility
+    const graphWithId = { ...newGraph, id, isVisible: true }; 
     setGraphs(prev => [...prev, graphWithId]);
     setGraphCount(id);
   };
@@ -31,37 +30,126 @@ export const useGraphManager = () => {
     setGraphCount(0);
   }, []);
 
+  const requestClearAll = () => {
+    if (window.confirm('Are you sure want to delete all graphs? This action cannot be undone.')) {
+      setGraphs([]);
+      setGraphCount(0);
+    }
+  };
+
+  // --- VISIBILITY ---
   const toggleGraphVisibility = useCallback((id: number) => {
-    setGraphs(prev => prev.map(g => 
+    setGraphs(prev => prev.map(g =>
       g.id === id ? { ...g, isVisible: !g.isVisible } : g
     ));
   }, []);
 
-  const toggleSnap = () => setIsSnappingEnabled(prev => !prev);
-
-  const toggleViewMode = (mode: 'grid4' | 'grid9') => {
-    // Toggle logic: if clicking the active mode, turn it off
-    setViewMode(prev => prev === mode ? 'default' : mode);
-  };
-  // ... existing state
-
-  // New: Toggle visibility for ALL graphs
   const toggleAllVisibility = (shouldShow: boolean) => {
     setGraphs(prev => prev.map(g => ({ ...g, isVisible: shouldShow })));
   };
 
-  // New: Clear with confirmation
-  const requestClearAll = () => {
-    if (window.confirm('Are you sure want to delete all graphs? This action cannot be undone.')) {
-      setGraphs([]);
-    }
+  // --- VIEW CONTROLS ---
+  const toggleSnap = () => setIsSnappingEnabled(prev => !prev);
+
+  const toggleViewMode = (mode: 'grid4' | 'grid9') => {
+    setViewMode(prev => prev === mode ? 'default' : mode);
   };
 
-  // NEW: Add this function
   const renameGraph = (id: number, newName: string) => {
-    setGraphs(prev => prev.map(g => 
+    setGraphs(prev => prev.map(g =>
       g.id === id ? { ...g, name: newName } : g
     ));
+  };
+
+  // --- EDGE & NODE MANIPULATION ---
+
+const addEdge = (graphId: number, source: string, target: string, weight: number) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+
+      // Check if nodes exist
+      const sourceNode = g.nodes.find(n => n.id === source);
+      const targetNode = g.nodes.find(n => n.id === target);
+
+      if (!sourceNode || !targetNode) {
+        alert(`Cannot add edge: Vertex ${!sourceNode ? source : target} does not exist.`);
+        return g;
+      }
+
+      // Create new edge
+      const newEdge: Edge = {
+        id: `${source}-${target}`, 
+        
+        // --- FIX: Pass the Node Objects, not the ID strings ---
+        // This ensures the renderer can immediately read .id to draw the arrow
+        source: sourceNode, 
+        target: targetNode,
+        
+        weight: weight
+      };
+
+      return { ...g, edges: [...g.edges, newEdge] };
+    }));
+  };
+
+  const deleteEdge = (graphId: number, edgeId: string) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+      return { ...g, edges: g.edges.filter(e => e.id !== edgeId) };
+    }));
+  };
+
+  // Renamed from deleteVertex to deleteNode for consistency
+  const deleteVertex = (graphId: number, nodeId: string) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+
+      // 1. Remove the vertex
+      const updatedNodes = g.nodes.filter(n => n.id !== nodeId);
+
+      // 2. Remove edges connected to this vertex
+      const updatedEdges = g.edges.filter(e => {
+        // Handle D3 mutation (Source/Target might be objects OR strings)
+        const sourceId = typeof e.source === 'object' ? (e.source as any).id : e.source;
+        const targetId = typeof e.target === 'object' ? (e.target as any).id : e.target;
+
+        return sourceId !== nodeId && targetId !== nodeId;
+      });
+
+      return { ...g, nodes: updatedNodes, edges: updatedEdges };
+    }));
+  };
+
+  // Renamed from addVertex to addNode for consistency
+  const addVertex = (graphId: number, nodeId: string, x: number, y: number) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+
+      // Prevent duplicate IDs
+      if (g.nodes.some(n => n.id === nodeId)) {
+        alert(`Node "${nodeId}" already exists.`);
+        return g;
+      }
+
+      // USE ALIASED TYPE 'Node' HERE
+      const newNode: Node = { 
+        id: nodeId, 
+        x: x, 
+        y: y 
+      };
+
+      return { ...g, nodes: [...g.nodes, newNode] };
+    }));
+  };
+
+  const updateEdgeWeight = (graphId: number, edgeId: string, newWeight: number) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+      return {
+        ...g,
+        edges: g.edges.map(e => e.id === edgeId ? { ...e, weight: newWeight } : e)
+      };
+    }));
   };
 
   return {
@@ -80,5 +168,10 @@ export const useGraphManager = () => {
     requestClearAll,
     renameGraph,
     toggleGraphVisibility,
+    addEdge,
+    deleteEdge,
+    deleteVertex,
+    addVertex,
+    updateEdgeWeight
   };
 };
