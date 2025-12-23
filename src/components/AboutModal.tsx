@@ -9,22 +9,19 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    // 1. The Overlay: Covers the screen, handles the "Click Outside" to close
     <div className="modal-overlay" onClick={onClose}>
-      
-      {/* 2. The Content Box: Stops click propagation so clicking inside doesn't close it */}
-      <div 
-        className="aboutDiv" 
-        id="aboutDiv" 
+      <div
+        className="aboutDiv"
+        id="aboutDiv"
         style={{ display: 'block' }}
         onClick={(e) => e.stopPropagation()}
       >
         <span style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: 'x-large' }}>
           Arx Net guide
-        </span> 
+        </span>
         <br />
         <span style={{ fontSize: '0.8em', color: '#888' }}>© 2025 arx-net</span>
-        
+
         <p>
           This section provides guidance on how to use the Arx Net application effectively. To know about how the application works, please refer to the documentation.
         </p>

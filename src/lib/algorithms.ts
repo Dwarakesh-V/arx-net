@@ -26,12 +26,12 @@ export const vertexExists = (nodes: Node[], vertexId: string): boolean => {
 // --- 1. BFS ---
 export const bfs = (edges: Edge[], startNode: string, isDirected: boolean): string[] => {
   const adjacency: Record<string, string[]> = {};
-  
+
   // Build Adjacency List
   edges.forEach(e => {
     const s = typeof e.source === 'object' ? e.source.id : e.source;
     const t = typeof e.target === 'object' ? e.target.id : e.target;
-    
+
     if (!adjacency[s]) adjacency[s] = [];
     adjacency[s].push(t);
 
@@ -62,11 +62,11 @@ export const bfs = (edges: Edge[], startNode: string, isDirected: boolean): stri
 // --- 2. DFS ---
 export const dfs = (edges: Edge[], startNode: string, isDirected: boolean): string[] => {
   const adjacency: Record<string, string[]> = {};
-  
+
   edges.forEach(e => {
     const s = typeof e.source === 'object' ? e.source.id : e.source;
     const t = typeof e.target === 'object' ? e.target.id : e.target;
-    
+
     if (!adjacency[s]) adjacency[s] = [];
     adjacency[s].push(t);
 
@@ -95,7 +95,7 @@ export const dfs = (edges: Edge[], startNode: string, isDirected: boolean): stri
 // Returns structured data: { [nodeId]: { distance: number, path: string[] } }
 export const dijkstra = (edges: Edge[], startNode: string, nodes: Node[], isDirected: boolean) => {
   const adjacency: Record<string, { target: string, weight: number }[]> = {};
-  
+
   // Initialize graph with empty arrays for all nodes (handles isolated nodes)
   nodes.forEach(n => adjacency[n.id] = []);
 
@@ -138,19 +138,19 @@ export const dijkstra = (edges: Edge[], startNode: string, nodes: Node[], isDire
 
   // Format Result for UI
   const results: { vertex: string, distance: number | string, path: string[] }[] = [];
-  
+
   for (const node of nodes) {
     const d = distances[node.id];
     const path: string[] = [];
     let curr: string | null = node.id;
-    
+
     if (d !== Infinity) {
       while (curr !== null) {
         path.unshift(curr);
         curr = previous[curr];
       }
     }
-    
+
     results.push({
       vertex: node.id,
       distance: d === Infinity ? "∞" : d,
@@ -211,7 +211,7 @@ export const mst = (edges: Edge[], nodes: Node[]): Edge[] => {
 export const topologicalSort = (edges: Edge[], nodes: Node[]): string[] => {
   const adjacency: Record<string, string[]> = {};
   const inDegree: Record<string, number> = {};
-  
+
   nodes.forEach(n => {
     adjacency[n.id] = [];
     inDegree[n.id] = 0;
@@ -243,6 +243,6 @@ export const topologicalSort = (edges: Edge[], nodes: Node[]): string[] => {
   if (sorted.length !== nodes.length) {
     throw new Error("Graph contains a cycle");
   }
-  
+
   return sorted;
 };

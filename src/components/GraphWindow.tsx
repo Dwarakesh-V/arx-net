@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GraphCanvas } from './GraphCanvas';
 import type { Node, Edge } from '../types';
 import { getSnapPosition } from '../lib/layoutUtils';
-
-// --- IMPORT ALGORITHMS ---
 import { bfs, dfs, dijkstra, mst, topologicalSort, vertexExists } from '../lib/algorithms';
 
 interface GraphWindowProps {
@@ -135,11 +133,11 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
     // Default start node to first node if empty
     const start = startNodeInput.trim() || nodes[0].id;
-    
+
     // Validate Start Node if needed
     if (['BFS', 'DFS', 'Dijkstra'].includes(selectedAlgo)) {
       if (!vertexExists(nodes, start)) {
-        setAlgoResult(<span style={{color: 'red'}}>Error: Start node "{start}" does not exist.</span>);
+        setAlgoResult(<span style={{ color: 'red' }}>Error: Start node "{start}" does not exist.</span>);
         setShowResultBoard(true);
         return;
       }
@@ -153,7 +151,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           const bfsRes = bfs(edges, start, isDirected);
           resultUI = (
             <div>
-              <strong>BFS Traversal (Start: {start}):</strong><br/>
+              <strong>BFS Traversal (Start: {start}):</strong><br />
               {bfsRes.join(' → ')}
             </div>
           );
@@ -163,7 +161,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           const dfsRes = dfs(edges, start, isDirected);
           resultUI = (
             <div>
-              <strong>DFS Traversal (Start: {start}):</strong><br/>
+              <strong>DFS Traversal (Start: {start}):</strong><br />
               {dfsRes.join(' → ')}
             </div>
           );
@@ -174,20 +172,20 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           resultUI = (
             <div>
               <strong>Shortest Paths (Start: {start}):</strong>
-              <table style={{width: '100%', marginTop: '5px', borderCollapse: 'collapse', fontSize: '0.9em'}}>
+              <table style={{ width: '100%', marginTop: '5px', borderCollapse: 'collapse', fontSize: '0.9em' }}>
                 <thead>
-                  <tr style={{borderBottom: '1px solid #555', textAlign: 'left'}}>
-                    <th style={{padding: '4px'}}>Node</th>
-                    <th style={{padding: '4px'}}>Dist</th>
-                    <th style={{padding: '4px'}}>Path</th>
+                  <tr style={{ borderBottom: '1px solid #555', textAlign: 'left' }}>
+                    <th style={{ padding: '4px' }}>Node</th>
+                    <th style={{ padding: '4px' }}>Dist</th>
+                    <th style={{ padding: '4px' }}>Path</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dijkstraRes.map(r => (
-                    <tr key={r.vertex} style={{borderBottom: '1px solid #333'}}>
-                      <td style={{padding: '4px', color: 'var(--accent)'}}>{r.vertex}</td>
-                      <td style={{padding: '4px'}}>{r.distance}</td>
-                      <td style={{padding: '4px', color: '#aaa'}}>{r.path.join(' → ')}</td>
+                    <tr key={r.vertex} style={{ borderBottom: '1px solid #333' }}>
+                      <td style={{ padding: '4px', color: 'var(--accent)' }}>{r.vertex}</td>
+                      <td style={{ padding: '4px' }}>{r.distance}</td>
+                      <td style={{ padding: '4px', color: '#aaa' }}>{r.path.join(' → ')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -197,9 +195,9 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           break;
 
         case 'MST':
-          // MST is typically for Undirected Weighted graphs
+          // MST is for Undirected Weighted graphs
           if (isDirected) {
-             resultUI = <span style={{color: 'orange'}}>Note: MST is usually defined for undirected graphs. Result might be incorrect for directed graphs.</span>;
+            resultUI = <span style={{ color: 'orange' }}>Note: MST is usually defined for undirected graphs. Result might be incorrect for directed graphs.</span>;
           }
           const mstRes = mst(edges, nodes);
           const totalWeight = mstRes.reduce((acc, curr) => acc + (curr.weight || 0), 0);
@@ -207,14 +205,14 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
             <div>
               {resultUI}
               <strong>Minimum Spanning Tree (Total Weight: {totalWeight}):</strong>
-              <ul style={{marginTop: '5px', paddingLeft: '20px'}}>
+              <ul style={{ marginTop: '5px', paddingLeft: '20px' }}>
                 {mstRes.map((e, i) => (
-                   <li key={i}>
-                      {typeof e.source === 'object' ? (e.source as any).id : e.source} 
-                      — 
-                      {typeof e.target === 'object' ? (e.target as any).id : e.target} 
-                      (Weight: {e.weight})
-                   </li>
+                  <li key={i}>
+                    {typeof e.source === 'object' ? (e.source as any).id : e.source}
+                    —
+                    {typeof e.target === 'object' ? (e.target as any).id : e.target}
+                    (Weight: {e.weight})
+                  </li>
                 ))}
               </ul>
             </div>
@@ -223,19 +221,19 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
         case 'TopologicalSort':
           if (!isDirected) {
-             resultUI = <span style={{color: 'red'}}>Error: Topological Sort requires a Directed Graph.</span>;
+            resultUI = <span style={{ color: 'red' }}>Error: Topological Sort requires a Directed Graph.</span>;
           } else {
-             try {
-                const topoRes = topologicalSort(edges, nodes);
-                resultUI = (
-                  <div>
-                    <strong>Topological Sort:</strong><br/>
-                    {topoRes.join(' → ')}
-                  </div>
-                );
-             } catch (err) {
-                resultUI = <span style={{color: 'red'}}>Error: Cycle detected (Graph is not a DAG).</span>;
-             }
+            try {
+              const topoRes = topologicalSort(edges, nodes);
+              resultUI = (
+                <div>
+                  <strong>Topological Sort:</strong><br />
+                  {topoRes.join(' → ')}
+                </div>
+              );
+            } catch (err) {
+              resultUI = <span style={{ color: 'red' }}>Error: Cycle detected (Graph is not a DAG).</span>;
+            }
           }
           break;
 
@@ -243,7 +241,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           resultUI = "Algorithm not implemented.";
       }
     } catch (e: any) {
-       resultUI = <span style={{color: 'red'}}>Error: {e.message}</span>;
+      resultUI = <span style={{ color: 'red' }}>Error: {e.message}</span>;
     }
 
     setAlgoResult(resultUI);
@@ -251,7 +249,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   };
 
 
-  // ... (Keep existing Save Handlers) ...
+  // ... Save Handlers ...
   const handleSaveEdgeList = () => {
     const header = "Source,Target,Weight\n";
     const csvContent = edges.map(e => {
@@ -319,85 +317,85 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
     setContextMenu(null);
   };
 
-  // ... (Keep existing Context Menu Handlers) ...
+  // ... Context Menu Handlers ...
   const handleNodeContextMenu = (e: React.MouseEvent, n: any) => { e.preventDefault(); setIsAddingEdge(false); setIsEditingWeight(false); setEdgeTarget(''); setEdgeWeight(1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n }); };
   const handleEdgeContextMenu = (e: React.MouseEvent, edge: any) => { e.preventDefault(); setIsAddingEdge(false); setIsAddingNode(false); setIsEditingWeight(false); setEditWeightVal(edge.weight || 1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge }); };
   const handleCanvasContextMenu = (e: React.MouseEvent) => { e.preventDefault(); setIsAddingNode(false); setIsEditingWeight(false); setNewNodeId(''); setContextMenu({ x: e.clientX, y: e.clientY, type: 'canvas', data: null }); };
 
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className={`graphContainer ${isActive ? 'active' : ''}`}
       style={{
         position: isFullScreen ? 'fixed' : 'absolute',
         left: isFullScreen ? 0 : position.x, top: isFullScreen ? 0 : position.y,
         width: isFullScreen ? '100vw' : position.width, height: isFullScreen ? '100vh' : position.height,
-        zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10), 
-        overflow: 'hidden', transition: 'height 0.2s, width 0.2s', 
+        zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10),
+        overflow: 'hidden', transition: 'height 0.2s, width 0.2s',
       }}
-      onMouseDown={() => { onFocus(); setContextMenu(null); }} 
+      onMouseDown={() => { onFocus(); setContextMenu(null); }}
     >
-      <div 
+      <div
         ref={headerRef}
-        className="window-header" 
+        className="window-header"
         onMouseDown={handleDragStart}
         onDoubleClick={toggleFullScreen}
-        style={{ cursor: 'move' }} 
+        style={{ cursor: 'move' }}
       >
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', overflow: 'hidden' }}>
           <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', marginRight: '5px' }}>{title}</span>
-          
+
           <label style={{ fontSize: '0.8em', display: 'flex', alignItems: 'center' }}>
-              <input type="checkbox" checked={useForce} onChange={(e) => setUseForce(e.target.checked)} style={{ marginRight: '3px' }}/> Force
+            <input type="checkbox" checked={useForce} onChange={(e) => setUseForce(e.target.checked)} style={{ marginRight: '3px' }} /> Force
           </label>
           <label style={{ fontSize: '0.8em', display: 'flex', alignItems: 'center' }}>
-              <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} style={{ marginRight: '3px' }}/> Grid
+            <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} style={{ marginRight: '3px' }} /> Grid
           </label>
 
           {/* --- ALGORITHM CONTROLS --- */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '5px', borderLeft: '1px solid #555', paddingLeft: '5px' }}>
-             <select 
-               value={selectedAlgo} 
-               onChange={(e) => setSelectedAlgo(e.target.value)}
-               onMouseDown={(e) => e.stopPropagation()} 
-               style={{ background: '#222', color: '#fff', border: '1px solid #444', fontSize: '0.8em', padding: '2px' }}
-             >
-                <option value="">Algo...</option>
-                <option value="BFS">BFS</option>
-                <option value="DFS">DFS</option>
-                <option value="Dijkstra">Dijkstra</option>
-                <option value="MST">MST</option>
-                <option value="TopologicalSort">Topo Sort</option>
-             </select>
-             
-             {/* Show Start Node input only for relevant algorithms */}
-             {(selectedAlgo === 'BFS' || selectedAlgo === 'DFS' || selectedAlgo === 'Dijkstra') && (
-                <input 
-                  type="text" 
-                  placeholder="Start Node"
-                  value={startNodeInput}
-                  onChange={(e) => setStartNodeInput(e.target.value)}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  style={{ width: '60px', background: '#222', color: '#fff', border: '1px solid #444', fontSize: '0.8em', padding: '2px' }}
-                />
-             )}
+            <select
+              value={selectedAlgo}
+              onChange={(e) => setSelectedAlgo(e.target.value)}
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{ background: '#222', color: '#fff', border: '1px solid #444', fontSize: '0.8em', padding: '2px' }}
+            >
+              <option value="">Algo...</option>
+              <option value="BFS">BFS</option>
+              <option value="DFS">DFS</option>
+              <option value="Dijkstra">Dijkstra</option>
+              <option value="MST">MST</option>
+              <option value="TopologicalSort">Topo Sort</option>
+            </select>
 
-             <button 
-               onClick={(e) => { e.stopPropagation(); handleRunAlgorithm(); }}
-               disabled={!selectedAlgo}
-               style={{ 
-                 fontSize: '0.8em', 
-                 cursor: 'pointer', 
-                 background: selectedAlgo ? 'var(--accent)' : '#444', 
-                 color: selectedAlgo ? '#000' : '#888',
-                 border: 'none',
-                 padding: '2px 8px',
-                 borderRadius: '2px'
-               }}
-             >
-               ▶
-             </button>
+            {/* Show Start Node input only for relevant algorithms */}
+            {(selectedAlgo === 'BFS' || selectedAlgo === 'DFS' || selectedAlgo === 'Dijkstra') && (
+              <input
+                type="text"
+                placeholder="Start Node"
+                value={startNodeInput}
+                onChange={(e) => setStartNodeInput(e.target.value)}
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{ width: '60px', background: '#222', color: '#fff', border: '1px solid #444', fontSize: '0.8em', padding: '2px' }}
+              />
+            )}
+
+            <button
+              onClick={(e) => { e.stopPropagation(); handleRunAlgorithm(); }}
+              disabled={!selectedAlgo}
+              style={{
+                fontSize: '0.8em',
+                cursor: 'pointer',
+                background: selectedAlgo ? 'var(--accent)' : '#444',
+                color: selectedAlgo ? '#000' : '#888',
+                border: 'none',
+                padding: '2px 8px',
+                borderRadius: '2px'
+              }}
+            >
+              ▶
+            </button>
           </div>
         </div>
 
@@ -409,110 +407,110 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
       </div>
 
       <div className="window-content" style={{ height: 'calc(100% - 40px)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-        
+
         {/* Graph Area */}
         <div style={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }}>
-            <GraphCanvas 
-                nodes={nodes} edges={edges} isDirected={isDirected} isWeighted={isWeighted}
-                useForce={useForce} showGrid={showGrid}
-                onNodeContextMenu={handleNodeContextMenu}
-                onEdgeContextMenu={handleEdgeContextMenu}
-                onCanvasContextMenu={handleCanvasContextMenu} 
-            />
+          <GraphCanvas
+            nodes={nodes} edges={edges} isDirected={isDirected} isWeighted={isWeighted}
+            useForce={useForce} showGrid={showGrid}
+            onNodeContextMenu={handleNodeContextMenu}
+            onEdgeContextMenu={handleEdgeContextMenu}
+            onCanvasContextMenu={handleCanvasContextMenu}
+          />
         </div>
 
         {/* --- RESULT BOARD --- */}
         {showResultBoard && (
-            <div 
-              className="result-board"
-              style={{
-                  height: isFullScreen ? '200px' : '120px', 
-                  background: '#1a1a1a',
-                  borderTop: '2px solid var(--accent)',
-                  padding: '10px',
-                  fontFamily: 'monospace',
-                  fontSize: '0.9em',
-                  color: '#eee',
-                  overflowY: 'auto',
-                  position: 'relative',
-                  flexShrink: 0
-              }}
+          <div
+            className="result-board"
+            style={{
+              height: isFullScreen ? '200px' : '120px',
+              background: '#1a1a1a',
+              borderTop: '2px solid var(--accent)',
+              padding: '10px',
+              fontFamily: 'monospace',
+              fontSize: '0.9em',
+              color: '#eee',
+              overflowY: 'auto',
+              position: 'relative',
+              flexShrink: 0
+            }}
+          >
+            <button
+              onClick={() => setShowResultBoard(false)}
+              style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2em' }}
             >
-                <button 
-                  onClick={() => setShowResultBoard(false)}
-                  style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2em' }}
-                >
-                    ×
-                </button>
-                {algoResult}
-            </div>
+              ×
+            </button>
+            {algoResult}
+          </div>
         )}
 
         {/* Context Menu (Keep Existing) */}
         {contextMenu && (
-             <div className="floating-menu" style={{ top: contextMenu.y, left: contextMenu.x, width: '200px' }} onMouseDown={(e) => e.stopPropagation()}>
-                <div style={{ padding: '8px', borderBottom: '1px solid #444', fontWeight: 'bold', color: 'var(--accent)' }}>
-                   {contextMenu.type === 'node' ? `Node: ${contextMenu.data.id}` : contextMenu.type === 'edge' ? 'Edge Actions' : 'Graph Actions'}
+          <div className="floating-menu" style={{ top: contextMenu.y, left: contextMenu.x, width: '200px' }} onMouseDown={(e) => e.stopPropagation()}>
+            <div style={{ padding: '8px', borderBottom: '1px solid #444', fontWeight: 'bold', color: 'var(--accent)' }}>
+              {contextMenu.type === 'node' ? `Node: ${contextMenu.data.id}` : contextMenu.type === 'edge' ? 'Edge Actions' : 'Graph Actions'}
+            </div>
+            {/* 1. EDGE MENU */}
+            {contextMenu.type === 'edge' && (
+              !isEditingWeight ? (
+                <>
+                  <button onClick={() => setIsEditingWeight(true)}>Edit Weight</button>
+                  <button onClick={() => { if (contextMenu.data.id) onDeleteEdge(contextMenu.data.id); setContextMenu(null); }}>Delete Edge</button>
+                </>
+              ) : (
+                <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input autoFocus type="number" value={editWeightVal} onChange={(e) => setEditWeightVal(Number(e.target.value))} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} onKeyDown={(e) => { if (e.key === 'Enter') { onUpdateEdgeWeight(contextMenu.data.id, editWeightVal); setContextMenu(null); } }} />
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button onClick={() => { onUpdateEdgeWeight(contextMenu.data.id, editWeightVal); setContextMenu(null); }} style={{ flex: 1, background: 'var(--accent)', color: '#000' }}>Save</button>
+                    <button onClick={() => setIsEditingWeight(false)} style={{ flex: 1, background: '#444' }}>Back</button>
+                  </div>
                 </div>
-                {/* 1. EDGE MENU */}
-                {contextMenu.type === 'edge' && (
-                  !isEditingWeight ? (
-                    <>
-                      <button onClick={() => setIsEditingWeight(true)}>Edit Weight</button>
-                      <button onClick={() => { if (contextMenu.data.id) onDeleteEdge(contextMenu.data.id); setContextMenu(null); }}>Delete Edge</button>
-                    </>
-                  ) : (
-                    <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                       <input autoFocus type="number" value={editWeightVal} onChange={(e) => setEditWeightVal(Number(e.target.value))} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} onKeyDown={(e) => { if (e.key === 'Enter') { onUpdateEdgeWeight(contextMenu.data.id, editWeightVal); setContextMenu(null); } }} />
-                       <div style={{ display: 'flex', gap: '5px' }}>
-                           <button onClick={() => { onUpdateEdgeWeight(contextMenu.data.id, editWeightVal); setContextMenu(null); }} style={{ flex: 1, background: 'var(--accent)', color: '#000' }}>Save</button>
-                           <button onClick={() => setIsEditingWeight(false)} style={{ flex: 1, background: '#444' }}>Back</button>
-                       </div>
-                    </div>
-                  )
-                )}
-                {/* 2. NODE MENU */}
-                {contextMenu.type === 'node' && (
-                  !isAddingEdge ? (
-                    <>
-                      <button onClick={() => setIsAddingEdge(true)}>Add Edge</button>
-                      <button onClick={() => { onDeleteVertex(contextMenu.data.id); setContextMenu(null); }}>Delete Vertex</button>
-                    </>
-                  ) : (
-                    <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                       <input autoFocus type="text" placeholder="Target" value={edgeTarget} onChange={(e) => setEdgeTarget(e.target.value)} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} />
-                       <input type="number" placeholder="Weight" value={edgeWeight} onChange={(e) => setEdgeWeight(Number(e.target.value))} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} />
-                       <div style={{ display: 'flex', gap: '5px' }}>
-                           <button onClick={() => { if (edgeTarget.trim()) { onAddEdge(contextMenu.data.id, edgeTarget, edgeWeight); setContextMenu(null); } }} style={{ flex: 1, background: 'var(--accent)', color: '#000' }}>Add</button>
-                           <button onClick={() => setIsAddingEdge(false)} style={{ flex: 1, background: '#444' }}>Back</button>
-                       </div>
-                    </div>
-                  )
-                )}
-                {/* 3. CANVAS MENU */}
-                {contextMenu.type === 'canvas' && (
-                  !isAddingNode ? (
-                    <>
-                      <button onClick={() => setIsAddingNode(true)}>Add Vertex</button>
-                      <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '4px 0' }} />
-                      <button onClick={handleSavePNG}>Save as PNG</button>
-                      <button onClick={handleSaveEdgeList}>Save as EdgeList</button>
-                    </>
-                  ) : (
-                    <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                       <input autoFocus type="text" placeholder="ID" value={newNodeId} onChange={(e) => setNewNodeId(e.target.value)} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} onKeyDown={(e) => { if (e.key === 'Enter' && newNodeId.trim()) { onAddVertex(newNodeId, Math.random() * 400, Math.random() * 300); setContextMenu(null); } }} />
-                       <div style={{ display: 'flex', gap: '5px' }}>
-                           <button onClick={() => { if (newNodeId.trim()) { onAddVertex(newNodeId, Math.random() * 400, Math.random() * 300); setContextMenu(null); } }} style={{ flex: 1, background: 'var(--accent)', color: '#000' }}>Add</button>
-                           <button onClick={() => setIsAddingNode(false)} style={{ flex: 1, background: '#444' }}>Back</button>
-                       </div>
-                    </div>
-                  )
-                )}
-             </div>
+              )
+            )}
+            {/* 2. NODE MENU */}
+            {contextMenu.type === 'node' && (
+              !isAddingEdge ? (
+                <>
+                  <button onClick={() => setIsAddingEdge(true)}>Add Edge</button>
+                  <button onClick={() => { onDeleteVertex(contextMenu.data.id); setContextMenu(null); }}>Delete Vertex</button>
+                </>
+              ) : (
+                <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input autoFocus type="text" placeholder="Target" value={edgeTarget} onChange={(e) => setEdgeTarget(e.target.value)} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} />
+                  <input type="number" placeholder="Weight" value={edgeWeight} onChange={(e) => setEdgeWeight(Number(e.target.value))} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} />
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button onClick={() => { if (edgeTarget.trim()) { onAddEdge(contextMenu.data.id, edgeTarget, edgeWeight); setContextMenu(null); } }} style={{ flex: 1, background: 'var(--accent)', color: '#000' }}>Add</button>
+                    <button onClick={() => setIsAddingEdge(false)} style={{ flex: 1, background: '#444' }}>Back</button>
+                  </div>
+                </div>
+              )
+            )}
+            {/* 3. CANVAS MENU */}
+            {contextMenu.type === 'canvas' && (
+              !isAddingNode ? (
+                <>
+                  <button onClick={() => setIsAddingNode(true)}>Add Vertex</button>
+                  <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '4px 0' }} />
+                  <button onClick={handleSavePNG}>Save as PNG</button>
+                  <button onClick={handleSaveEdgeList}>Save as EdgeList</button>
+                </>
+              ) : (
+                <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input autoFocus type="text" placeholder="ID" value={newNodeId} onChange={(e) => setNewNodeId(e.target.value)} style={{ width: '100%', padding: '5px', background: '#222', border: '1px solid #555', color: '#fff' }} onKeyDown={(e) => { if (e.key === 'Enter' && newNodeId.trim()) { onAddVertex(newNodeId, Math.random() * 400, Math.random() * 300); setContextMenu(null); } }} />
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button onClick={() => { if (newNodeId.trim()) { onAddVertex(newNodeId, Math.random() * 400, Math.random() * 300); setContextMenu(null); } }} style={{ flex: 1, background: 'var(--accent)', color: '#000' }}>Add</button>
+                    <button onClick={() => setIsAddingNode(false)} style={{ flex: 1, background: '#444' }}>Back</button>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
         )}
 
         {!isFullScreen && (
-          <div className="resize-handle bottom-right" onMouseDown={handleResizeStart} style={{ position: 'absolute', bottom: 0, right: 0, width: '15px', height: '15px', cursor: 'nwse-resize', zIndex: 20 }}/>
+          <div className="resize-handle bottom-right" onMouseDown={handleResizeStart} style={{ position: 'absolute', bottom: 0, right: 0, width: '15px', height: '15px', cursor: 'nwse-resize', zIndex: 20 }} />
         )}
       </div>
     </div>

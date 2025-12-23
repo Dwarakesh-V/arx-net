@@ -13,7 +13,7 @@ export const useWindowInteraction = (
   // --- DRAGGING LOGIC ---
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     if (isLocked) return;
-    
+
     // Ignore drag if clicking buttons or inputs
     if ((e.target as HTMLElement).closest('button, input')) return;
 
@@ -24,7 +24,6 @@ export const useWindowInteraction = (
     const startY = e.clientY - position.y;
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      // Logic for "snapPosition" can be added here
       setPosition(prev => ({
         ...prev,
         x: moveEvent.clientX - startX,
@@ -46,7 +45,7 @@ export const useWindowInteraction = (
   const handleResizeStart = useCallback((e: React.MouseEvent, corner: string) => {
     if (isLocked) return;
     e.preventDefault();
-    e.stopPropagation(); // Don't trigger drag
+    e.stopPropagation();
     setIsResizing(true);
 
     const startX = e.clientX;
@@ -61,7 +60,7 @@ export const useWindowInteraction = (
       let newHeight = startHeight;
       let newX = startLeft;
       let newY = startTop;
-      
+
       const deltaX = moveEvent.clientX - startX;
       const deltaY = moveEvent.clientY - startY;
 

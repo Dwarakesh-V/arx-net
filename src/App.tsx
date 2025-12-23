@@ -129,7 +129,7 @@ function App() {
       {/* --- Main Workspace --- */}
       <main className="main-workspace" style={{ position: 'relative' }}>
 
-        {/* FIX: Floating Open Sidebar Button (Only visible when sidebar is closed) */}
+        {/*Floating Open Sidebar Button (Only visible when sidebar is closed) */}
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -169,11 +169,11 @@ function App() {
                 onFocus={() => { }}
                 onClose={() => { removeGraph(graph.id); }}
                 onMinimize={() => { toggleGraphVisibility(graph.id); }}
-                onAddEdge={(source, target, weight) => {addEdge(graph.id, source, target, weight);}}
-                onDeleteEdge={(edgeId) => {deleteEdge(graph.id, edgeId);}}
-                onDeleteVertex={(nodeId) => {deleteVertex(graph.id, nodeId);}}
-                onAddVertex={(newNode,x,y) => {addVertex(graph.id, newNode, x, y);}}
-                onUpdateEdgeWeight={(edgeId, newWeight) => {updateEdgeWeight(graph.id, edgeId, newWeight);}}
+                onAddEdge={(source, target, weight) => { addEdge(graph.id, source, target, weight); }}
+                onDeleteEdge={(edgeId) => { deleteEdge(graph.id, edgeId); }}
+                onDeleteVertex={(nodeId) => { deleteVertex(graph.id, nodeId); }}
+                onAddVertex={(newNode, x, y) => { addVertex(graph.id, newNode, x, y); }}
+                onUpdateEdgeWeight={(edgeId, newWeight) => { updateEdgeWeight(graph.id, edgeId, newWeight); }}
                 nodes={graph.nodes}
                 edges={graph.edges}
                 isDirected={graph.isDirected}

@@ -1,12 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import type { Node, Edge } from '../types';
-import { 
-  createSimulation, 
-  updateForces, 
-  setEdgePositions, 
-  dragBehavior 
-} from '../lib/graphRenderer'; 
+import { createSimulation, updateForces, setEdgePositions, dragBehavior } from '../lib/graphRenderer';
 import { getGraphExtent } from '../lib/viewUtils';
 
 interface GraphCanvasProps {
@@ -18,17 +13,15 @@ interface GraphCanvasProps {
   showGrid: boolean;
   onNodeContextMenu?: (event: React.MouseEvent, node: Node) => void;
   onEdgeContextMenu?: (event: React.MouseEvent, edge: Edge) => void;
-  
-  // --- ADDED PROP ---
-  onCanvasContextMenu?: (event: React.MouseEvent) => void; 
+  onCanvasContextMenu?: (event: React.MouseEvent) => void;
 }
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
-  nodes, edges, isDirected, isWeighted, useForce, showGrid, 
-  onNodeContextMenu, onEdgeContextMenu, onCanvasContextMenu // <--- Destructure here
+  nodes, edges, isDirected, isWeighted, useForce, showGrid,
+  onNodeContextMenu, onEdgeContextMenu, onCanvasContextMenu
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const contentRef = useRef<SVGGElement>(null); 
+  const contentRef = useRef<SVGGElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<d3.Simulation<Node, undefined> | null>(null);
   const zoomBehavior = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
@@ -39,7 +32,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     const width = wrapperRef.current.clientWidth;
     const height = wrapperRef.current.clientHeight;
-    
+
     const svg = d3.select(svgRef.current);
     const contentGroup = d3.select(contentRef.current);
 
@@ -48,19 +41,19 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .scaleExtent([0.1, 4])
       // Filter: Middle Mouse OR (Left Mouse + Ctrl) OR Wheel
       .filter((event) => {
-         return event.button === 1 || (event.button === 0 && event.ctrlKey) || event.type === 'wheel';
+        return event.button === 1 || (event.button === 0 && event.ctrlKey) || event.type === 'wheel';
       })
       .on('zoom', (event) => {
         contentGroup.attr('transform', event.transform);
       });
 
     zoomBehavior.current = zoom;
-    svg.call(zoom).on("dblclick.zoom", null); 
+    svg.call(zoom).on("dblclick.zoom", null);
 
     // 2. Define Grid Pattern
-    svg.select('defs').remove(); 
+    svg.select('defs').remove();
     const defs = svg.append('defs');
-    
+
     const pattern = defs.append('pattern')
       .attr('id', 'grid-pattern')
       .attr('width', 40)
@@ -77,24 +70,24 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
     contentGroup.selectAll("*").remove();
     const edgeMap = new Set<string>();
     edges.forEach(e => {
-        // Handle object references vs string IDs
-        const s = typeof e.source === 'object' ? (e.source as any).id : e.source;
-        const t = typeof e.target === 'object' ? (e.target as any).id : e.target;
-        edgeMap.add(`${s}->${t}`);
+      // Handle object references vs string IDs
+      const s = typeof e.source === 'object' ? (e.source as any).id : e.source;
+      const t = typeof e.target === 'object' ? (e.target as any).id : e.target;
+      edgeMap.add(`${s}->${t}`);
     });
 
     edges.forEach((e: any) => {
-        const s = typeof e.source === 'object' ? e.source.id : e.source;
-        const t = typeof e.target === 'object' ? e.target.id : e.target;
-        
-        // Check if the reverse edge exists
-        if (s !== t && edgeMap.has(`${t}->${s}`)) {
-            e.bidirectional = true;
-        } else {
-            e.bidirectional = false;
-        }
-        
-        e.selfLoop = (s === t);
+      const s = typeof e.source === 'object' ? e.source.id : e.source;
+      const t = typeof e.target === 'object' ? e.target.id : e.target;
+
+      // Check if the reverse edge exists
+      if (s !== t && edgeMap.has(`${t}->${s}`)) {
+        e.bidirectional = true;
+      } else {
+        e.bidirectional = false;
+      }
+
+      e.selfLoop = (s === t);
     });
 
     // 4. Create Layers 
@@ -116,38 +109,38 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr('fill', 'none')
       .attr('marker-end', (d: any) => isDirected ? `url(#arrow-${d.source.id}-${d.target.id})` : null)
       .on('contextmenu', (event, d) => {
-         // Stop event so it doesn't trigger the canvas context menu
-         event.stopPropagation();
-         event.preventDefault();
-         onEdgeContextMenu?.(event, d as unknown as Edge);
+        // Stop event so it doesn't trigger the canvas context menu
+        event.stopPropagation();
+        event.preventDefault();
+        onEdgeContextMenu?.(event, d as unknown as Edge);
       });
 
     // 7. Define Markers (Arrowheads)
     if (isDirected) {
-       edges.forEach((e: any) => {
-         const sId = typeof e.source === 'object' ? e.source.id : e.source;
-         const tId = typeof e.target === 'object' ? e.target.id : e.target;
-         const id = `arrow-${sId}-${tId}`;
-         
-         if (defs.select(`#${id}`).empty()) {
-            defs.append('marker')
-              .attr('id', id)
-              .attr('viewBox', '0 -5 10 10')
-              .attr('refX', 25)
-              .attr('refY', 0)
-              .attr('markerWidth', 8)
-              .attr('markerHeight', 8)
-              .attr('orient', 'auto')
-              .append('path')
-              .attr('d', 'M0,-5L10,0L0,5')
-              .attr('fill', 'var(--edge-color)');
-         }
-       });
+      edges.forEach((e: any) => {
+        const sId = typeof e.source === 'object' ? e.source.id : e.source;
+        const tId = typeof e.target === 'object' ? e.target.id : e.target;
+        const id = `arrow-${sId}-${tId}`;
+
+        if (defs.select(`#${id}`).empty()) {
+          defs.append('marker')
+            .attr('id', id)
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 25)
+            .attr('refY', 0)
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', 'var(--edge-color)');
+        }
+      });
     }
 
     // 8. Draw Nodes
     const circles = nodeLayer
-      .selectAll<SVGCircleElement, any>('circle') 
+      .selectAll<SVGCircleElement, any>('circle')
       .data(nodes, (d: any) => d.id)
       .join('circle')
       .attr('r', 20)
@@ -155,10 +148,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .style('cursor', 'pointer')
       .call(dragBehavior(simulation, useForce))
       .on('contextmenu', (event, d) => {
-         // Stop event so it doesn't trigger the canvas context menu
-         event.stopPropagation();
-         event.preventDefault();
-         onNodeContextMenu?.(event, d as unknown as Node);
+        // Stop event so it doesn't trigger the canvas context menu
+        event.stopPropagation();
+        event.preventDefault();
+        onNodeContextMenu?.(event, d as unknown as Node);
       });
 
     // 9. Draw Labels
@@ -194,37 +187,37 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     // 12. Handle "Center Graph" on Double Click
     svg.on("dblclick", (event) => {
-       // Only allow centering if clicking background
-       if (event.target.tagName !== 'svg' && event.target.tagName !== 'rect') return;
+      // Only allow centering if clicking background
+      if (event.target.tagName !== 'svg' && event.target.tagName !== 'rect') return;
 
-       const { x, y, width: gWidth, height: gHeight } = getGraphExtent(nodes);
-       const safeWidth = gWidth || 1;
-       const safeHeight = gHeight || 1;
+      const { x, y, width: gWidth, height: gHeight } = getGraphExtent(nodes);
+      const safeWidth = gWidth || 1;
+      const safeHeight = gHeight || 1;
 
-       const scale = 0.9 / Math.max(safeWidth / width, safeHeight / height);
-       
-       svg.transition().duration(750).call(
-         zoom.transform,
-         d3.zoomIdentity
-           .translate(width / 2, height / 2)
-           .scale(Math.min(scale, 1)) 
-           .translate(-x, -y)
-       );
+      const scale = 0.9 / Math.max(safeWidth / width, safeHeight / height);
+
+      svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity
+          .translate(width / 2, height / 2)
+          .scale(Math.min(scale, 1))
+          .translate(-x, -y)
+      );
     });
 
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges, isDirected, isWeighted]); 
+  }, [nodes, edges, isDirected, isWeighted]);
 
   // --- Dynamic Updates ---
   useEffect(() => {
     if (simulationRef.current && wrapperRef.current) {
       updateForces(
-        simulationRef.current, 
-        edges, 
-        useForce, 
-        wrapperRef.current.clientWidth, 
+        simulationRef.current,
+        edges,
+        useForce,
+        wrapperRef.current.clientWidth,
         wrapperRef.current.clientHeight
       );
     }
@@ -245,20 +238,16 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
   return (
     <div ref={wrapperRef} className="graph-content" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-      
-      <svg 
-        ref={svgRef} 
-        width="100%" 
-        height="100%" 
+
+      <svg
+        ref={svgRef}
+        width="100%"
+        height="100%"
         style={{ cursor: 'default' }}
-        // --- ADDED: Context Menu Handler ---
         onContextMenu={(e) => {
-            // Only trigger if we clicked the SVG or the Grid Rect directly
-            // (Nodes/Edges have their own handlers that call stopPropagation)
-            if (onCanvasContextMenu) {
-                // We don't need strict target checks because nodes/edges stop propagation
-                onCanvasContextMenu(e);
-            }
+          if (onCanvasContextMenu) {
+            onCanvasContextMenu(e);
+          }
         }}
       >
         {showGrid && (

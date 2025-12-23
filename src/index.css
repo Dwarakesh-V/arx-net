@@ -30,14 +30,17 @@
     color: var(--text-primary);
 }
 
-html, body, #root {
+html,
+body,
+#root {
     height: 100%;
     width: 100%;
     background-color: var(--bg-primary);
     text-align: left;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* Prevent body scroll */
+    overflow: hidden;
+    /* Prevent body scroll */
 }
 
 /* =========================================
@@ -46,14 +49,17 @@ html, body, #root {
 ::-webkit-scrollbar {
     width: 10px;
 }
+
 ::-webkit-scrollbar-track {
     background: var(--bg-primary);
 }
+
 ::-webkit-scrollbar-thumb {
     background-color: #3f3f3f;
     border-radius: 10px;
     border: 2px solid var(--bg-primary);
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background-color: #555;
 }
@@ -61,7 +67,8 @@ html, body, #root {
 /* =========================================
    3. INPUTS & CONTROLS
    ========================================= */
-input[type="text"], input[type="number"] {
+input[type="text"],
+input[type="number"] {
     display: block;
     width: calc(100% - 20px);
     background: none;
@@ -84,12 +91,15 @@ input[type="checkbox"] {
     margin: 0px 5px 3px 15px;
     cursor: pointer;
 }
+
 input[type="checkbox"]:hover {
     background-color: #7e7e7e;
 }
+
 input[type="checkbox"]:checked {
     background-color: var(--accent);
 }
+
 input[type="checkbox"]:checked::before {
     content: "";
     position: absolute;
@@ -136,8 +146,9 @@ img {
     flex-direction: column;
     border-right: 1px solid #333;
     overflow-y: auto;
-    overflow-x: hidden; /* Hide content during resize */
-    
+    overflow-x: hidden;
+    /* Hide content during resize */
+
     /* Smooth Animation */
     transition: all 0.3s ease-in-out;
 }
@@ -149,7 +160,8 @@ img {
     padding: 0 !important;
     border: none;
     opacity: 0;
-    pointer-events: none; /* Prevent clicking hidden elements */
+    pointer-events: none;
+    /* Prevent clicking hidden elements */
 }
 
 .main-workspace {
@@ -187,10 +199,12 @@ img {
     align-items: center;
     margin-bottom: 10px;
 }
+
 .input-row input {
     width: 60px;
     margin-right: 10px;
 }
+
 .input-row label {
     margin-right: 5px;
     font-size: 0.9em;
@@ -204,9 +218,10 @@ img {
 /* Override the default .outliner to allow full height expansion */
 .outliner {
     /* We overwrite the previous 'margin-top: auto' so it fills the space */
-    margin-top: 0 !important; 
+    margin-top: 0 !important;
     border-top: 1px solid #333;
-    padding: 0; /* Remove padding so scrollbar hits the edge */
+    padding: 0;
+    /* Remove padding so scrollbar hits the edge */
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -246,7 +261,8 @@ img {
 
 /* Active State (Selected Graph) */
 .list-item.active {
-    background-color: #444; /* Darker highlight */
+    background-color: #444;
+    /* Darker highlight */
     color: var(--accent);
     border-left: 3px solid var(--accent);
 }
@@ -273,7 +289,8 @@ img {
     line-height: 1;
     padding: 0 4px;
     border-radius: 3px;
-    opacity: 0; /* Hidden by default */
+    opacity: 0;
+    /* Hidden by default */
 }
 
 .delete-btn:hover {
@@ -293,11 +310,14 @@ img {
     line-height: 1;
     padding: 0 4px;
     border-radius: 3px;
-    opacity: 0; /* Hidden by default */
+    opacity: 0;
+    /* Hidden by default */
 }
+
 .minimize-btn:hover {
     background-color: rgba(255, 107, 107, 0.2);
 }
+
 .list-item:hover .minimize-btn {
     opacity: 1;
 }
@@ -324,7 +344,8 @@ img {
     white-space: nowrap;
     padding: 5px 10px;
     height: 40px;
-    flex-shrink: 0; /* Don't shrink header */
+    flex-shrink: 0;
+    /* Don't shrink header */
 }
 
 /* Header Buttons */
@@ -335,6 +356,7 @@ img {
     cursor: pointer;
     font-size: 1.1em;
 }
+
 .graphHeader button:hover {
     color: var(--accent);
 }
@@ -354,6 +376,7 @@ img {
     height: 15px;
     z-index: 20;
 }
+
 .resize-handle.bottom-right {
     bottom: 0;
     right: 0;
@@ -392,7 +415,7 @@ img {
     border-radius: 4px;
     z-index: 9999;
     border: 1px solid #444;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     min-width: 150px;
 }
 
@@ -414,7 +437,7 @@ img {
 
 /* Modal / About Box */
 .aboutDiv {
-    display: block; 
+    display: block;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -439,26 +462,31 @@ img {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Dimmed background */
-    z-index: 1999; /* High z-index, but below the modal content */
+    background-color: rgba(0, 0, 0, 0.6);
+    /* Dimmed background */
+    z-index: 1999;
+    /* High z-index, but below the modal content */
     display: block;
 }
 
 /* Ensure the content sits on top */
 .aboutDiv {
     /* Existing styles are fine, just ensuring z-index is higher */
-    z-index: 2000; 
+    z-index: 2000;
 }
+
 /* =========================================
    10. RESULT BOARD SCROLLBAR STYLES
    ========================================= */
 .result-board::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
+
 .result-board::-webkit-scrollbar-thumb {
-  background: #444; 
-  border-radius: 3px;
+    background: #444;
+    border-radius: 3px;
 }
+
 .result-board::-webkit-scrollbar-track {
-  background: #1a1a1a; 
+    background: #1a1a1a;
 }

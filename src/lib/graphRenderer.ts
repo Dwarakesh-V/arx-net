@@ -8,18 +8,17 @@ export const createSimulation = (nodes: Node[], width: number, height: number) =
   return d3.forceSimulation(nodes)
     .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    // FIX: Add Weak Gravity (forceX/forceY) to keep disconnected nodes from flying away
-    .force('x', d3.forceX(width / 2).strength(0.05)) 
+    .force('x', d3.forceX(width / 2).strength(0.05))
     .force('y', d3.forceY(height / 2).strength(0.05))
     .force('collide', d3.forceCollide().radius(30).iterations(2))
     .stop();
 };
 
 export const updateForces = (
-  simulation: d3.Simulation<Node, undefined>, 
-  edges: Edge[], 
+  simulation: d3.Simulation<Node, undefined>,
+  edges: Edge[],
   useForce: boolean,
-  width: number, 
+  width: number,
   height: number
 ) => {
   const safeWidth = width || 500;
@@ -44,9 +43,9 @@ export const updateForces = (
     simulation.force('link', linkForce);
     simulation.force('charge', d3.forceManyBody().strength(-500));
     simulation.force('collide', d3.forceCollide().radius(30));
-    
+
     // Warmup ticks to stabilize layout
-    simulation.tick(300); 
+    simulation.tick(300);
 
     // Stop movement
     simulation.force('charge', null);
@@ -55,7 +54,7 @@ export const updateForces = (
     simulation.force('collide', null);
     simulation.force('x', null); // Stop gravity too
     simulation.force('y', null);
-    
+
     simulation.stop();
   }
 };
@@ -72,9 +71,9 @@ export const setEdgePositions = (
   linkSelection.attr('d', (d: any) => {
     if (d.selfLoop) {
       const { x, y } = d.source;
-      const r = 30; 
+      const r = 30;
       return `M${x},${y - 25 - r} a${r},${r} 0 1,1 0,${2 * r} a${r},${r} 0 1,1 0,${-2 * r}`;
-    } 
+    }
     if (d.bidirectional) {
       const dx = d.target.x - d.source.x;
       const dy = d.target.y - d.source.y;
@@ -85,14 +84,14 @@ export const setEdgePositions = (
   });
 
   if (directed) {
-    linkSelection.each(function(d: any) {
+    linkSelection.each(function (d: any) {
       const dx = d.target.x - d.source.x;
       const dy = d.target.y - d.source.y;
       const length = Math.sqrt(dx * dx + dy * dy);
       const sId = typeof d.source === 'object' ? d.source.id : d.source;
       const tId = typeof d.target === 'object' ? d.target.id : d.target;
       const marker = d3.select(`#arrow-${sId}-${tId}`);
-      
+
       if (!marker.empty()) {
         if (d.selfLoop) {
           marker.attr('orient', 0).attr('refX', 4).attr('refY', -0.5);
@@ -109,24 +108,24 @@ export const setEdgePositions = (
   if (weighted && edgeLabelSelection) {
     edgeLabelSelection
       .attr('x', (d: any) => {
-         const midpointX = (d.source.x + d.target.x) / 2;
-         const dx = d.target.x - d.source.x;
-         const dy = d.target.y - d.source.y;
-         const length = Math.sqrt(dx * dx + dy * dy);
-         const angle = Math.atan2(dy, dx);
-         if (d.selfLoop) return midpointX - 5;
-         if (d.bidirectional) return midpointX + Math.sin(angle) * length / 10;
-         return midpointX; 
+        const midpointX = (d.source.x + d.target.x) / 2;
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        if (d.selfLoop) return midpointX - 5;
+        if (d.bidirectional) return midpointX + Math.sin(angle) * length / 10;
+        return midpointX;
       })
       .attr('y', (d: any) => {
-         const midpointY = (d.source.y + d.target.y) / 2;
-         const dx = d.target.x - d.source.x;
-         const dy = d.target.y - d.source.y;
-         const length = Math.sqrt(dx * dx + dy * dy);
-         const angle = Math.atan2(dy, dx);
-         if (d.selfLoop) return midpointY - 27;
-         if (d.bidirectional) return midpointY - Math.cos(angle) * length / 10;
-         return midpointY;
+        const midpointY = (d.source.y + d.target.y) / 2;
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        if (d.selfLoop) return midpointY - 27;
+        if (d.bidirectional) return midpointY - Math.cos(angle) * length / 10;
+        return midpointY;
       });
   }
 
@@ -137,7 +136,7 @@ export const setEdgePositions = (
 // --- 3. Drag Handlers ---
 
 export const dragBehavior = (simulation: d3.Simulation<Node, undefined>, useForce: boolean) => {
-  
+
   function dragstarted(this: SVGCircleElement, event: any, d: any) {
     // IMPORTANT FIX: 
     // Always restart the simulation on drag start, even if useForce is false.
@@ -145,7 +144,7 @@ export const dragBehavior = (simulation: d3.Simulation<Node, undefined>, useForc
     // If useForce is false, forces are null (from updateForces), so nodes won't repel,
     // but the rendering loop will run.
     simulation.alphaTarget(0.3).restart();
-    
+
     d.fx = d.x;
     d.fy = d.y;
     d3.select(this).attr('fill', 'var(--drag-node-color)');
