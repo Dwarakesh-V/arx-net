@@ -13,9 +13,9 @@ interface RandomGenOptions {
 }
 
 export const generateRandomGraphData = (options: RandomGenOptions) => {
-    const { 
-        vertexCount, edgeCount, allowDuplicates, ensureConnected, 
-        allowSelfLoops, minWeight, maxWeight, isDirected 
+    const {
+        vertexCount, edgeCount, allowDuplicates, ensureConnected,
+        allowSelfLoops, minWeight, maxWeight, isDirected
     } = options;
 
     if (vertexCount <= 0) throw new Error("Vertex count must be > 0");
@@ -40,7 +40,7 @@ export const generateRandomGraphData = (options: RandomGenOptions) => {
     } else {
         maxEdges = isDirected ? vertexCount * (vertexCount - 1) : (vertexCount * (vertexCount - 1)) / 2;
     }
-    
+
     // Cap edge count if duplicates are not allowed
     let finalEdgeCount = edgeCount;
     if (!allowDuplicates && edgeCount > maxEdges) finalEdgeCount = maxEdges;
@@ -59,10 +59,10 @@ export const generateRandomGraphData = (options: RandomGenOptions) => {
             const u = shuffled[i - 1];
             const v = shuffled[i];
             const weight = Math.floor(Math.random() * (maxWeight - minWeight + 1)) + minWeight;
-            
+
             const key = isDirected ? `${u}->${v}` : `${u}-${v}`; // Unique Key
             edgeSet.add(key);
-            
+
             edges.push({
                 id: key,
                 source: u,
@@ -79,7 +79,7 @@ export const generateRandomGraphData = (options: RandomGenOptions) => {
         attempts++;
         const u = vertices[Math.floor(Math.random() * vertexCount)];
         const v = vertices[Math.floor(Math.random() * vertexCount)];
-        
+
         if (!allowSelfLoops && u === v) continue;
 
         // Check Duplicates
@@ -93,7 +93,7 @@ export const generateRandomGraphData = (options: RandomGenOptions) => {
         }
 
         const weight = Math.floor(Math.random() * (maxWeight - minWeight + 1)) + minWeight;
-        
+
         edgeSet.add(forwardKey);
         edges.push({
             id: forwardKey + (allowDuplicates ? `-${attempts}` : ''), // Ensure ID uniqueness if duplicates allowed

@@ -2,8 +2,8 @@ import * as d3 from 'd3';
 import { GRID_SIZE } from './constants'; // Ensure you added GRID_SIZE = 40 here
 
 export const drawGrid = (
-  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>, 
-  gridGroup: d3.Selection<SVGGElement, unknown, null, undefined>
+    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+    gridGroup: d3.Selection<SVGGElement, unknown, null, undefined>
 ) => {
     // 1. Get current viewbox
     const viewBoxAttr = svg.attr('viewBox');

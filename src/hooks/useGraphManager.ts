@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-// 1. ALIAS THE IMPORT to avoid conflict with HTML 'Node'
 import type { GraphData, Node, Edge } from '../types';
 
 export const useGraphManager = () => {
@@ -15,8 +14,7 @@ export const useGraphManager = () => {
 
   const addGraph = (newGraph: Omit<GraphData, 'id'>) => {
     const id = graphCount + 1;
-    // When adding, respect global visibility
-    const graphWithId = { ...newGraph, id, isVisible: true }; 
+    const graphWithId = { ...newGraph, id, isVisible: true };
     setGraphs(prev => [...prev, graphWithId]);
     setGraphCount(id);
   };
@@ -63,7 +61,7 @@ export const useGraphManager = () => {
 
   // --- EDGE & NODE MANIPULATION ---
 
-const addEdge = (graphId: number, source: string, target: string, weight: number) => {
+  const addEdge = (graphId: number, source: string, target: string, weight: number) => {
     setGraphs(prev => prev.map(g => {
       if (g.id !== graphId) return g;
 
@@ -78,13 +76,12 @@ const addEdge = (graphId: number, source: string, target: string, weight: number
 
       // Create new edge
       const newEdge: Edge = {
-        id: `${source}-${target}`, 
-        
-        // --- FIX: Pass the Node Objects, not the ID strings ---
+        id: `${source}-${target}`,
+
         // This ensures the renderer can immediately read .id to draw the arrow
-        source: sourceNode, 
+        source: sourceNode,
         target: targetNode,
-        
+
         weight: weight
       };
 
@@ -99,7 +96,6 @@ const addEdge = (graphId: number, source: string, target: string, weight: number
     }));
   };
 
-  // Renamed from deleteVertex to deleteNode for consistency
   const deleteVertex = (graphId: number, nodeId: string) => {
     setGraphs(prev => prev.map(g => {
       if (g.id !== graphId) return g;
@@ -120,7 +116,6 @@ const addEdge = (graphId: number, source: string, target: string, weight: number
     }));
   };
 
-  // Renamed from addVertex to addNode for consistency
   const addVertex = (graphId: number, nodeId: string, x: number, y: number) => {
     setGraphs(prev => prev.map(g => {
       if (g.id !== graphId) return g;
@@ -131,11 +126,10 @@ const addEdge = (graphId: number, source: string, target: string, weight: number
         return g;
       }
 
-      // USE ALIASED TYPE 'Node' HERE
-      const newNode: Node = { 
-        id: nodeId, 
-        x: x, 
-        y: y 
+      const newNode: Node = {
+        id: nodeId,
+        x: x,
+        y: y
       };
 
       return { ...g, nodes: [...g.nodes, newNode] };

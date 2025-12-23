@@ -4,7 +4,6 @@ export const useThemeColors = () => {
   const [colors, setColors] = useState({
     edgeColor: '#000',
     nodeColor: '#fff',
-    // ... defaults
   });
 
   useEffect(() => {
@@ -13,7 +12,6 @@ export const useThemeColors = () => {
     setColors({
       edgeColor: style.getPropertyValue('--edge-color').trim(),
       nodeColor: style.getPropertyValue('--node-color').trim(),
-      // ... map the rest of your colors here
     });
   }, []);
 
