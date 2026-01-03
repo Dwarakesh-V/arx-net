@@ -146,6 +146,13 @@ export const useGraphManager = () => {
     }));
   };
 
+  const updateGraphPosition = (graphId: number, x: number, y: number) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+      return { ...g, x, y };
+    }));
+  };
+
   return {
     graphs,
     graphCount,
@@ -166,6 +173,7 @@ export const useGraphManager = () => {
     deleteEdge,
     deleteVertex,
     addVertex,
-    updateEdgeWeight
+    updateEdgeWeight,
+    updateGraphPosition
   };
 };
