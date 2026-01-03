@@ -167,3 +167,46 @@ export const dragBehavior = (simulation: d3.Simulation<Node, undefined>, useForc
     .on("drag", dragged)
     .on("end", dragended);
 };
+
+export const updateGraphDimensions = (
+  simulation: d3.Simulation<Node, undefined>,
+  nodes: Node[],
+  width: number,
+  height: number,
+  prevWidth: number,
+  prevHeight: number,
+  useForce: boolean
+) => {
+  const safeWidth = width || 500;
+  const safeHeight = height || 500;
+  const centerX = safeWidth / 2;
+  const centerY = safeHeight / 2;
+
+  // Always update force centers in case we toggle force back on
+  simulation.force('center', d3.forceCenter(centerX, centerY));
+  simulation.force('x', d3.forceX(centerX).strength(0.05));
+  simulation.force('y', d3.forceY(centerY).strength(0.05));
+
+  if (useForce) {
+    simulation.alpha(0.3).restart();
+  } else {
+    // Manually shift nodes to keep relative center
+    const dx = (width - prevWidth) / 2;
+    const dy = (height - prevHeight) / 2;
+    if (Math.abs(dx) > 0 || Math.abs(dy) > 0) {
+      nodes.forEach(node => {
+        if (node.x !== undefined) node.x += dx;
+        if (node.y !== undefined) node.y += dy;
+        // Fix position if it was fixed (dragging)
+        if (node.fx !== undefined && node.fx !== null) node.fx += dx;
+        if (node.fy !== undefined && node.fy !== null) node.fy += dy;
+      });
+      // Trigger render update immediately without running physics simulation
+      const tickListener = simulation.on('tick');
+      // @ts-ignore
+      if (typeof tickListener === 'function') {
+        tickListener.call(simulation);
+      }
+    }
+  }
+};
