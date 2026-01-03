@@ -1,9 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { GraphData, Node, Edge } from '../types';
 
 export const useGraphManager = () => {
-  const [graphs, setGraphs] = useState<GraphData[]>([]);
-  const [graphCount, setGraphCount] = useState(0);
+  const [graphs, setGraphs] = useState<GraphData[]>(() => {
+  const saved =localStorage.getItem('arx_net_graphs');
+    return saved ? JSON.parse(saved) : [];
+  });
+const [graphCount, setGraphCount] = useState(() => {
+    const saved=localStorage.getItem('arx_net_graph_count');
+    return saved ? Number(saved) :0; });
+
+  useEffect(() => {
+localStorage.setItem('arx_net_graphs',JSON.stringify(graphs));
+localStorage.setItem('arx_net_graph_count',graphCount.toString());
+  }, [graphs, graphCount]);
 
   // --- View Modes ---
   const [viewMode, setViewMode] = useState<'default' | 'grid4' | 'grid9'>('default');
@@ -13,8 +23,19 @@ export const useGraphManager = () => {
   // --- Actions ---
 
   const addGraph = (newGraph: Omit<GraphData, 'id'>) => {
+    let finalName = newGraph.name.trim() || `Graph ${graphCount + 1}`;
+    const existingNames = graphs.map(g => g.name);
+
+    if (existingNames.includes(finalName)) {
+      let counter = 1;
+      while (existingNames.includes(`${finalName}.${counter}`)) {
+        counter++;
+      }
+      finalName = `${finalName}.${counter}`;
+    }
+
     const id = graphCount + 1;
-    const graphWithId = { ...newGraph, id, isVisible: true };
+    const graphWithId = { ...newGraph, name: finalName, id, isVisible: true };
     setGraphs(prev => [...prev, graphWithId]);
     setGraphCount(id);
   };
