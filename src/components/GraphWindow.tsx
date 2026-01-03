@@ -60,6 +60,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
   const [useForce, setUseForce] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
@@ -82,15 +83,27 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const dx = moveEvent.clientX - startMouseX;
-      const dy = moveEvent.clientY - startMouseY;
-      const parent = (moveEvent.target as HTMLElement).closest('.main-workspace');
-      const parentW = parent ? parent.clientWidth : window.innerWidth;
-      const parentH = parent ? parent.clientHeight : window.innerHeight;
-      const snapped = getSnapPosition(currentX + dx, currentY + dy, isSnapped, viewMode, parentW, parentH);
-      setPosition(prev => ({ ...prev, x: snapped.x, y: snapped.y }));
+      if (rafRef.current) return;
+      const moveX = moveEvent.clientX; // Capture values
+      const moveY = moveEvent.clientY;
+      const target = moveEvent.target as HTMLElement;
+
+      rafRef.current = requestAnimationFrame(() => {
+        const dx = moveX - startMouseX;
+        const dy = moveY - startMouseY;
+        const parent = target.closest('.main-workspace');
+        const parentW = parent ? parent.clientWidth : window.innerWidth;
+        const parentH = parent ? parent.clientHeight : window.innerHeight;
+        const snapped = getSnapPosition(currentX + dx, currentY + dy, isSnapped, viewMode, parentW, parentH);
+        setPosition(prev => ({ ...prev, x: snapped.x, y: snapped.y }));
+        rafRef.current = null;
+      });
     };
     const handleMouseUp = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -110,9 +123,20 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
     const startW = containerRef.current?.offsetWidth || 600;
     const startH = containerRef.current?.offsetHeight || 450;
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      setPosition(prev => ({ ...prev, width: Math.max(300, startW + (moveEvent.clientX - startX)), height: Math.max(200, startH + (moveEvent.clientY - startY)) }));
+      if (rafRef.current) return;
+      const moveX = moveEvent.clientX;
+      const moveY = moveEvent.clientY;
+
+      rafRef.current = requestAnimationFrame(() => {
+        setPosition(prev => ({ ...prev, width: Math.max(300, startW + (moveX - startX)), height: Math.max(200, startH + (moveY - startY)) }));
+        rafRef.current = null;
+      });
     };
     const handleMouseUp = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };

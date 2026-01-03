@@ -16,7 +16,7 @@ interface GraphCanvasProps {
   onCanvasContextMenu?: (event: React.MouseEvent) => void;
 }
 
-export const GraphCanvas: React.FC<GraphCanvasProps> = ({
+const GraphCanvasComponent: React.FC<GraphCanvasProps> = ({
   nodes, edges, isDirected, isWeighted, useForce, showGrid,
   onNodeContextMenu, onEdgeContextMenu, onCanvasContextMenu
 }) => {
@@ -263,6 +263,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
     </div>
   );
 };
+
+export const GraphCanvas = React.memo(GraphCanvasComponent);
 
 const zoomButtonStyle: React.CSSProperties = {
   width: '30px',
