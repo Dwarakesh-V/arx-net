@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import type { Node, Edge } from '../types';
-import { createSimulation, updateForces, setEdgePositions, dragBehavior } from '../lib/graphRenderer';
+import { createSimulation, updateForces, setEdgePositions, dragBehavior, updateGraphDimensions } from '../lib/graphRenderer';
 import { getGraphExtent } from '../lib/viewUtils';
 
 interface GraphCanvasProps {
@@ -25,6 +25,7 @@ const GraphCanvasComponent: React.FC<GraphCanvasProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<d3.Simulation<Node, undefined> | null>(null);
   const zoomBehavior = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const prevSize = useRef({ width: 0, height: 0 });
 
   // --- Initialize D3 Graph ---
   useEffect(() => {
@@ -212,7 +213,9 @@ const GraphCanvasComponent: React.FC<GraphCanvasProps> = ({
 
   // --- Dynamic Updates ---
   useEffect(() => {
+    // Force/Mode Updates
     if (simulationRef.current && wrapperRef.current) {
+      // ... (existing updateForces call for Mode change)
       updateForces(
         simulationRef.current,
         edges,
@@ -222,6 +225,44 @@ const GraphCanvasComponent: React.FC<GraphCanvasProps> = ({
       );
     }
   }, [useForce]);
+
+  // --- Resize Observer ---
+  useEffect(() => {
+    if (!wrapperRef.current || !simulationRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+
+        // Initial check or update
+        if (prevSize.current.width === 0 && prevSize.current.height === 0) {
+          prevSize.current = { width, height };
+          // Ensure forces usage has correct initial dimensions
+          updateForces(simulationRef.current!, edges, useForce, width, height);
+          continue;
+        }
+
+        if (width !== prevSize.current.width || height !== prevSize.current.height) {
+          updateGraphDimensions(
+            simulationRef.current!,
+            nodes,
+            width,
+            height,
+            prevSize.current.width,
+            prevSize.current.height,
+            useForce
+          );
+          prevSize.current = { width, height };
+        }
+      }
+    });
+
+    resizeObserver.observe(wrapperRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [edges, useForce, nodes]); // removed width/height dependencies
 
   // --- Zoom Helpers ---
   const handleZoomIn = () => {

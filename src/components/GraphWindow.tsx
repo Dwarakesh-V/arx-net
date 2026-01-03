@@ -73,6 +73,8 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
     setPosition({ x: initialX, y: initialY, width: initialWidth || 600, height: initialHeight || 450 });
   }, [initialX, initialY, initialWidth, initialHeight]);
 
+  const [isResizing, setIsResizing] = useState(false);
+
   // --- Handlers (Drag, Resize, etc.) ---
   const handleDragStart = (e: React.MouseEvent) => {
     if (isFullScreen) return;
@@ -119,6 +121,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
   const handleResizeStart = (e: React.MouseEvent) => {
     e.stopPropagation(); e.preventDefault();
+    setIsResizing(true);
     const startX = e.clientX; const startY = e.clientY;
     const startW = containerRef.current?.offsetWidth || 600;
     const startH = containerRef.current?.offsetHeight || 450;
@@ -133,6 +136,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
       });
     };
     const handleMouseUp = () => {
+      setIsResizing(false);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -357,7 +361,8 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
         left: isFullScreen ? 0 : position.x, top: isFullScreen ? 0 : position.y,
         width: isFullScreen ? '100vw' : position.width, height: isFullScreen ? '100vh' : position.height,
         zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10),
-        overflow: 'hidden', transition: 'height 0.2s, width 0.2s',
+        overflow: 'hidden',
+        transition: isResizing ? 'none' : 'height 0.2s, width 0.2s',
       }}
       onMouseDown={() => { onFocus(); setContextMenu(null); }}
     >
