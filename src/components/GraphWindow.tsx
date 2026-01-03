@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GraphCanvas } from './GraphCanvas';
 import type { Node, Edge } from '../types';
 import { getSnapPosition } from '../lib/layoutUtils';
@@ -342,9 +342,10 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   };
 
   // ... Context Menu Handlers ...
-  const handleNodeContextMenu = (e: React.MouseEvent, n: any) => { e.preventDefault(); setIsAddingEdge(false); setIsEditingWeight(false); setEdgeTarget(''); setEdgeWeight(1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n }); };
-  const handleEdgeContextMenu = (e: React.MouseEvent, edge: any) => { e.preventDefault(); setIsAddingEdge(false); setIsAddingNode(false); setIsEditingWeight(false); setEditWeightVal(edge.weight || 1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge }); };
-  const handleCanvasContextMenu = (e: React.MouseEvent) => { e.preventDefault(); setIsAddingNode(false); setIsEditingWeight(false); setNewNodeId(''); setContextMenu({ x: e.clientX, y: e.clientY, type: 'canvas', data: null }); };
+  // ... Context Menu Handlers ...
+  const handleNodeContextMenu = useCallback((e: React.MouseEvent, n: any) => { e.preventDefault(); setIsAddingEdge(false); setIsEditingWeight(false); setEdgeTarget(''); setEdgeWeight(1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n }); }, []);
+  const handleEdgeContextMenu = useCallback((e: React.MouseEvent, edge: any) => { e.preventDefault(); setIsAddingEdge(false); setIsAddingNode(false); setIsEditingWeight(false); setEditWeightVal(edge.weight || 1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge }); }, []);
+  const handleCanvasContextMenu = useCallback((e: React.MouseEvent) => { e.preventDefault(); setIsAddingNode(false); setIsEditingWeight(false); setNewNodeId(''); setContextMenu({ x: e.clientX, y: e.clientY, type: 'canvas', data: null }); }, []);
 
 
   return (
