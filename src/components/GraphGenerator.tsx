@@ -158,14 +158,15 @@ export const GraphGenerator: React.FC<GraphGeneratorProps> = ({ onGenerate, onGe
           value={edgesInput}
           onChange={(e) => setEdgesInput(e.target.value)}
           style={{
-            width: '100%',
+            width: 'calc(100% - 20px)',
             height: '60px',
             fontFamily: 'monospace',
             marginBottom: '5px',
             background: 'none',
             border: '1.5px solid var(--accent)',
             color: 'var(--text-primary)',
-            padding: '10px'
+            padding: '10px',
+            resize: 'vertical'
           }}
         /> <br />
 
