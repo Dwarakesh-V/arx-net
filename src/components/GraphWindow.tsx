@@ -335,7 +335,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
         zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10),
         overflow: 'hidden', transition: 'height 0.2s, width 0.2s',
       }}
-      onMouseDown={() => { onFocus(true); setContextMenu(null); }}
+      onMouseDown={() => { onFocus(false); setContextMenu(null); }}
     >
       <div
         ref={headerRef}
