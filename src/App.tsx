@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import './index.css';
 
 // --- Import Components ---
@@ -19,14 +19,56 @@ function App() {
     graphs, viewMode, toggleViewMode, isSnappingEnabled, areAllVisible, addVertex,
     requestClearAll, toggleAllVisibility, toggleSnap, addEdge, deleteEdge, deleteVertex,
     addGraph, removeGraph, renameGraph, setAreAllVisible, toggleGraphVisibility,
-    updateEdgeWeight
+    updateEdgeWeight, updateGraphPosition
   } = useGraphManager();
 
   const [showAbout, setShowAbout] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [focusedGraphId, setFocusedGraphId] = useState<number | null>(null);
 
+  const mainRef = useRef<HTMLElement>(null);
+
   // 2. Handlers
+
+  // Helper to Focus and optionally Center
+  const handleFocus = (id: number, centerMode: 'none' | 'if-switch' | 'always' = 'none') => {
+    const graph = graphs.find(g => g.id === id);
+    if (!graph) return;
+
+    // 1. If Switch or Always, we might center
+    // Check if we need to center
+    let shouldCenter = false;
+
+    if (centerMode === 'always') shouldCenter = true;
+    if (centerMode === 'if-switch' && (focusedGraphId !== id || !graph.isVisible)) shouldCenter = true;
+
+    // 2. Ensure visible (if centering or focusing via sidebar imply expansion?)
+    // User said: "When an minimized graph is clicked, it should expand and be centered."
+    // Sidebar click uses 'always', so we check visibility.
+    if (shouldCenter && !graph.isVisible) {
+      toggleGraphVisibility(id);
+    }
+
+    // 3. Center if needed
+    if (shouldCenter) {
+      if (mainRef.current) {
+        const parentW = mainRef.current.clientWidth;
+        const parentH = mainRef.current.clientHeight;
+        const w = 600; // approximation of default width
+        const h = 450; // approximation of default height
+
+        // Simple Center
+        const x = (parentW - w) / 2;
+        const y = (parentH - h) / 2;
+
+        updateGraphPosition(id, x, y);
+      }
+    }
+
+    // 4. Set Focus
+    setFocusedGraphId(id);
+  };
+
   const handleNewGraph = (data: any) => {
     // Parse input
     const edges = parseEdges(data.rawEdges, data.isDirected);
@@ -120,14 +162,14 @@ function App() {
           toggleGraphVisibility={toggleGraphVisibility}
 
           // Action Props
-          onSelectGraph={(id) => setFocusedGraphId(id)}
+          onSelectGraph={(id) => handleFocus(id, 'always')}
           onDeleteGraph={(id) => removeGraph(id)}
           onRenameGraph={(id, newName) => renameGraph(id, newName)}
         />
       </div>
 
       {/* --- Main Workspace --- */}
-      <main className="main-workspace" style={{ position: 'relative' }}>
+      <main ref={mainRef} className="main-workspace" style={{ position: 'relative' }}>
 
         {/*Floating Open Sidebar Button (Only visible when sidebar is closed) */}
         {!isSidebarOpen && (
@@ -166,7 +208,7 @@ function App() {
                 initialX={forcedLayout ? forcedLayout.x : (graph.x || 100 + (index * 30))}
                 initialY={forcedLayout ? forcedLayout.y : (graph.y || 100 + (index * 30))}
                 isActive={focusedGraphId === graph.id}
-                onFocus={() => { }}
+                onFocus={(shouldCenter) => handleFocus(graph.id, shouldCenter ? 'if-switch' : 'none')}
                 onClose={() => { removeGraph(graph.id); }}
                 onMinimize={() => { toggleGraphVisibility(graph.id); }}
                 onAddEdge={(source, target, weight) => { addEdge(graph.id, source, target, weight); }}
