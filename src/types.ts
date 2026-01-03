@@ -3,6 +3,8 @@ export interface Node {
     id: string;
     x: number;
     y: number;
+    fx?: number | null;
+    fy?: number | null;
     // Add other properties you use, e.g., color, label
 }
 
