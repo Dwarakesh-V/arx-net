@@ -13,10 +13,19 @@ export const useGraphManager = () => {
   // --- Actions ---
 
   const addGraph = (newGraph: Omit<GraphData, 'id'>) => {
-    const id = graphCount + 1;
-    const graphWithId = { ...newGraph, id, isVisible: true };
-    setGraphs(prev => [...prev, graphWithId]);
-    setGraphCount(id);
+    let finalName=newGraph.name.trim()||`Graph ${graphCount + 1}`;
+    const existingNames=graphs.map(g =>g.name);
+if (existingNames.includes(finalName)) {
+      let counter = 1;
+while (existingNames.includes(`${finalName}.${counter}`)) {
+        counter++;
+  }
+  finalName=`${finalName}.${counter}`;
+   }
+    const id=graphCount + 1;
+  const graphWithId={...newGraph, name:finalName, id, isVisible:true};
+ setGraphs(prev => [...prev, graphWithId]);
+   setGraphCount(id);
   };
 
   const removeGraph = (id: number) => {
