@@ -40,7 +40,7 @@ function App() {
     let shouldCenter = false;
 
     if (centerMode === 'always') shouldCenter = true;
-    if (centerMode === 'if-switch' && (focusedGraphId !== id || !graph.isVisible)) shouldCenter = true;
+    if (centerMode === 'if-switch') shouldCenter = true; // Always center on explicit content click, even if already focused
 
     // 2. Ensure visible (if centering or focusing via sidebar imply expansion?)
     // User said: "When an minimized graph is clicked, it should expand and be centered."
