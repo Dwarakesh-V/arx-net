@@ -18,7 +18,7 @@ interface GraphWindowProps {
   edges: Edge[];
   isDirected: boolean;
   isWeighted: boolean;
-  onFocus: () => void;
+  onFocus: (shouldCenter?: boolean) => void;
   onClose: () => void;
   onMinimize: () => void;
   onAddEdge: (source: string, target: string, weight: number) => void;
@@ -76,7 +76,8 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   const handleDragStart = (e: React.MouseEvent) => {
     if (isFullScreen) return;
     e.preventDefault();
-    onFocus();
+    e.stopPropagation(); // Prevent bubbling to container click
+    onFocus(false); // Don't center on drag
     const currentX = containerRef.current?.offsetLeft || 0;
     const currentY = containerRef.current?.offsetTop || 0;
     const startMouseX = e.clientX;
@@ -334,7 +335,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
         zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10),
         overflow: 'hidden', transition: 'height 0.2s, width 0.2s',
       }}
-      onMouseDown={() => { onFocus(); setContextMenu(null); }}
+      onMouseDown={() => { onFocus(true); setContextMenu(null); }}
     >
       <div
         ref={headerRef}
