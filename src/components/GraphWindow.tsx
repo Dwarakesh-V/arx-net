@@ -522,6 +522,18 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
             {contextMenu.type === 'canvas' && (
               !isAddingNode ? (
                 <>
+                  <button onClick={() => {
+                    onFocus();
+                    const parent = containerRef.current?.closest('.main-workspace');
+                    if (parent) {
+                      const pW = parent.clientWidth;
+                      const pH = parent.clientHeight;
+                      const w = typeof position.width === 'number' ? position.width : 600;
+                      const h = typeof position.height === 'number' ? position.height : 450;
+                      setPosition({ ...position, x: (pW - w) / 2, y: (pH - h) / 2 });
+                    }
+                    setContextMenu(null);
+                  }}>Focus</button>
                   <button onClick={() => setIsAddingNode(true)}>Add Vertex</button>
                   <hr style={{ border: 'none', borderTop: '1px solid #444', margin: '4px 0' }} />
                   <button onClick={handleSavePNG}>Save as PNG</button>
