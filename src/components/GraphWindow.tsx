@@ -41,7 +41,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
     x: initialX, y: initialY, width: initialWidth || 600, height: initialHeight || 450
   });
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [preFullScreenPos, setPreFullScreenPos] = useState(position);
+  // Pre-full screen position not used, removed to fix lint warning
 
   // Popup States
   const [isAddingEdge, setIsAddingEdge] = useState(false);
@@ -55,7 +55,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   // --- ALGORITHM STATE ---
   const [selectedAlgo, setSelectedAlgo] = useState('');
   const [startNodeInput, setStartNodeInput] = useState('');
-  const [algoResult, setAlgoResult] = useState<React.ReactNode | null>(null);
+  const [algoResults, setAlgoResults] = useState<{ content: React.ReactNode; timestamp: string }[]>([]);
   const [showResultBoard, setShowResultBoard] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,7 +116,6 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
   const toggleFullScreen = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isFullScreen) setPreFullScreenPos(position);
     setIsFullScreen(!isFullScreen);
   };
 
@@ -154,26 +153,29 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   // --- ALGORITHM LOGIC ---
   const handleRunAlgorithm = () => {
     if (!selectedAlgo) return;
-    if (nodes.length === 0) {
-      setAlgoResult("Graph is empty.");
+
+    const addResultToHistory = (result: React.ReactNode) => {
+      setAlgoResults(prev => [{
+        content: result,
+        timestamp: new Date().toLocaleTimeString()
+      }, ...prev]);
       setShowResultBoard(true);
+    };
+
+    if (nodes.length === 0) {
+      addResultToHistory("Graph is empty.");
       return;
     }
 
-    // Default start node to first node if empty
     const start = startNodeInput.trim() || nodes[0].id;
-
-    // Validate Start Node if needed
     if (['BFS', 'DFS', 'Dijkstra'].includes(selectedAlgo)) {
       if (!vertexExists(nodes, start)) {
-        setAlgoResult(<span style={{ color: 'red' }}>Error: Start node "{start}" does not exist.</span>);
-        setShowResultBoard(true);
+        addResultToHistory(<span style={{ color: 'red' }}>Error: Start node "{start}" does not exist.</span>);
         return;
       }
     }
 
     let resultUI: React.ReactNode = null;
-
     try {
       switch (selectedAlgo) {
         case 'BFS':
@@ -224,7 +226,6 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           break;
 
         case 'MST':
-          // MST is for Undirected Weighted graphs
           if (isDirected) {
             resultUI = <span style={{ color: 'orange' }}>Note: MST is usually defined for undirected graphs. Result might be incorrect for directed graphs.</span>;
           }
@@ -273,8 +274,9 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
       resultUI = <span style={{ color: 'red' }}>Error: {e.message}</span>;
     }
 
-    setAlgoResult(resultUI);
-    setShowResultBoard(true);
+    if (resultUI) {
+      addResultToHistory(resultUI);
+    }
   };
 
 
@@ -374,8 +376,8 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
         onDoubleClick={toggleFullScreen}
         style={{ cursor: 'move' }}
       >
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', overflow: 'hidden' }}>
-          <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', marginRight: '5px' }}>{title}</span>
+        <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{title}</span>
 
           <label style={{ fontSize: '0.8em', display: 'flex', alignItems: 'center' }}>
             <input type="checkbox" checked={useForce} onChange={(e) => setUseForce(e.target.checked)} style={{ marginRight: '3px' }} /> Force
@@ -390,6 +392,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
               value={selectedAlgo}
               onChange={(e) => setSelectedAlgo(e.target.value)}
               onMouseDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
               style={{ background: '#222', color: '#fff', border: '1px solid #444', fontSize: '0.8em', padding: '2px' }}
             >
               <option value="">Algo...</option>
@@ -408,12 +411,14 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
                 value={startNodeInput}
                 onChange={(e) => setStartNodeInput(e.target.value)}
                 onMouseDown={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
                 style={{ width: '60px', background: '#222', color: '#fff', border: '1px solid #444', fontSize: '0.8em', padding: '2px' }}
               />
             )}
 
             <button
               onClick={(e) => { e.stopPropagation(); handleRunAlgorithm(); }}
+              onDoubleClick={(e) => e.stopPropagation()}
               disabled={!selectedAlgo}
               style={{
                 fontSize: '0.8em',
@@ -427,10 +432,30 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
             >
               ▶
             </button>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowResultBoard(!showResultBoard); }}
+              onDoubleClick={(e) => e.stopPropagation()}
+              title={showResultBoard ? "Hide Results History" : "Show Results History"}
+              style={{
+                fontSize: '0.8em',
+                cursor: 'pointer',
+                background: showResultBoard ? 'var(--accent)' : '#444',
+                color: showResultBoard ? '#000' : '#fff',
+                border: 'none',
+                padding: '2px 8px',
+                borderRadius: '2px',
+                marginLeft: '2px',
+                flexShrink: 0,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {showResultBoard ? "Hide" : "Results"}
+            </button>
           </div>
         </div>
 
-        <div className="window-controls" style={{ display: 'flex', gap: '5px' }}>
+        <div className="window-controls" style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
           <button onClick={minimizeWindow} title="Minimize">_</button>
           <button onClick={toggleFullScreen} title="Toggle Fullscreen">{isFullScreen ? '↙' : '↗'}</button>
           <button onClick={(e) => { e.stopPropagation(); onClose(); }} title="Close" className="close-btn">✕</button>
@@ -469,11 +494,23 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           >
             <button
               onClick={() => setShowResultBoard(false)}
-              style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2em' }}
+              style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2em', zIndex: 1 }}
             >
               ×
             </button>
-            {algoResult}
+            {algoResults.length === 0 ? (
+              <div style={{ color: '#666', textAlign: 'center', marginTop: '20px' }}>No results yet. Run an algorithm to see output.</div>
+            ) : (
+              algoResults.map((res, i) => (
+                <div key={i} style={{ borderBottom: i < algoResults.length - 1 ? '1px solid #333' : 'none', paddingBottom: '15px', marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', color: 'var(--accent)', marginBottom: '5px' }}>
+                    <span>Run #{algoResults.length - i}</span>
+                    <span style={{ color: '#888' }}>{res.timestamp}</span>
+                  </div>
+                  {res.content}
+                </div>
+              ))
+            )}
           </div>
         )}
 
