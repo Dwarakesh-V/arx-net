@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GraphCanvas } from './GraphCanvas';
 import type { Node, Edge } from '../types';
 import { getSnapPosition } from '../lib/layoutUtils';
@@ -18,7 +18,7 @@ interface GraphWindowProps {
   edges: Edge[];
   isDirected: boolean;
   isWeighted: boolean;
-  onFocus: () => void;
+  onFocus: (shouldCenter?: boolean) => void;
   onClose: () => void;
   onMinimize: () => void;
   onAddEdge: (source: string, target: string, weight: number) => void;
@@ -60,6 +60,7 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
   const [useForce, setUseForce] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
@@ -72,25 +73,40 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
     setPosition({ x: initialX, y: initialY, width: initialWidth || 600, height: initialHeight || 450 });
   }, [initialX, initialY, initialWidth, initialHeight]);
 
+  const [isResizing, setIsResizing] = useState(false);
+
   // --- Handlers (Drag, Resize, etc.) ---
   const handleDragStart = (e: React.MouseEvent) => {
     if (isFullScreen) return;
     e.preventDefault();
-    onFocus();
+    e.stopPropagation(); // Prevent bubbling to container click
+    onFocus(false); // Don't center on drag
     const currentX = containerRef.current?.offsetLeft || 0;
     const currentY = containerRef.current?.offsetTop || 0;
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const dx = moveEvent.clientX - startMouseX;
-      const dy = moveEvent.clientY - startMouseY;
-      const parent = (moveEvent.target as HTMLElement).closest('.main-workspace');
-      const parentW = parent ? parent.clientWidth : window.innerWidth;
-      const parentH = parent ? parent.clientHeight : window.innerHeight;
-      const snapped = getSnapPosition(currentX + dx, currentY + dy, isSnapped, viewMode, parentW, parentH);
-      setPosition(prev => ({ ...prev, x: snapped.x, y: snapped.y }));
+      if (rafRef.current) return;
+      const moveX = moveEvent.clientX; // Capture values
+      const moveY = moveEvent.clientY;
+      const target = moveEvent.target as HTMLElement;
+
+      rafRef.current = requestAnimationFrame(() => {
+        const dx = moveX - startMouseX;
+        const dy = moveY - startMouseY;
+        const parent = target.closest('.main-workspace');
+        const parentW = parent ? parent.clientWidth : window.innerWidth;
+        const parentH = parent ? parent.clientHeight : window.innerHeight;
+        const snapped = getSnapPosition(currentX + dx, currentY + dy, isSnapped, viewMode, parentW, parentH);
+        setPosition(prev => ({ ...prev, x: snapped.x, y: snapped.y }));
+        rafRef.current = null;
+      });
     };
     const handleMouseUp = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -106,13 +122,26 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
 
   const handleResizeStart = (e: React.MouseEvent) => {
     e.stopPropagation(); e.preventDefault();
+    setIsResizing(true);
     const startX = e.clientX; const startY = e.clientY;
     const startW = containerRef.current?.offsetWidth || 600;
     const startH = containerRef.current?.offsetHeight || 450;
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      setPosition(prev => ({ ...prev, width: Math.max(300, startW + (moveEvent.clientX - startX)), height: Math.max(200, startH + (moveEvent.clientY - startY)) }));
+      if (rafRef.current) return;
+      const moveX = moveEvent.clientX;
+      const moveY = moveEvent.clientY;
+
+      rafRef.current = requestAnimationFrame(() => {
+        setPosition(prev => ({ ...prev, width: Math.max(300, startW + (moveX - startX)), height: Math.max(200, startH + (moveY - startY)) }));
+        rafRef.current = null;
+      });
     };
     const handleMouseUp = () => {
+      setIsResizing(false);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -318,9 +347,10 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   };
 
   // ... Context Menu Handlers ...
-  const handleNodeContextMenu = (e: React.MouseEvent, n: any) => { e.preventDefault(); setIsAddingEdge(false); setIsEditingWeight(false); setEdgeTarget(''); setEdgeWeight(1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n }); };
-  const handleEdgeContextMenu = (e: React.MouseEvent, edge: any) => { e.preventDefault(); setIsAddingEdge(false); setIsAddingNode(false); setIsEditingWeight(false); setEditWeightVal(edge.weight || 1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge }); };
-  const handleCanvasContextMenu = (e: React.MouseEvent) => { e.preventDefault(); setIsAddingNode(false); setIsEditingWeight(false); setNewNodeId(''); setContextMenu({ x: e.clientX, y: e.clientY, type: 'canvas', data: null }); };
+  // ... Context Menu Handlers ...
+  const handleNodeContextMenu = useCallback((e: React.MouseEvent, n: any) => { e.preventDefault(); setIsAddingEdge(false); setIsEditingWeight(false); setEdgeTarget(''); setEdgeWeight(1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'node', data: n }); }, []);
+  const handleEdgeContextMenu = useCallback((e: React.MouseEvent, edge: any) => { e.preventDefault(); setIsAddingEdge(false); setIsAddingNode(false); setIsEditingWeight(false); setEditWeightVal(edge.weight || 1); setContextMenu({ x: e.clientX, y: e.clientY, type: 'edge', data: edge }); }, []);
+  const handleCanvasContextMenu = useCallback((e: React.MouseEvent) => { e.preventDefault(); setIsAddingNode(false); setIsEditingWeight(false); setNewNodeId(''); setContextMenu({ x: e.clientX, y: e.clientY, type: 'canvas', data: null }); }, []);
 
 
   return (
@@ -332,9 +362,10 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
         left: isFullScreen ? 0 : position.x, top: isFullScreen ? 0 : position.y,
         width: isFullScreen ? '100vw' : position.width, height: isFullScreen ? '100vh' : position.height,
         zIndex: isFullScreen ? 1000 : (isActive ? 100 : 10),
-        overflow: 'hidden', transition: 'height 0.2s, width 0.2s',
+        overflow: 'hidden',
+        transition: isResizing ? 'none' : 'height 0.2s, width 0.2s',
       }}
-      onMouseDown={() => { onFocus(); setContextMenu(null); }}
+      onMouseDown={() => { onFocus(false); setContextMenu(null); }}
     >
       <div
         ref={headerRef}

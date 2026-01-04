@@ -167,6 +167,13 @@ localStorage.setItem('arx_net_graph_count',graphCount.toString());
     }));
   };
 
+  const updateGraphPosition = (graphId: number, x: number, y: number) => {
+    setGraphs(prev => prev.map(g => {
+      if (g.id !== graphId) return g;
+      return { ...g, x, y };
+    }));
+  };
+
   return {
     graphs,
     graphCount,
@@ -187,6 +194,7 @@ localStorage.setItem('arx_net_graph_count',graphCount.toString());
     deleteEdge,
     deleteVertex,
     addVertex,
-    updateEdgeWeight
+    updateEdgeWeight,
+    updateGraphPosition
   };
 };
