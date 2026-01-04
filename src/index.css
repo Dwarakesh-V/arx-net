@@ -145,7 +145,7 @@ img {
     display: flex;
     flex-direction: column;
     border-right: 1px solid #333;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
     /* Hide content during resize */
 
@@ -219,15 +219,13 @@ img {
 
 /* Override the default .outliner to allow full height expansion */
 .outliner {
-    /* We overwrite the previous 'margin-top: auto' so it fills the space */
-    margin-top: 0 !important;
+    /* Ensure it fills remaining space in the sidebar */
+    flex: 1;
+    min-height: 200px;
     border-top: 1px solid #333;
     padding: 0;
-    /* Remove padding so scrollbar hits the edge */
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow: hidden;
 }
 
 .outliner-header {

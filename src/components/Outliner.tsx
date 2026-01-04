@@ -57,7 +57,7 @@ export const Outliner: React.FC<OutlinerProps> = ({
   };
 
   return (
-    <div className="outliner" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="outliner" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
 
       {/* --- Toolbar Header (Single Row Layout) --- */}
       <div className="outliner-header" style={{ flexShrink: 0, paddingBottom: '5px' }}>
