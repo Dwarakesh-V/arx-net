@@ -38,6 +38,7 @@ localStorage.setItem('arx_net_graph_count',graphCount.toString());
     const graphWithId = { ...newGraph, name: finalName, id, isVisible: true };
     setGraphs(prev => [...prev, graphWithId]);
     setGraphCount(id);
+    return id;
   };
 
   const removeGraph = (id: number) => {

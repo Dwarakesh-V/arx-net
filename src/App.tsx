@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './index.css';
 
 // --- Import Components ---
@@ -27,7 +27,6 @@ function App() {
   const [focusedGraphId, setFocusedGraphId] = useState<number | null>(null);
 
   const mainRef = useRef<HTMLElement>(null);
-
   // 2. Handlers
 
   // Helper to Focus and optionally Center
@@ -68,6 +67,19 @@ function App() {
     // 4. Set Focus
     setFocusedGraphId(id);
   };
+
+  const prevGraphsLength = useRef(graphs.length);
+
+  // Auto-focus and center newly added graphs
+  useEffect(() => {
+    if (graphs.length > prevGraphsLength.current) {
+      const lastGraph = graphs[graphs.length - 1];
+      if (lastGraph) {
+        handleFocus(lastGraph.id, 'always');
+      }
+    }
+    prevGraphsLength.current = graphs.length;
+  }, [graphs.length]);
 
   const handleNewGraph = (data: any) => {
     // Parse input
@@ -216,6 +228,12 @@ function App() {
                 onDeleteVertex={(nodeId) => { deleteVertex(graph.id, nodeId); }}
                 onAddVertex={(newNode, x, y) => { addVertex(graph.id, newNode, x, y); }}
                 onUpdateEdgeWeight={(edgeId, newWeight) => { updateEdgeWeight(graph.id, edgeId, newWeight); }}
+                onCreateNewGraph={(data) => {
+                  addGraph({
+                    ...data,
+                    isVisible: true
+                  });
+                }}
                 nodes={graph.nodes}
                 edges={graph.edges}
                 isDirected={graph.isDirected}
