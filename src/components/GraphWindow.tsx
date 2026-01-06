@@ -26,6 +26,13 @@ interface GraphWindowProps {
   onDeleteEdge: (edgeId: string) => void;
   onAddVertex: (nodeId: string, x: number, y: number) => void;
   onUpdateEdgeWeight: (edgeId: string, newWeight: number) => void;
+  onCreateNewGraph: (data: {
+    name: string;
+    nodes: Node[];
+    edges: Edge[];
+    isDirected: boolean;
+    isWeighted: boolean;
+  }) => void;
 }
 
 export const GraphWindow: React.FC<GraphWindowProps> = ({
@@ -33,7 +40,8 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
   isActive, isSnapped,
   nodes, edges, isDirected, isWeighted, viewMode,
   onFocus, onClose, onMinimize,
-  onAddEdge, onDeleteVertex, onDeleteEdge, onAddVertex, onUpdateEdgeWeight
+  onAddEdge, onDeleteVertex, onDeleteEdge, onAddVertex, onUpdateEdgeWeight,
+  onCreateNewGraph
 }) => {
 
   // --- Local State ---
@@ -231,6 +239,15 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
           }
           const mstRes = mst(edges, nodes);
           const totalWeight = mstRes.reduce((acc, curr) => acc + (curr.weight || 0), 0);
+
+          onCreateNewGraph({
+            name: `${title}_MST`,
+            nodes: JSON.parse(JSON.stringify(nodes)),
+            edges: mstRes,
+            isDirected: false,
+            isWeighted: true
+          });
+
           resultUI = (
             <div>
               {resultUI}
@@ -247,6 +264,12 @@ export const GraphWindow: React.FC<GraphWindowProps> = ({
               </ul>
             </div>
           );
+          // For MST, we don't force show the result board because we opened a new window
+          setAlgoResults(prev => [{
+            content: resultUI,
+            timestamp: new Date().toLocaleTimeString()
+          }, ...prev]);
+          return;
           break;
 
         case 'TopologicalSort':
