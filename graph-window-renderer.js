@@ -134,7 +134,7 @@ function disableForceSimulation(simulation) {
 }
 
 // Function to even spaces nodes in a circle
-function positionNodesInCircle(nodes, simulation, width, height, edges = []) {
+function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
     disableForceSimulation(simulation);
     simulation.alphaDecay(1);
     simulation.alphaTarget(0);
@@ -1465,7 +1465,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* End of graph drawing */
 
     /* Functions to update positions */
-    positionNodesInCircle(nodes, simulation, width, height, edgesInput); // Initial call to generate the graph
+    autoLayoutNodes(nodes, simulation, width, height, edgesInput); // Initial call to generate the graph
     // Apply positions to nodes
     node.attr('cx', d => d.x).attr('cy', d => d.y);
     adjustViewBox(svg, nodes, grid); // Initial call to center the graph
@@ -1478,7 +1478,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* Auto-rearrange nodes functionality */
     rearrangeNodes.addEventListener('click', () => {
-        positionNodesInCircle(nodes, simulation, width, height, edgesInput);
+        autoLayoutNodes(nodes, simulation, width, height, edgesInput);
         // Apply positions to nodes
         node.attr('cx', d => d.x).attr('cy', d => d.y);
 
@@ -1488,7 +1488,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         adjustViewBox(svg, nodes, grid);
         drawGrid(svg, grid);
 
-        // positionNodesInCircle sets the simulation forces to null, enabling it based on use force checkbox
+        // autoLayoutNodes sets the simulation forces to null, enabling it based on use force checkbox
         simulation.alphaDecay(1);
         simulation.alphaTarget(0);
         if (useForceCheckbox.checked) {
