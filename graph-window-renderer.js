@@ -134,17 +134,96 @@ function disableForceSimulation(simulation) {
 }
 
 // Function to even spaces nodes in a circle
-function positionNodesInCircle(nodes, simulation, width, height) {
-    disableForceSimulation(simulation); // Disable force simulation when auto-rearranging nodes
+function positionNodesInCircle(nodes, simulation, width, height, edges = []) {
+    disableForceSimulation(simulation);
     simulation.alphaDecay(1);
     simulation.alphaTarget(0);
-    radius = 30 * nodes.length;
-    const angleStep = (2 * Math.PI) / nodes.length;
 
-    nodes.forEach((node, index) => {
-        node.x = width / 2 + radius * Math.cos(index * angleStep);
-        node.y = height / 2 + radius * Math.sin(index * angleStep);
-    });
+    // A simple graph is a tree if E = V - 1.
+    // (Assuming the graph is fully connected based on the generator functions).
+    const isTreeInput = isTree(edges)
+
+    if (isTreeInput) {
+        edges=parseEdges(edges)
+
+        // Helper to get node identifiers safely
+        const getId = (n) => n.id !== undefined ? n.id : n.label || n.name;
+        const getEdgeId = (n) => typeof n === 'object' ? getId(n) : n;
+
+        // Calculate in-degrees to find the root
+        const inDegree = new Map(nodes.map(n => [getId(n), 0]));
+        
+        edges.forEach(e => {
+            const targetId = getEdgeId(e.target);
+            if (inDegree.has(targetId)) {
+                inDegree.set(targetId, inDegree.get(targetId) + 1);
+            }
+        });
+
+        // Identify the root (in-degree of 0). Fallback to 'root' named node, or just the first node.
+        let rootId = null;
+        for (const [id, deg] of inDegree.entries()) {
+            if (deg === 0) {
+                rootId = id;
+                break;
+            }
+        }
+        if (!rootId) {
+            const rootNode = nodes.find(n => getId(n) === 'rt');
+            rootId = rootNode ? getId(rootNode) : getId(nodes[0]);
+        }
+
+        // BFS to assign nodes to vertical levels
+        const levels = [];
+        const queue = [{ id: rootId, depth: 0 }];
+        const visited = new Set([rootId]);
+
+        while (queue.length > 0) {
+            const { id, depth } = queue.shift();
+            
+            if (!levels[depth]) levels[depth] = [];
+            levels[depth].push(id);
+
+            // Traverse edges to find children
+            edges.forEach(e => {
+                const s = getEdgeId(e.source);
+                const t = getEdgeId(e.target);
+                
+                if (s === id && !visited.has(t)) {
+                    visited.add(t);
+                    queue.push({ id: t, depth: depth + 1 });
+                } else if (t === id && !visited.has(s)) {
+                    visited.add(s);
+                    queue.push({ id: s, depth: depth + 1 });
+                }
+            });
+        }
+
+        // Calculate coordinates based on hierarchy
+        const maxDepth = levels.length;
+        const verticalSpacing = height / (maxDepth + 1);
+
+        levels.forEach((levelNodes, depth) => {
+            const horizontalSpacing = width / (levelNodes.length + 1);
+            
+            levelNodes.forEach((nodeId, index) => {
+                const node = nodes.find(n => getId(n) === nodeId);
+                if (node) {
+                    node.x = horizontalSpacing * (index + 1);
+                    node.y = verticalSpacing * (depth + 1);
+                }
+            });
+        });
+
+    } else {
+        const radius = 30 * nodes.length;
+        const angleStep = (2 * Math.PI) / nodes.length;
+
+        nodes.forEach((node, index) => {
+            node.x = width / 2 + radius * Math.cos(index * angleStep);
+            node.y = height / 2 + radius * Math.sin(index * angleStep);
+        });
+    }
 }
 
 /* Drag Functions - Move nodes */
@@ -794,10 +873,10 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             document.body.appendChild(menu);
                         });
 
-                    // 4. Remove old nodes (optional, not always needed)
+                    // Remove old nodes (optional, not always needed)
                     nodeSelection.exit().remove();
 
-                    // 5. Merge new and existing nodes if needed later
+                    // Merge new and existing nodes if needed later
                     node = nodeEnter.merge(nodeSelection);
 
                     // Update labels
@@ -815,7 +894,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                         .style('pointer-events', 'none')
                         .style('font-weight', 'bold');
 
-                    // EXIT: Remove labels for removed nodes (optional)
                     // labelSelection.exit().remove();
 
                     // MERGE: Combine enter and update selections
@@ -1387,7 +1465,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* End of graph drawing */
 
     /* Functions to update positions */
-    positionNodesInCircle(nodes, simulation, width, height); // Initial call to generate the graph
+    positionNodesInCircle(nodes, simulation, width, height, edgesInput); // Initial call to generate the graph
     // Apply positions to nodes
     node.attr('cx', d => d.x).attr('cy', d => d.y);
     adjustViewBox(svg, nodes, grid); // Initial call to center the graph
@@ -1400,7 +1478,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* Auto-rearrange nodes functionality */
     rearrangeNodes.addEventListener('click', () => {
-        positionNodesInCircle(nodes, simulation, width, height);
+        positionNodesInCircle(nodes, simulation, width, height, edgesInput);
         // Apply positions to nodes
         node.attr('cx', d => d.x).attr('cy', d => d.y);
 

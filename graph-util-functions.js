@@ -314,11 +314,152 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
     addGraph();
 }
 
-generateRandomButton.addEventListener('click', () => {
+function generateRandomTree(vertexCount, options = {}) {
+    const {
+        minWeightValue = parseInt(minWeight.value),
+        maxWeightValue = parseInt(maxWeight.value),
+        isDirectedValue = isDirected.checked
+    } = options;
+
+    if (vertexCount <= 0) {
+        alert("Vertex count must be greater than 0.");
+        graphInputField.value = "";
+        return;
+    }
+
+    const edgeList = [];
+    
+    // Initialize vertices. Index 0 is explicitly "root".
+    const vertices = vertexCount > 0 ? ['rt'] : [];
+    for (let i = 1; i < vertexCount; i++) {
+        vertices.push(indexToLabel(i));
+    }
+
+    if (vertexCount > 1) {
+        const treeNodes = ['rt'];
+        const remaining = [...vertices.slice(1)];
+
+        // Shuffle the remaining vertices to randomize attachment order
+        for (let i = remaining.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+        }
+
+        // Attach each remaining vertex to a random node already in the tree
+        for (const v of remaining) {
+            let u = treeNodes[Math.floor(Math.random() * treeNodes.length)];
+            let target = v;
+
+            // If undirected, randomly flip the visual source and target
+            // (If directed, we strictly flow u -> target so 'root' remains the ultimate source)
+            if (!isDirectedValue && Math.random() > 0.5) {
+                [u, target] = [target, u];
+            }
+
+            const weight = Math.floor(Math.random() * (maxWeightValue - minWeightValue + 1)) + minWeightValue;
+            
+            edgeList.push({ source: u, target: target, weight });
+            treeNodes.push(v);
+        }
+    }
+
+    graphInputField.value = stringifyEdges(edgeList);
+    graphInputVertices.value = vertices.join(', ');
+    addGraph();
+}
+
+generateRandomGraphButton.addEventListener('click', () => {
     const vertexCount = vertexInput.value;
     const edgeCount = edgeInput.value;
     generateRandomGraph(vertexCount, edgeCount);
 });
+generateRandomTreeButton.addEventListener('click',() => {
+    const vertexCount = vertexInput.value;
+    generateRandomTree(vertexCount);
+});
+
+function isTree(edgesInput, directed = true) {
+    const edges = parseEdges(edgesInput, directed);
+    if (!edges) return false; // Fail gracefully if parsing returned null
+
+    const vertices = new Set();
+    edges.forEach(edge => {
+        if (edge.source) vertices.add(edge.source);
+        if (edge.target) vertices.add(edge.target);
+    });
+
+    if (vertices.size <= 1) return edges.length === 0;
+
+    // Rule 1: A tree must have exactly V - 1 edges
+    if (edges.length !== vertices.size - 1) {
+        return false; 
+    }
+
+    const adjList = new Map();
+    vertices.forEach(v => adjList.set(v, []));
+
+    if (directed) {
+        const inDegrees = new Map();
+        vertices.forEach(v => inDegrees.set(v, 0));
+
+        edges.forEach(edge => {
+            adjList.get(edge.source).push(edge.target);
+            inDegrees.set(edge.target, inDegrees.get(edge.target) + 1);
+        });
+
+        let root = null;
+        let rootCount = 0;
+
+        for (const [v, deg] of inDegrees.entries()) {
+            if (deg === 0) {
+                root = v;
+                rootCount++;
+            } else if (deg > 1) {
+                return false; // A node in a tree can only have one parent
+            }
+        }
+
+        if (rootCount !== 1) return false;
+
+        const visited = new Set([root]);
+        const queue = [root];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            for (const neighbor of adjList.get(current)) {
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    queue.push(neighbor);
+                }
+            }
+        }
+
+        return visited.size === vertices.size;
+
+    } else {
+        // Undirected graph population
+        edges.forEach(edge => {
+            adjList.get(edge.source).push(edge.target);
+            adjList.get(edge.target).push(edge.source);
+        });
+
+        const startNode = vertices.values().next().value;
+        const visited = new Set([startNode]);
+        const queue = [startNode];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            for (const neighbor of adjList.get(current)) {
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    queue.push(neighbor);
+                }
+            }
+        }
+
+        return visited.size === vertices.size;
+    }
+}
 
 function handleGraphNameInput(event, nameInput) {
     if (event.key !== 'Enter') return;

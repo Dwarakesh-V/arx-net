@@ -11,7 +11,8 @@ const minWeight = document.getElementById('minWeight'); // Minimum weight input
 const maxWeight = document.getElementById('maxWeight'); // Maximum weight input
 const vertexInput = document.getElementById('numNodes'); // Number of vertices input
 const edgeInput = document.getElementById('numEdges'); // Number of edges input
-const generateRandomButton = document.getElementById('generateRandomGraph'); // Generate random graph button
+const generateRandomGraphButton = document.getElementById('generateRandomGraph'); // Generate random graph button
+const generateRandomTreeButton = document.getElementById('generateRandomTree');
 
 const selfLoops = document.getElementById('selfLoops');
 const duplicateEdges = document.getElementById('duplicateEdges');
