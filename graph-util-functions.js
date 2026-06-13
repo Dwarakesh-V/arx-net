@@ -350,12 +350,6 @@ function generateRandomTree(vertexCount, options = {}) {
             let u = treeNodes[Math.floor(Math.random() * treeNodes.length)];
             let target = v;
 
-            // If undirected, randomly flip the visual source and target
-            // (If directed, we strictly flow u -> target so 'root' remains the ultimate source)
-            if (!isDirectedValue && Math.random() > 0.5) {
-                [u, target] = [target, u];
-            }
-
             const weight = Math.floor(Math.random() * (maxWeightValue - minWeightValue + 1)) + minWeightValue;
             
             edgeList.push({ source: u, target: target, weight });
@@ -380,7 +374,8 @@ generateRandomTreeButton.addEventListener('click',() => {
 
 function isTree(edgesInput, directed = true) {
     const edges = parseEdges(edgesInput, directed);
-    if (!edges) return false; // Fail gracefully if parsing returned null
+    if (!edges) return false;
+    console.log(edges)
 
     const vertices = new Set();
     edges.forEach(edge => {
