@@ -134,12 +134,34 @@ function snapPosition(x, y) {
 
 // Parse edges input into an array of edge objects
 function parseEdges(edgesInput, directed = true) {
-    let edgesRaw = edgesInput.split(',').map(edge => {
+    // Split on commas, but ignore commas that are inside parentheses
+    // (needed because the paren format itself now uses commas: (a,b,5))
+    function splitTopLevel(input) {
+        const result = [];
+        let depth = 0;
+        let current = '';
+        for (const char of input) {
+            if (char === '(') depth++;
+            if (char === ')') depth--;
+            if (char === ',' && depth === 0) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current);
+        return result.filter(s => s.trim() !== ''); // drop empty segments (e.g. trailing comma)
+    }
+
+    let edgesRaw = splitTopLevel(edgesInput).map(edge => {
         edge = edge.trim();
 
         // Validate the edge format
-        const simpleFormat = /^([a-zA-Z0-9]{2})(\d*)$/; // Matches 'ab5'
-        const parenFormat = /^\(([a-zA-Z0-9]+)_([a-zA-Z0-9]+)(?:_(\d+))?\)$/; // Matches '(a_b_5)' and '(a_b)'
+        // Matches 'ab5', 'ab-2.5', '1250' (-> 1,2,w50), '12-2.5' (-> 1,2,w-2.5)
+        const simpleFormat = /^([a-zA-Z0-9]{2})(-?\d*\.?\d*)$/;
+        // Matches '(a,b,5)', '(a,b,-2.5)', '(a,b)'
+        const parenFormat = /^\(\s*([a-zA-Z0-9]+)\s*,\s*([a-zA-Z0-9]+)\s*(?:,\s*(-?\d*\.?\d*)\s*)?\)$/;
 
         let source, target, weight;
 
