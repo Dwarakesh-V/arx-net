@@ -8,6 +8,7 @@
 
     /* Global colors, can be changed for light mode */
     --accent: #ffc66d;
+    --tree-accent: #19a900;
     --accent-inverted: #003992;
     /* Buttons that contain images are inverted in color for visibility, this color will match accent when inverted */
     --bg-primary: #1d1d1d;
@@ -138,7 +139,7 @@ input[type="radio"]:hover {
 }
 
 input[type="radio"]:checked {
-    background-color: var(--accent);
+    background-color: var(--tree-accent);
 }
 
 input[type="radio"]:checked::before {
@@ -215,6 +216,7 @@ img {
 }
 
 #generateRandomTree {
+    background-color: var(--tree-accent);
     margin-top: 0px;
 }
 
