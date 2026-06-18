@@ -129,14 +129,14 @@ function performResize(event, { startX, startY, startWidth, startHeight, startLe
 }
 /* End of window resize functionality */
 
-function handleTopResizeMouseDown(event, methodsElement, container) {
+function handleTopResizeMouseDown(event, methodsElement, container, svgElement) {
     event.preventDefault();
 
     const startY = event.clientY;
     const startHeight = methodsElement.offsetHeight;
 
     function onTopResizeMouseMove(e) {
-        performTopResize(e, startY, startHeight, methodsElement, container);
+        performTopResize(e, startY, startHeight, methodsElement, container, svgElement);
     }
 
     function onTopResizeMouseUp() {
@@ -147,13 +147,14 @@ function handleTopResizeMouseDown(event, methodsElement, container) {
     document.addEventListener('mouseup', onTopResizeMouseUp, { once: true });
 }
 
-function performTopResize(event, startY, startHeight, methodsElement, container) {
+function performTopResize(event, startY, startHeight, methodsElement, container, svgElement) {
     const newHeight = startHeight - (event.clientY - startY);
     const minHeight = container.offsetHeight * 0.2;
     const maxHeight = container.offsetHeight * 0.9;
 
     if (newHeight >= minHeight && newHeight <= maxHeight) {
         methodsElement.style.height = `${newHeight}px`;
+        svgElement.style.height = `calc(100% - ${newHeight}px)`;
     }
 }
 

@@ -144,7 +144,7 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
     const isTreeInput = isTree(edges)
 
     if (isTreeInput) {
-        edges=parseEdges(edges)
+        edges = parseEdges(edges)
 
         // Helper to get node identifiers safely
         const getId = (n) => n.id !== undefined ? n.id : n.label || n.name;
@@ -152,7 +152,7 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
 
         // Calculate in-degrees to find the root
         const inDegree = new Map(nodes.map(n => [getId(n), 0]));
-        
+
         edges.forEach(e => {
             const targetId = getEdgeId(e.target);
             if (inDegree.has(targetId)) {
@@ -180,7 +180,7 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
 
         while (queue.length > 0) {
             const { id, depth } = queue.shift();
-            
+
             if (!levels[depth]) levels[depth] = [];
             levels[depth].push(id);
 
@@ -188,7 +188,7 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
             edges.forEach(e => {
                 const s = getEdgeId(e.source);
                 const t = getEdgeId(e.target);
-                
+
                 if (s === id && !visited.has(t)) {
                     visited.add(t);
                     queue.push({ id: t, depth: depth + 1 });
@@ -205,7 +205,7 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
 
         levels.forEach((levelNodes, depth) => {
             const horizontalSpacing = width / (levelNodes.length + 1);
-            
+
             levelNodes.forEach((nodeId, index) => {
                 const node = nodes.find(n => getId(n) === nodeId);
                 if (node) {
@@ -469,8 +469,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     headerSpan.appendChild(operationPanel);
 
     // Input Validation - Parse edges
-    edges = parseEdges(edgesInput, directed);
-    edgesRaw = parseEdges(edgesInput, directed);
+    let edges = parseEdges(edgesInput, directed);
+    let edgesRaw = parseEdges(edgesInput, directed);
     if (edges.length === 0) {
         return;
     }
@@ -489,7 +489,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         button.title = algorithm.title;
 
         button.addEventListener('click', () => {
-            handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, nameInput.value, methodsElement);
+            handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, nameInput.value, methodsElement, svgElement);
         });
         methodsDiv.appendChild(button);
     });
@@ -500,6 +500,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     methodsButton.addEventListener('click', (event) => {
         methodsDiv.style.left = `${methodsButton.offsetLeft}px`;
         methodsElement.style.display = 'none'; // Hide methodsElement if it is visible
+        svgElement.style.height = '100%';
         methodsDiv.style.display = methodsDiv.style.display === 'none' ? 'block' : 'none';
         methodsDiv.addEventListener('mouseleave', () => {
             methodsDiv.style.display = 'none';
@@ -560,7 +561,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     topResizeHandle.className = 'top-resize-handle';
     // Resizing logic
     topResizeHandle.addEventListener('mousedown', (e) => {
-        handleTopResizeMouseDown(e, methodsElement, container);
+        handleTopResizeMouseDown(e, methodsElement, container, svgElement);
     });
 
     // End of resizing for methodsElement
@@ -577,7 +578,14 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     methodsElementToggle.innerHTML = '&#9776'; // Hamburger menu
     methodsElementToggle.title = 'Toggle visibility for called methods on this graph';
     methodsElementToggle.addEventListener('click', () => {
-        methodsElement.style.display = methodsElement.style.display === 'block' ? 'none' : 'block';
+        if (methodsElement.style.display === 'block') {
+            methodsElement.style.display = 'none'
+            svgElement.style.height="100%";
+        } else {
+            methodsElement.style.display = 'block';
+            const meHeight = methodsElement.offsetHeight;
+            svgElement.style.height = `calc(100% - ${meHeight}px)`;
+        }
     })
     operationPanel.appendChild(methodsElementToggle);
 

@@ -25,7 +25,7 @@ function filterAlgorithms(algorithms, directed, weighted) {
     return applicableAlgorithms;
 }
 
-function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, displayName, methodsElement) {
+function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, displayName, methodsElement, svgElement) {
     const resultContainer = document.createElement('p');
     let result = null;
     let label = '';
@@ -98,6 +98,8 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
         resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} <br>`;
         methodsElement.appendChild(resultContainer);
         methodsElement.style.display = 'block';
+        const meHeight = methodsElement.offsetHeight;
+        svgElement.style.height = `calc(100% - ${meHeight}px)`;
         methodsElement.scrollTop = methodsElement.scrollHeight;
     } else {
         resultContainer.remove();
@@ -375,7 +377,6 @@ generateRandomTreeButton.addEventListener('click',() => {
 function isTree(edgesInput, directed = true) {
     const edges = parseEdges(edgesInput, directed);
     if (!edges) return false;
-    console.log(edges)
 
     const vertices = new Set();
     edges.forEach(edge => {

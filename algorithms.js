@@ -355,7 +355,6 @@ function mst(edges, weighted, graphName) {
 
     const startNode = Object.keys(graph)[0];
     if (!startNode) {
-        console.log("Graph is empty.");
         return;
     }
 
@@ -383,7 +382,6 @@ function mst(edges, weighted, graphName) {
     }
 
     let mstResult = '';
-    console.log("Minimum Spanning Tree:");
     for (const edge of mstEdges) {
         mstResult += `(${edge.source}_${edge.target}_${edge.weight}),`
     }
