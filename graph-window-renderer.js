@@ -580,7 +580,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     methodsElementToggle.addEventListener('click', () => {
         if (methodsElement.style.display === 'block') {
             methodsElement.style.display = 'none'
-            svgElement.style.height="100%";
+            svgElement.style.height = "100%";
         } else {
             methodsElement.style.display = 'block';
             const meHeight = methodsElement.offsetHeight;

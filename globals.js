@@ -2,7 +2,7 @@ const aboutBtn = document.getElementById('about');
 const aboutDiv = document.getElementById('aboutDiv');
 
 const cgb = document.getElementById('createGraphButton'); // Create graph button
-const graphGenMenu = document.getElementById('sourceInput') 
+const graphGenMenu = document.getElementById('sourceInput')
 
 const graphInputField = document.getElementById('edges'); // Edge list
 const graphInputVertices = document.getElementById('vertices'); // Vertices
@@ -17,6 +17,7 @@ const generateRandomTreeButton = document.getElementById('generateRandomTree');
 const selfLoops = document.getElementById('selfLoops');
 const duplicateEdges = document.getElementById('duplicateEdges');
 const isDirected = document.getElementById('directed');
+const treeTypeRadios = document.querySelectorAll('input[name="treeType"]');
 
 const outliner = document.querySelector('.outliner'); // Outliner - Contains created graphs
 

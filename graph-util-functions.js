@@ -320,7 +320,8 @@ function generateRandomTree(vertexCount, options = {}) {
     const {
         minWeightValue = parseInt(minWeight.value),
         maxWeightValue = parseInt(maxWeight.value),
-        isDirectedValue = isDirected.checked
+        isDirectedValue = isDirected.checked,
+        checkedTreeType = [...treeTypeRadios].find(radio => radio.checked)
     } = options;
 
     if (vertexCount <= 0) {
@@ -330,7 +331,8 @@ function generateRandomTree(vertexCount, options = {}) {
     }
 
     const edgeList = [];
-    
+    const treeType = checkedTreeType ? checkedTreeType.id : 'regular';
+
     // Initialize vertices. Index 0 is explicitly "root".
     const vertices = vertexCount > 0 ? ['rt'] : [];
     for (let i = 1; i < vertexCount; i++) {
@@ -338,7 +340,6 @@ function generateRandomTree(vertexCount, options = {}) {
     }
 
     if (vertexCount > 1) {
-        const treeNodes = ['rt'];
         const remaining = [...vertices.slice(1)];
 
         // Shuffle the remaining vertices to randomize attachment order
@@ -347,15 +348,74 @@ function generateRandomTree(vertexCount, options = {}) {
             [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
         }
 
-        // Attach each remaining vertex to a random node already in the tree
-        for (const v of remaining) {
-            let u = treeNodes[Math.floor(Math.random() * treeNodes.length)];
-            let target = v;
+        const getRandomWeight = () => Math.floor(Math.random() * (maxWeightValue - minWeightValue + 1)) + minWeightValue;
 
-            const weight = Math.floor(Math.random() * (maxWeightValue - minWeightValue + 1)) + minWeightValue;
-            
-            edgeList.push({ source: u, target: target, weight });
-            treeNodes.push(v);
+        if (treeType === 'regular') {
+            const treeNodes = ['rt'];
+            for (const v of remaining) {
+                let u = treeNodes[Math.floor(Math.random() * treeNodes.length)];
+                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
+                treeNodes.push(v);
+            }
+        }
+        else if (treeType === 'binary') {
+            const treeNodes = ['rt'];
+            const childrenCount = { 'rt': 0 };
+
+            for (const v of remaining) {
+                // Only allow attachment to nodes that have less than 2 children
+                const availableNodes = treeNodes.filter(node => childrenCount[node] < 2);
+                let u = availableNodes[Math.floor(Math.random() * availableNodes.length)];
+
+                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
+                treeNodes.push(v);
+
+                childrenCount[v] = 0;
+                childrenCount[u]++;
+            }
+        }
+        else if (treeType === 'binarySearch') {
+            // Simulate standard BST insertion logic to get a valid BST structure
+            const rootNode = { id: 'rt', val: Math.random(), left: null, right: null };
+
+            for (const v of remaining) {
+                let val = Math.random();
+                let curr = rootNode;
+                while (true) {
+                    if (val < curr.val) {
+                        if (!curr.left) {
+                            curr.left = { id: v, val: val, left: null, right: null };
+                            edgeList.push({ source: curr.id, target: v, weight: getRandomWeight() });
+                            break;
+                        }
+                        curr = curr.left;
+                    } else {
+                        if (!curr.right) {
+                            curr.right = { id: v, val: val, left: null, right: null };
+                            edgeList.push({ source: curr.id, target: v, weight: getRandomWeight() });
+                            break;
+                        }
+                        curr = curr.right;
+                    }
+                }
+            }
+        }
+        else if (treeType === 'avl' || treeType === 'redBlack') {
+            // AVL and RB are self-balancing
+            const balancedNodes = ['rt', ...remaining];
+
+            for (let i = 1; i < balancedNodes.length; i++) {
+                let parentIndex = Math.floor((i - 1) / 2);
+                let u = balancedNodes[parentIndex];
+                let v = balancedNodes[i];
+
+                let edge = { source: u, target: v, weight: getRandomWeight() };
+                // Red black coloring - Not in scope for now
+                // if (treeType === 'redBlack') {
+                //     edge.color = (Math.floor(Math.log2(i + 1)) % 2 === 0) ? 'red' : 'black';
+                // }
+                edgeList.push(edge);
+            }
         }
     }
 
@@ -369,7 +429,7 @@ generateRandomGraphButton.addEventListener('click', () => {
     const edgeCount = edgeInput.value;
     generateRandomGraph(vertexCount, edgeCount);
 });
-generateRandomTreeButton.addEventListener('click',() => {
+generateRandomTreeButton.addEventListener('click', () => {
     const vertexCount = vertexInput.value;
     generateRandomTree(vertexCount);
 });
@@ -388,7 +448,7 @@ function isTree(edgesInput, directed = true) {
 
     // Rule 1: A tree must have exactly V - 1 edges
     if (edges.length !== vertices.size - 1) {
-        return false; 
+        return false;
     }
 
     const adjList = new Map();

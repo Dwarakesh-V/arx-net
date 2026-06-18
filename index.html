@@ -24,7 +24,7 @@
                     value='AB7, AA6, BA9, AC5, AD3, BC4, BE6, CD2, CF8, DE5, DG7, EE2, EF3, EH4, FG6, FI7, GH2, HI5, HJ9, IJ4'
                     style='text-transform: uppercase;'>
                 <br>
-                <input type='checkbox' id='directed' onchange='updateMinMax()' checked>Directed <br>
+                <input type='checkbox' id='directed' onchange='updateMinMax()' checked>Directed
                 <input type='checkbox' id='weighted' checked>Weighted
                 <br>
                 <button id='generateGraph' onclick='addGraph()'>Generate Graph</button>
@@ -44,15 +44,22 @@
                     <label for='maxWeight'>Max weight:</label>
                     <input type='text' id='maxWeight' placeholder='Maximum weight' value='20'>
                 </div>
-                <input type='checkbox' id='connectedGraph'>Connected<br>
-                <input type='checkbox' id='selfLoops' onchange='updateMinMax()'>Self loops (Multigraph) <br>
-                <input type='checkbox' id='duplicateEdges' onchange='updateMinMax()'>Duplicate edges (Multigraph)
+                <input type='checkbox' id='connectedGraph'>Connected
+                <input type='checkbox' id='selfLoops' onchange='updateMinMax()'>Self loops
+                <input type='checkbox' id='duplicateEdges' onchange='updateMinMax()'>Duplicate edges
                 <br>
                 <p id='minMaxRec'>
                     Max edge count for current vertex count: <b id='maxRec' style='color: #ffc66d;'> 90 </b>
                 </p>
                 <button id='generateRandomGraph'>Generate random Graph</button>
-                <button id='generateRandomTree'>Generate random tree</button>
+                <button id='generateRandomTree'>Generate random tree</button><br>
+                <input type='radio' name='treeType' id='regular' title='Normal tree' checked />Reg
+                <input type='radio' name='treeType' id='binary'
+                    title='Binary tree (2 or less children per node)' />Binary
+                <input type='radio' name='treeType' id='binarySearch' title='Binary search tree' />BST
+                <input type='radio' name='treeType' id='avl' title='AVL tree (self balancing)' />AVL
+                <input type='radio' name='treeType' id='redBlack'
+                    title='Red black tree (self balancing with color)' />Red Black
             </div>
         </div>
         <hr style='color: #ccc;'>
@@ -121,9 +128,9 @@
 </body>
 <script src='D3.js'></script> <!--D3 library contains the necessary elements to generate and manipulate graphs -->
 <script src='globals.js'></script>
-<script src = 'container-functions.js'></script>
-<script src = 'svg-functions.js'></script>
-<script src = 'grid-render.js'></script>
+<script src='container-functions.js'></script>
+<script src='svg-functions.js'></script>
+<script src='grid-render.js'></script>
 <script src='graph-util-functions.js'></script>
 <script src='non-graph.js'></script>
 <script src='graph-layout-manager.js'></script>

@@ -85,7 +85,7 @@ function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false)
         const ctx = canvas.getContext('2d');
 
         // Optionally fill with white background
-        ctx.fillStyle = isTransparent? 'transparent' : '#1d1d1d';  // Or transparent if you prefer
+        ctx.fillStyle = isTransparent ? 'transparent' : '#1d1d1d';  // Or transparent if you prefer
         ctx.fillRect(0, 0, width, height);
 
         ctx.save();

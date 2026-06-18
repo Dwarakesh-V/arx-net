@@ -543,7 +543,7 @@ function BiconnectedComponents(edges) {
         for (let j = 0; j < bcc[i].length; j++) {
             bccResult += `(${bcc[i][j]}), `;
         }
-        bccResult = bccResult.slice(0, -2); 
+        bccResult = bccResult.slice(0, -2);
         bccResult += '}, ';
     }
     bccResult = bccResult.slice(0, -2);
