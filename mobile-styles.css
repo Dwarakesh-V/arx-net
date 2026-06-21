@@ -9,7 +9,6 @@
     }
 
     .container {
-        position: fixed !important;
         top: auto !important;
         right: 0 !important;
         bottom: 0 !important;
@@ -23,7 +22,6 @@
         overflow-x: hidden;
         box-shadow: 0 -4px 28px rgba(0, 0, 0, 0.6);
         z-index: 10 !important;
-        /* Collapsed: only the drag-handle pill peeks out */
         transform: translateY(calc(100% - 50px));
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -157,7 +155,7 @@
     /* Outliner icon buttons (#showHideAll, #clearAll, etc.) */
     .outliner button,
     h1 button {
-        width: 40px;
+        width: 20px;
         height: 20px;
     }
 
@@ -173,13 +171,6 @@
         font-size: 11px !important;
         padding: 6px 4px !important;
         min-width: 0;
-    }
-
-    /* Focus / show-hide / graph-modifier buttons inside the row */
-    .showHideDeleteDiv button {
-        width: 40px;
-        height: 10px;
-        flex-shrink: 0;
     }
 
     .graphContainer {
@@ -201,38 +192,6 @@
     /* Corner resize handles — useless on touch */
     .resize-handle {
         display: none !important;
-    }
-
-    .graphHeader {
-        display: flex;
-        flex-direction: column;
-        /* stack rows vertically */
-        align-items: stretch;
-        white-space: nowrap;
-        /* keep children from wrapping internally */
-        padding: 4px 6px 2px;
-        gap: 2px;
-        min-height: unset;
-        overflow: visible;
-    }
-
-    .graphHeader>span:first-of-type {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        /* hide scrollbar on Firefox */
-        gap: 4px;
-        padding: 4px 2px;
-        min-height: 40px;
-    }
-
-    .graphHeader>span:first-of-type::-webkit-scrollbar {
-        display: none;
-        /* hide scrollbar on Chrome/Safari */
     }
 
     .graphHeader>span:last-of-type {
@@ -284,9 +243,8 @@
     }
 
     .closeButtonME {
-        min-width: 40px;
-        min-height: 40px;
-        margin: 6px;
+        min-width: 20px;
+        min-height: 20px;
     }
 
     .floating-menu {
@@ -295,17 +253,13 @@
         min-width: 170px;
         padding: 6px;
         /* If JS places it too far right, clamp it */
-        right: auto;
-        /* Ensure it never starts past the right edge */
-        max-left: calc(100vw - 186px);
-        /* min-width + padding */
     }
 
     .floating-menu button {
-        height: 46px;
+        height: 20px;
         /* comfortable touch target */
         font-size: 12px;
-        padding: 8px 14px;
+        padding: 3px 6px;
         width: 100%;
     }
 
