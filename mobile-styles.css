@@ -1,10 +1,13 @@
 #mobileDrawerToggle {
     display: none;
 }
+
 @media (max-width: 768px) {
     body {
-        overflow: hidden;
+        /* overflow: hidden; */
+        font-size: 11px !important;
     }
+
     .container {
         position: fixed !important;
         top: auto !important;
@@ -39,6 +42,7 @@
         background: #555;
         margin: 10px auto 8px;
     }
+
     #mobileDrawerToggle {
         display: flex;
         align-items: center;
@@ -55,7 +59,7 @@
         padding: 10px 22px;
         font-size: 14px;
         font-weight: bold;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
         cursor: pointer;
         transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
         white-space: nowrap;
@@ -79,6 +83,7 @@
         filter: invert(1);
         transform: rotate(180deg);
     }
+
     #instructions {
         font-size: 1.1rem;
         margin: 6px 0 4px;
@@ -90,10 +95,12 @@
 
     .sourceInput input[type='text'] {
         width: 100% !important;
-        font-size: 16px; /* prevents iOS auto-zoom */
+        font-size: 12px;
+        /* prevents iOS auto-zoom */
         padding: 10px 12px;
         box-sizing: border-box;
     }
+
     input[type='checkbox'],
     input[type='radio'] {
         width: 20px;
@@ -101,30 +108,35 @@
         margin: 0 6px 4px 8px;
         cursor: pointer;
     }
+
     #generateGraph,
     #generateRandomGraph,
     #generateRandomTree {
-        font-size: 15px;
-        padding: 12px 14px;
+        font-size: 11px;
+        padding: 6px 7px;
         width: calc(100% - 20px);
     }
 
     .input-row input[type='text'] {
         width: 30% !important;
-        font-size: 14px;
+        font-size: 11px;
         padding: 7px 5px;
     }
+
     #minMaxRec {
-        font-size: 13px;
+        font-size: 11px;
         margin: 4px 10px;
     }
+
     .graphGenerator {
         margin: 0;
         padding-top: 2px;
     }
+
     .container hr {
         margin: 8px 0;
     }
+
     .outliner {
         height: auto;
         max-height: 28vh;
@@ -135,6 +147,7 @@
     .outliner b {
         font-size: 1rem;
     }
+
     #view4,
     #view9,
     #snap {
@@ -145,8 +158,9 @@
     .outliner button,
     h1 button {
         width: 40px;
-        height: 40px;
+        height: 20px;
     }
+
     .showHideDeleteDiv {
         padding: 4px 6px;
         min-height: 48px;
@@ -156,7 +170,7 @@
     /* nameInput — JS sets width: '30%' inline; must use !important */
     .showHideDeleteDiv input[type='text'] {
         width: 42% !important;
-        font-size: 14px !important;
+        font-size: 11px !important;
         padding: 6px 4px !important;
         min-width: 0;
     }
@@ -164,9 +178,10 @@
     /* Focus / show-hide / graph-modifier buttons inside the row */
     .showHideDeleteDiv button {
         width: 40px;
-        height: 40px;
+        height: 10px;
         flex-shrink: 0;
     }
+
     .graphContainer {
         position: fixed !important;
         top: 0 !important;
@@ -178,6 +193,7 @@
         box-shadow: none !important;
         z-index: 1 !important;
     }
+
     .graphContainer.active-container {
         z-index: 2 !important;
     }
@@ -186,33 +202,40 @@
     .resize-handle {
         display: none !important;
     }
+
     .graphHeader {
         display: flex;
-        flex-direction: column;       /* stack rows vertically */
+        flex-direction: column;
+        /* stack rows vertically */
         align-items: stretch;
-        white-space: nowrap;          /* keep children from wrapping internally */
+        white-space: nowrap;
+        /* keep children from wrapping internally */
         padding: 4px 6px 2px;
         gap: 2px;
         min-height: unset;
         overflow: visible;
     }
-    .graphHeader > span:first-of-type {
+
+    .graphHeader>span:first-of-type {
         display: flex;
         flex-direction: row;
         align-items: center;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;        /* hide scrollbar on Firefox */
+        scrollbar-width: none;
+        /* hide scrollbar on Firefox */
         gap: 4px;
         padding: 4px 2px;
         min-height: 40px;
     }
 
-    .graphHeader > span:first-of-type::-webkit-scrollbar {
-        display: none;               /* hide scrollbar on Chrome/Safari */
+    .graphHeader>span:first-of-type::-webkit-scrollbar {
+        display: none;
+        /* hide scrollbar on Chrome/Safari */
     }
-    .graphHeader > span:last-of-type {
+
+    .graphHeader>span:last-of-type {
         display: flex;
         flex-direction: row;
         justify-content: flex-end;
@@ -222,13 +245,6 @@
         flex-shrink: 0;
     }
 
-    /* All buttons inside graphHeader — minimum 44×44 touch target */
-    .graphHeader button {
-        min-width: 44px;
-        min-height: 44px;
-        border-radius: 6px !important; /* override the 50% desktop style for easier tapping */
-        flex-shrink: 0;
-    }
     .operation-panel {
         display: inline-flex !important;
         align-items: center;
@@ -242,26 +258,28 @@
     }
 
     svg {
-        touch-action: none; /* prevent browser scroll hijack inside SVG */
+        touch-action: none;
+        /* prevent browser scroll hijack inside SVG */
     }
+
     .methodsElem {
-        height: 40%;        /* slightly taller so text is readable */
-        font-size: 13px;
+        height: 40%;
+        /* slightly taller so text is readable */
+        font-size: 11px;
     }
 
     .methodsElem p {
-        width: 88%; /* leave room for close button */
+        width: 88%;
+        /* leave room for close button */
     }
 
     .top-resize-handle {
         height: 20px !important;
-        background: linear-gradient(
-            to bottom,
-            transparent 4px,
-            #444 4px,
-            #444 6px,
-            transparent 6px
-        );
+        background: linear-gradient(to bottom,
+                transparent 4px,
+                #444 4px,
+                #444 6px,
+                transparent 6px);
         cursor: ns-resize;
     }
 
@@ -279,12 +297,14 @@
         /* If JS places it too far right, clamp it */
         right: auto;
         /* Ensure it never starts past the right edge */
-        max-left: calc(100vw - 186px); /* min-width + padding */
+        max-left: calc(100vw - 186px);
+        /* min-width + padding */
     }
 
     .floating-menu button {
-        height: 46px;      /* comfortable touch target */
-        font-size: 15px;
+        height: 46px;
+        /* comfortable touch target */
+        font-size: 12px;
         padding: 8px 14px;
         width: 100%;
     }
@@ -294,11 +314,12 @@
         left: 50% !important;
         transform: translateX(-50%) !important;
         top: auto !important;
-        bottom: calc(78vh + 10px) !important; /* above the open drawer */
+        bottom: calc(78vh + 10px) !important;
+        /* above the open drawer */
         z-index: 15 !important;
         min-width: 200px;
         border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
     .aboutDiv {
@@ -311,36 +332,116 @@
         padding: 16px;
         z-index: 20;
     }
-}
 
-@media (max-width: 400px) {
-
-    .input-row {
-        grid-template-columns: auto 50px auto 50px;
-        font-size: 12px;
-        gap: 3px 4px;
+    /* Checkbox */
+    input[type="checkbox"] {
+        appearance: none;
+        position: relative;
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        vertical-align: middle;
+        background-color: #545454;
+        border: none;
+        border-radius: 1px;
+        margin: 0px 5px 3px 15px;
     }
 
-    .input-row input[type='text'] {
-        padding: 5px 3px;
-        font-size: 13px;
+    input[type="checkbox"]:hover {
+        background-color: #7e7e7e;
     }
 
-    #generateGraph,
-    #generateRandomGraph,
-    #generateRandomTree {
-        font-size: 14px;
-        padding: 10px;
+    input[type="checkbox"]:checked {
+        background-color: var(--accent);
     }
 
-    /* Even at 400px, graph header controls must stay tappable */
-    .graphHeader button {
-        min-width: 40px;
-        min-height: 40px;
+    input[type="checkbox"]:checked::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -60%) rotate(40deg);
+        width: 2px;
+        /* Checkmark style */
+        height: 4px;
+        border: solid var(--checkmark-color);
+        border-width: 0 2px 2px 0;
     }
 
-    .floating-menu button {
-        height: 44px;
-        font-size: 14px;
+    input[type="radio"] {
+        appearance: none;
+        position: relative;
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        vertical-align: middle;
+        background-color: #545454;
+        border: none;
+        border-radius: 50%;
+        margin: 0px 5px 3px 8px;
+        cursor: pointer;
+    }
+
+    input[type="radio"]:hover {
+        background-color: #7e7e7e;
+    }
+
+    input[type="radio"]:checked {
+        background-color: var(--tree-accent);
+    }
+
+    input[type="radio"]:checked::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 4px;
+        height: 4px;
+        background-color: var(--checkmark-color);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    img {
+        width: 10px;
+        height: 10px;
+    }
+
+    .outliner button,
+    h1 button {
+        display: inline-flex;
+        width: 20px;
+        height: 20px;
+        justify-content: center;
+        align-items: center;
+        vertical-align: middle;
+        background: none;
+        border: none;
+        border-radius: 3px;
+        margin: 0;
+    }
+
+    .outliner button:hover,
+    h1 button:hover {
+        background-color: var(--highlight-button-color);
+    }
+
+    .outliner img {
+        width: 10px;
+        height: 10px;
+        filter: invert(1);
+    }
+
+    .showHideDeleteDiv button {
+        display: inline-flex;
+        width: 10px;
+        height: 10px;
+        justify-content: center;
+        align-items: center;
+        vertical-align: middle;
+        background: none;
+        border: none;
+        border-radius: 3px;
+        margin: 0;
     }
 }
