@@ -1,0 +1,363 @@
+#mobileDrawerToggle {
+    display: none;
+}
+@media (max-width: 768px) {
+    body {
+        overflow: hidden;
+    }
+    .container {
+        position: fixed !important;
+        top: auto !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-height: 78vh;
+        min-height: unset;
+        border-radius: 18px 18px 0 0;
+        padding: 0 12px 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 0 -4px 28px rgba(0, 0, 0, 0.6);
+        z-index: 10 !important;
+        /* Collapsed: only the drag-handle pill peeks out */
+        transform: translateY(calc(100% - 50px));
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .container.mobile-open {
+        transform: translateY(0);
+    }
+
+    /* Drag-handle pill */
+    .container::before {
+        content: '';
+        display: block;
+        width: 44px;
+        height: 4px;
+        border-radius: 2px;
+        background: #555;
+        margin: 10px auto 8px;
+    }
+    #mobileDrawerToggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: fixed;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 11;
+        background: var(--accent);
+        color: var(--inverted-text);
+        border: none;
+        border-radius: 99px;
+        padding: 10px 22px;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+        cursor: pointer;
+        transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+        white-space: nowrap;
+    }
+
+    #mobileDrawerToggle.drawer-open {
+        bottom: calc(78vh + 10px);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid #444;
+    }
+
+    #mobileDrawerToggle img {
+        width: 16px;
+        height: 16px;
+        filter: invert(0);
+        transition: transform 0.3s;
+    }
+
+    #mobileDrawerToggle.drawer-open img {
+        filter: invert(1);
+        transform: rotate(180deg);
+    }
+    #instructions {
+        font-size: 1.1rem;
+        margin: 6px 0 4px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .sourceInput {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .sourceInput input[type='text'] {
+        width: 100% !important;
+        font-size: 16px; /* prevents iOS auto-zoom */
+        padding: 10px 12px;
+        box-sizing: border-box;
+    }
+    input[type='checkbox'],
+    input[type='radio'] {
+        width: 20px;
+        height: 20px;
+        margin: 0 6px 4px 8px;
+        cursor: pointer;
+    }
+    #generateGraph,
+    #generateRandomGraph,
+    #generateRandomTree {
+        font-size: 15px;
+        padding: 12px 14px;
+        width: calc(100% - 20px);
+    }
+    .input-row {
+        display: grid;
+        grid-template-columns: auto 58px auto 58px;
+        align-items: center;
+        gap: 4px 6px;
+        margin-bottom: 8px;
+    }
+
+    .input-row label {
+        width: auto;
+        font-size: 13px;
+    }
+
+    .input-row input[type='text'] {
+        width: 100% !important;
+        font-size: 14px;
+        padding: 7px 5px;
+    }
+    #minMaxRec {
+        font-size: 13px;
+        margin: 4px 10px;
+    }
+    .graphGenerator {
+        margin: 0;
+        padding-top: 2px;
+    }
+    .container hr {
+        margin: 8px 0;
+    }
+    .outliner {
+        height: auto;
+        max-height: 28vh;
+        padding: 8px 12px;
+        margin-top: 8px;
+    }
+
+    .outliner b {
+        font-size: 1rem;
+    }
+    #view4,
+    #view9,
+    #snap {
+        display: none !important;
+    }
+
+    /* Outliner icon buttons (#showHideAll, #clearAll, etc.) */
+    .outliner button,
+    h1 button {
+        width: 40px;
+        height: 40px;
+    }
+    .showHideDeleteDiv {
+        padding: 4px 6px;
+        min-height: 48px;
+        align-items: center;
+    }
+
+    /* nameInput — JS sets width: '30%' inline; must use !important */
+    .showHideDeleteDiv input[type='text'] {
+        width: 42% !important;
+        font-size: 14px !important;
+        padding: 6px 4px !important;
+        min-width: 0;
+    }
+
+    /* Focus / show-hide / graph-modifier buttons inside the row */
+    .showHideDeleteDiv button {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+    .graphContainer {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: calc(100vh - 52px) !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        z-index: 1 !important;
+    }
+    .graphContainer.active-container {
+        z-index: 2 !important;
+    }
+
+    /* Corner resize handles — useless on touch */
+    .resize-handle {
+        display: none !important;
+    }
+    .graphHeader {
+        display: flex;
+        flex-direction: column;       /* stack rows vertically */
+        align-items: stretch;
+        white-space: nowrap;          /* keep children from wrapping internally */
+        padding: 4px 6px 2px;
+        gap: 2px;
+        min-height: unset;
+        overflow: visible;
+    }
+    .graphHeader > span:first-of-type {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;        /* hide scrollbar on Firefox */
+        gap: 4px;
+        padding: 4px 2px;
+        min-height: 40px;
+    }
+
+    .graphHeader > span:first-of-type::-webkit-scrollbar {
+        display: none;               /* hide scrollbar on Chrome/Safari */
+    }
+    .graphHeader > span:last-of-type {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 0;
+        flex-shrink: 0;
+    }
+
+    /* All buttons inside graphHeader — minimum 44×44 touch target */
+    .graphHeader button {
+        min-width: 44px;
+        min-height: 44px;
+        border-radius: 6px !important; /* override the 50% desktop style for easier tapping */
+        flex-shrink: 0;
+    }
+    .operation-panel {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 2px;
+        margin-left: 6px;
+        flex-shrink: 0;
+    }
+
+    .graphContent {
+        overflow: hidden;
+    }
+
+    svg {
+        touch-action: none; /* prevent browser scroll hijack inside SVG */
+    }
+    .methodsElem {
+        height: 40%;        /* slightly taller so text is readable */
+        font-size: 13px;
+    }
+
+    .methodsElem p {
+        width: 88%; /* leave room for close button */
+    }
+
+    .top-resize-handle {
+        height: 20px !important;
+        background: linear-gradient(
+            to bottom,
+            transparent 4px,
+            #444 4px,
+            #444 6px,
+            transparent 6px
+        );
+        cursor: ns-resize;
+    }
+
+    .closeButtonME {
+        min-width: 40px;
+        min-height: 40px;
+        margin: 6px;
+    }
+
+    .floating-menu {
+        /* Prevent any menu from being wider than the viewport */
+        max-width: calc(100vw - 16px);
+        min-width: 170px;
+        padding: 6px;
+        /* If JS places it too far right, clamp it */
+        right: auto;
+        /* Ensure it never starts past the right edge */
+        max-left: calc(100vw - 186px); /* min-width + padding */
+    }
+
+    .floating-menu button {
+        height: 46px;      /* comfortable touch target */
+        font-size: 15px;
+        padding: 8px 14px;
+        width: 100%;
+    }
+
+    .outliner .floating-menu {
+        position: fixed !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        top: auto !important;
+        bottom: calc(78vh + 10px) !important; /* above the open drawer */
+        z-index: 15 !important;
+        min-width: 200px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .aboutDiv {
+        top: 50% !important;
+        left: 50% !important;
+        translate: -50% -50% !important;
+        width: 92% !important;
+        max-height: 84vh;
+        border-radius: 14px;
+        padding: 16px;
+        z-index: 20;
+    }
+}
+
+@media (max-width: 400px) {
+
+    .input-row {
+        grid-template-columns: auto 50px auto 50px;
+        font-size: 12px;
+        gap: 3px 4px;
+    }
+
+    .input-row input[type='text'] {
+        padding: 5px 3px;
+        font-size: 13px;
+    }
+
+    #generateGraph,
+    #generateRandomGraph,
+    #generateRandomTree {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    /* Even at 400px, graph header controls must stay tappable */
+    .graphHeader button {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .floating-menu button {
+        height: 44px;
+        font-size: 14px;
+    }
+}

@@ -3,13 +3,14 @@
 
 <head>
     <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
     <title>Arx Net</title>
     <link rel='stylesheet' href='styles.css'>
+    <link rel='stylesheet' href='mobile-styles.css'>
 </head>
 
 <body>
-    <div class='container'>
+    <div class='container' id='mainContainer'>
         <div class='graphGenerator' id='graphGenerator'>
             <h1 id='instructions'>Arx Net
                 <button id='about' title='About this application'><img src='images/about.png'></button>
@@ -83,6 +84,13 @@
             </button>
         </div>
     </div>
+
+    <!-- Mobile drawer toggle — only visible on small screens via CSS -->
+    <button id='mobileDrawerToggle' aria-label='Toggle controls panel'>
+        <img src='images/sidebarclose.png' alt=''>
+        Controls
+    </button>
+
     <div class='aboutDiv' id='aboutDiv'>
         <span style='color: #ffc66d; font-weight: bold; font-size:x-large;'>Arx Net guide</span> <br>
         © 2025 arx-net
@@ -126,7 +134,7 @@
         Click anywhere outside this window to close the guide.
     </div>
 </body>
-<script src='D3.js'></script> <!--D3 library contains the necessary elements to generate and manipulate graphs -->
+<script src='D3.js'></script>
 <script src='globals.js'></script>
 <script src='container-functions.js'></script>
 <script src='svg-functions.js'></script>
@@ -136,5 +144,32 @@
 <script src='graph-layout-manager.js'></script>
 <script src='algorithms.js'></script>
 <script src='graph-window-renderer.js'></script>
+
+<script>
+(function () {
+    const btn = document.getElementById('mobileDrawerToggle');
+    const panel = document.getElementById('mainContainer');
+
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', () => {
+        const isOpen = panel.classList.toggle('mobile-open');
+        btn.classList.toggle('drawer-open', isOpen);
+        btn.querySelector('img').style.transform = isOpen ? 'rotate(180deg)' : '';
+    });
+
+    // Tap on the drag handle (the ::before pseudo) closes the drawer.
+    // Approximate it: if the user taps within the top 28px of the panel, toggle.
+    panel.addEventListener('click', (e) => {
+        if (!panel.classList.contains('mobile-open')) return;
+        const rect = panel.getBoundingClientRect();
+        if (e.clientY - rect.top < 28) {
+            panel.classList.remove('mobile-open');
+            btn.classList.remove('drawer-open');
+            btn.querySelector('img').style.transform = '';
+        }
+    });
+})();
+</script>
 
 </html>
