@@ -1107,6 +1107,46 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             zoomOut(svg, grid);
         }
     });
+
+    // Pinch-to-Zoom functionality
+    let initialPinchDistance = null;
+
+    container.addEventListener('touchstart', (event) => {
+        if (event.touches.length === 2) {
+            initialPinchDistance = Math.hypot(
+                event.touches[0].clientX - event.touches[1].clientX,
+                event.touches[0].clientY - event.touches[1].clientY
+            );
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (event) => {
+        if (event.touches.length === 2) {
+            event.preventDefault(); // Prevent default browser zooming/scrolling
+            const currentDistance = Math.hypot(
+                event.touches[0].clientX - event.touches[1].clientX,
+                event.touches[0].clientY - event.touches[1].clientY
+            );
+
+            if (initialPinchDistance) {
+                const diff = currentDistance - initialPinchDistance;
+                // Threshold of 15 limits hypersensitivity
+                if (diff > 15) { 
+                    zoomIn(svg, grid);
+                    initialPinchDistance = currentDistance;
+                } else if (diff < -15) {
+                    zoomOut(svg, grid);
+                    initialPinchDistance = currentDistance;
+                }
+            }
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', (event) => {
+        if (event.touches.length < 2) {
+            initialPinchDistance = null;
+        }
+    });
     /* End of zoom functionality */
 
     /* Pan functionality to middle mouse hold or Ctrl + LMB and drag */
@@ -1122,7 +1162,14 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     });
     /* End of pan functionality */
 
-    svg.on('dblclick', () => adjustViewBox(svg, nodes, grid)); // Bind to double click to adjust viewbox
+    // CHANGED: Prevent adjustViewBox from firing if we just finished a double-click pan
+    svg.on('dblclick', () => {
+        if (hasDragged) {
+            hasDragged = false; // Reset the flag
+            return;             // Abort adjustViewBox
+        }
+        adjustViewBox(svg, nodes, grid);
+    });
     /* End of SVG general functionalities */
 
     // Get the dimensions of the container of the SVG

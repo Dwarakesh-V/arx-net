@@ -39,10 +39,20 @@ function zoomOut(svg, grid) {
 }
 
 /* SVG pan functionality */
+// NEW: State variables to handle the double-click timing and drag prevention
+let lastMousedownTime = 0;
+let hasDragged = false; 
+// Assuming isSvgPanning, panStartX, panStartY are already declared here
+
 function svgPanStart(event) {
-    if (!(event.button === 1 || (event.button === 0 && event.ctrlKey))) return;
+    const currentTime = Date.now();
+    const isDoubleClick = (event.button === 0) && ((currentTime - lastMousedownTime) < 300); // Minimum 300ms hold
+    lastMousedownTime = currentTime;
+
+    if (!(event.button === 1 || (event.button === 0 && event.ctrlKey) || isDoubleClick)) return;
 
     isSvgPanning = true;
+    hasDragged = false; // Reset drag flag on new pan start
     panStartX = event.clientX;
     panStartY = event.clientY;
     document.body.style.cursor = 'grabbing';
@@ -51,6 +61,8 @@ function svgPanStart(event) {
 
 function svgPanMove(event, svg, drawGridFn, gridData) {
     if (!isSvgPanning) return;
+
+    hasDragged = true;
 
     const [minX, minY, viewWidth, viewHeight] = svg.attr('viewBox').split(' ').map(Number);
     const dx = (panStartX - event.clientX) * (viewWidth / 600);
@@ -66,7 +78,11 @@ function svgPanMove(event, svg, drawGridFn, gridData) {
 }
 
 function svgPanEnd() {
+    if (!isSvgPanning) return;
+    
     isSvgPanning = false;
     document.body.style.cursor = 'default';
+    // Note: Do NOT reset hasDragged here. 
+    // We need it to stay 'true' for a split second so the dblclick event catches it!
 }
 /* End of SVG pan functionality */
