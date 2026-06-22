@@ -1015,6 +1015,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     // Focus on graph functionality
     const focusButton = document.createElement('button');
+    focusButton.className = 'FBbutton'
     focusButton.title = 'Focus on this graph';
     const focusImg = document.createElement('img');
     focusImg.src = 'images/focus.png';
@@ -1078,6 +1079,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     // Span for the buttons
     const showHideSpanButtons = document.createElement('span');
+    showHideSpanButtons.className = 'SHSB'
     showHideSpanButtons.appendChild(focusButton);
     showHideSpanButtons.appendChild(showHideGraph);
     showHideSpanButtons.appendChild(graphmodifierButton);

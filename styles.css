@@ -233,6 +233,11 @@ img {
     border: 1.5px solid var(--accent);
 }
 
+#generateRandomTree:hover {
+    color: var(--tree-accent);
+    border: 1.5px solid var(--tree-accent);
+}
+
 /* Contains the inputs for random graph generation */
 .input-row {
     display: flex;

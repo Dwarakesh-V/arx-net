@@ -4,7 +4,8 @@
 
 @media (max-width: 768px) {
     body {
-        /* overflow: hidden; */
+        overflow: hidden;
+        gap: 10px !important; 
         font-size: 11px !important;
     }
 
@@ -97,7 +98,8 @@
 
     .showHideDeleteDiv {
         padding: 4px 6px;
-        min-height: 48px;
+        min-height: 10px;
+        gap: 10px;
         align-items: center;
     }
 
@@ -333,5 +335,9 @@
         border: none;
         border-radius: 3px;
         margin: 0;
+    }
+
+    .SHSB button {
+        margin-right:15px;
     }
 }
