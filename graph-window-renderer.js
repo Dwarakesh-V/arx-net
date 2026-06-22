@@ -520,6 +520,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     // Create the fullScreen button
     const fullScreenButton = document.createElement('button');
+    fullScreenButton.className = 'FSButton'
     fullScreenButton.innerHTML = '<b>&#9744;</b>';
     fullScreenButton.title = 'Toggle full screen';
     controlsSpan.appendChild(fullScreenButton);

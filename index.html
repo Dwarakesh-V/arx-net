@@ -85,12 +85,6 @@
         </div>
     </div>
 
-    <!-- Mobile drawer toggle — only visible on small screens via CSS -->
-    <button id='mobileDrawerToggle' aria-label='Toggle controls panel'>
-        <img src='images/sidebarclose.png' alt=''>
-        Controls
-    </button>
-
     <div class='aboutDiv' id='aboutDiv'>
         <span style='color: #ffc66d; font-weight: bold; font-size:x-large;'>Arx Net guide</span> <br>
         © 2025 arx-net
@@ -144,32 +138,5 @@
 <script src='graph-layout-manager.js'></script>
 <script src='algorithms.js'></script>
 <script src='graph-window-renderer.js'></script>
-
-<script>
-(function () {
-    const btn = document.getElementById('mobileDrawerToggle');
-    const panel = document.getElementById('mainContainer');
-
-    if (!btn || !panel) return;
-
-    btn.addEventListener('click', () => {
-        const isOpen = panel.classList.toggle('mobile-open');
-        btn.classList.toggle('drawer-open', isOpen);
-        btn.querySelector('img').style.transform = isOpen ? 'rotate(180deg)' : '';
-    });
-
-    // Tap on the drag handle (the ::before pseudo) closes the drawer.
-    // Approximate it: if the user taps within the top 28px of the panel, toggle.
-    panel.addEventListener('click', (e) => {
-        if (!panel.classList.contains('mobile-open')) return;
-        const rect = panel.getBoundingClientRect();
-        if (e.clientY - rect.top < 28) {
-            panel.classList.remove('mobile-open');
-            btn.classList.remove('drawer-open');
-            btn.querySelector('img').style.transform = '';
-        }
-    });
-})();
-</script>
 
 </html>
