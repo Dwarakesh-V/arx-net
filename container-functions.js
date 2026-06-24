@@ -9,26 +9,18 @@ function focusOnThisContainer(container) {
 }
 
 // Focus on this container and center it in the viewport
-function focusAndCenterContainer(container, resize = true, fromCenter = false, oldLeft = null, oldTop = null) {
-    if (resize) {
-        container.style.height = '50%';
-        container.style.width = '37.5%';
-        isFullScreen = false; // Reset full screen state
-    }
+function focusAndCenterContainer(container, resize = true) {
+
+    container.style.height = '80%';
+    container.style.width = '50%';
+    isFullScreen = false; // Reset full screen state
+
     const offsetX = container.offsetWidth / 2;
     const offsetY = container.offsetHeight / 2;
 
-    if (oldLeft !== null && oldTop !== null) {
-        container.style.left = oldLeft + 'px';
-        container.style.top = oldTop + 'px';
-    } else {
-        if (!fromCenter) {
-            container.style.left = 'calc(37.5% - ' + offsetX + 'px)';
-        } else {
-            container.style.left = 'calc(50% - ' + offsetX + 'px)';
-        }
-        container.style.top = 'calc(50% - ' + offsetY + 'px)';
-    }
+    container.style.left = '0px';
+    container.style.top = '10%';
+
     focusOnThisContainer(container);
 }
 

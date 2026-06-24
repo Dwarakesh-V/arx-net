@@ -69,9 +69,8 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
             break;
         }
         case 'mst':
-            mst(edgesRaw, weighted, displayName);
-            result = ''; // MST function handles its own output
-            label = `Generated MST through ${displayName}: `;
+            result = mst(edgesRaw, weighted, displayName);
+            label = `Generated MST through ${displayName}. `;
             break;
 
         case 'topologicalSort':

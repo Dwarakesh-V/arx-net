@@ -277,9 +277,14 @@ img {
     margin-top: 15px;
     display: block;
     width: 100%;
+    max-height: 100%;
     padding: 0px 20px 20px 20px;
-    overflow-y: auto;
+    overflow-y: hidden;
     box-sizing: border-box;
+}
+
+h3 {
+    color: var(--accent);
 }
 
 .outliner button,
@@ -528,7 +533,7 @@ svg {
     filter: none;
 }
 
-#rsLog {
+#resultLog {
     background-color: var(--bg-secondary);
     border-right: 2px solid var(--accent);
     border-left: 2px solid var(--accent);
@@ -538,8 +543,4 @@ svg {
     height: 100%;
     overflow-y: auto;
     padding: 5px 20px;
-}
-
-#rsLog p {
-    line-height: 2;
 }

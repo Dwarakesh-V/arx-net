@@ -390,15 +390,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     document.body.appendChild(container); // Append the container initially to calculate child properties
     container.className = 'graphContainer';
 
-    // Defining position and dimensions of the graph window here to check for grid view of the containers
-    if (view9gen) {
-        container.style.width = '25%';
-        container.style.height = '33.33%';
-    } else {
-        container.style.width = '37.5%';
-        container.style.height = '50%';
-    }
-
     // Container that is interacted with will have the highest z-index
     container.addEventListener('mousedown', () => {
         focusOnThisContainer(container);
@@ -637,13 +628,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
         // Reset zoom
         addMenuItem('Reset window zoom', 'Set the window size as it initially was', () => {
-            if (view9gen) {
-                container.style.width = '25%';
-                container.style.height = '33.33%';
-            } else {
-                container.style.width = '37.5%';
-                container.style.height = '50%';
-            }
+            container.style.width = '50';
+            container.style.height = '80%';
         });
 
         // Focus (center and bring to front)
