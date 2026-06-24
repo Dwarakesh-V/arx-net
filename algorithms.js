@@ -7,42 +7,104 @@ function vertexExists(edges, vertex, isDirected = true) {
 }
 
 function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
-    if (!vertexExists(edges, start, isDirected)) {
+    // Basic vertex existence check based on the provided edges
+    const allVertices = new Set();
+    for (const { source, target } of edges) {
+        allVertices.add(source);
+        allVertices.add(target);
+    }
+    if (start && !allVertices.has(start)) {
         alert("Vertex " + start + " not found.");
         return null;
     }
 
+    // Build the adjacency list
     const graph = {};
     for (const { source, target } of edges) {
         if (!graph[source]) graph[source] = [];
         graph[source].push(target);
 
-        // For undirected graphs, also include reverse:
         if (!isDirected) {
             if (!graph[target]) graph[target] = [];
             graph[target].push(source);
         }
     }
 
-    const visited = new Set();
-    const queue = [start];
+    // Initialize queues, sets, and tracking variables
+    const visited = new Set([start]);
+    const queue = [{ node: start, level: 0, parent: null }];
+    
     const result = [];
+    const levelMap = {}; 
+    const steps = [];
 
+    // Traverse the graph
     while (queue.length > 0) {
-        const node = queue.shift();
-        if (!visited.has(node)) {
-            visited.add(node);
-            result.push(node);
-            const neighbors = graph[node] || [];
-            for (const neighbor of neighbors) {
-                if (!visited.has(neighbor)) {
-                    queue.push(neighbor);
-                }
+        const { node, level, parent } = queue.shift();
+
+        // Track results and levels
+        result.push(node);
+        if (!levelMap[level]) levelMap[level] = [];
+        levelMap[level].push(node);
+
+        // Document the "Why" and the "Level"
+        let stepDesc = `Visited '${node}' at Level ${level}`;
+        stepDesc += parent !== null ? ` (reached via '${parent}').` : ` (Starting Node).`;
+        steps.push(stepDesc);
+
+        const neighbors = graph[node] || [];
+        const addedNeighbors = [];
+
+        // Evaluate neighbors
+        for (const neighbor of neighbors) {
+            if (!visited.has(neighbor)) {
+                visited.add(neighbor);
+                queue.push({ node: neighbor, level: level + 1, parent: node });
+                addedNeighbors.push(neighbor);
             }
+        }
+
+        if (addedNeighbors.length > 0) {
+            steps.push(`  -> Enqueued unvisited neighbors: [${addedNeighbors.join(', ')}] for Level ${level + 1}.`);
+        } else {
+            steps.push(`  -> No new unvisited neighbors to enqueue.`);
         }
     }
 
-    return result;
+    // --- GENERATE EXPLANATION ---
+    let explanation = "METHODOLOGY:\n";
+    explanation += "Breadth-First Search (BFS) explores a graph level by level radiating outward from the start vertex. ";
+    explanation += "It utilizes a Queue (First-In-First-Out) data structure. When a node is visited, all of its immediately adjacent, unvisited neighbors are pushed to the back of the queue. ";
+    explanation += "This guarantees that nodes closer to the start are completely processed before moving deeper.\n\n";
+
+    explanation += "TIME COMPLEXITY:\n";
+    explanation += "O(V + E), where V = number of Vertices and E = number of Edges. ";
+    explanation += "Each vertex is added to and removed from the queue exactly once, and every edge is traversed once (or twice if undirected).\n\n";
+
+    explanation += "STEP-BY-STEP TRAVERSAL:\n";
+    steps.forEach(step => explanation += step + "\n");
+
+    explanation += "\nMULTIPLE VALID ANSWERS (LEVEL PERMUTATIONS):\n";
+    explanation += "Because nodes on the exact same level are equidistant from the start, they can theoretically be visited in any order (dictated purely by how they were ordered in the edge list). This results in multiple valid BFS arrays:\n";
+    
+    // Helper function to calculate factorial for permutations
+    const factorial = n => n <= 1 ? 1 : n * factorial(n - 1);
+    
+    let totalCombinations = 1;
+    for (const [level, nodes] of Object.entries(levelMap)) {
+        if (nodes.length > 1) {
+            const perms = factorial(nodes.length);
+            totalCombinations *= perms;
+            explanation += `- Level ${level}: [${nodes.join(', ')}] can be arranged in ${perms} different valid permutations.\n`;
+        } else {
+            explanation += `- Level ${level}: [${nodes[0]}] has 1 fixed position.\n`;
+        }
+    }
+    explanation += `-> Total valid BFS permutations for this graph from vertex '${start}': ${totalCombinations} variations.\n`;
+    resultLog.innerText = explanation;
+    
+    // Construct the requested HTML element string
+    return `BFS result: ${result.join(',')}`;
 }
 
 function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
@@ -383,7 +445,7 @@ function mst(edges, weighted, graphName) {
 
     let mstResult = '';
     for (const edge of mstEdges) {
-        mstResult += `(${edge.source}_${edge.target}_${edge.weight}),`
+        mstResult += `(${edge.source},${edge.target},${edge.weight}),`
     }
     mstResult = mstResult.slice(0, -1); // Remove trailing comma
 

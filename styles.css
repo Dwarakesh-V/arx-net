@@ -1,14 +1,7 @@
 /* Global Styles */
-* {
-    box-sizing: border-box;
-    font-family: sans-serif;
-    text-decoration: none;
-    /* Don't use styles on anything unless specifically mentioned */
-    outline: none;
-
+:root {
     /* Global colors, can be changed for light mode */
     --accent: #ffc66d;
-    --tree-accent: #19a900;
     --accent-inverted: #003992;
     /* Buttons that contain images are inverted in color for visibility, this color will match accent when inverted */
     --bg-primary: #1d1d1d;
@@ -17,6 +10,7 @@
     --inverted-text: #000;
     --checkmark-color: #000;
     --highlight-button-color: #424242;
+
 
     /* Graph colors */
     --edge-color: #a3bf60;
@@ -35,7 +29,13 @@
     /* Color of the grid lines */
     --drag-node-color: #7a9ec2;
     /* Color of the nodes when dragged */
+}
 
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    text-decoration: none;
+    outline: none;
     color: var(--text-primary);
 }
 
@@ -48,8 +48,8 @@
 */
 
 body {
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100dvw;
     background-color: var(--bg-primary);
     text-align: left;
     margin: 0;
@@ -139,7 +139,7 @@ input[type="radio"]:hover {
 }
 
 input[type="radio"]:checked {
-    background-color: var(--tree-accent);
+    background-color: var(--accent);
 }
 
 input[type="radio"]:checked::before {
@@ -185,9 +185,7 @@ img {
     position: absolute;
     top: 0;
     right: 0;
-    height: auto;
-    min-height: 100%;
-    max-height: 100%;
+    height: 100%;
     width: 25%;
     background-color: var(--bg-secondary);
     padding: 10px;
@@ -202,8 +200,7 @@ img {
 
 /* Buttons to generate graphs */
 #generateGraph,
-#generateRandomGraph,
-#generateRandomTree {
+#generateRandomButton {
     font-size: medium;
     width: calc(100% - 20px);
     color: var(--inverted-text);
@@ -215,27 +212,47 @@ img {
     transition: background-color 0.3s, color 0.3s, border 0.3s;
 }
 
-#generateRandomTree {
-    background-color: var(--tree-accent);
-    margin-top: 0px;
-}
-
-#generateRandomGraph {
+#generateRandomButton {
     margin-top: 5px;
 }
 
 #generateGraph:hover,
-#generateRandomGraph:hover,
-#generateRandomTree:hover {
+#generateRandomButton:hover {
     cursor: pointer;
     background-color: transparent;
     color: var(--accent);
     border: 1.5px solid var(--accent);
 }
 
-#generateRandomTree:hover {
-    color: var(--tree-accent);
-    border: 1.5px solid var(--tree-accent);
+#treeTypeSelect {
+    display: none;
+    font-size: medium;
+    width: 50%;
+    color: var(--inverted-text);
+    background-color: var(--accent);
+    border: 1.5px solid transparent;
+    border-radius: 3px;
+    margin: 10px 0;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+#treeTypeSelect:hover {
+    background-color: transparent;
+    border-color: var(--accent);
+    color: var(--accent)
+}
+
+#treeTypeSelect:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+#treeTypeSelect option {
+    background-color: var(--bg-secondary);
+    border: 1.5px solid var(--accent);
+    color: #fff;
 }
 
 /* Contains the inputs for random graph generation */
@@ -259,7 +276,6 @@ img {
 .outliner {
     margin-top: 15px;
     display: block;
-    height: 25vh;
     width: 100%;
     padding: 0px 20px 20px 20px;
     overflow-y: auto;
@@ -267,7 +283,7 @@ img {
 }
 
 .outliner button,
-h1 button {
+h2 button {
     display: inline-flex;
     width: 32px;
     height: 32px;
@@ -281,7 +297,7 @@ h1 button {
 }
 
 .outliner button:hover,
-h1 button:hover {
+h2 button:hover {
     background-color: var(--highlight-button-color);
 }
 
@@ -510,4 +526,20 @@ svg {
     color: var(--inverted-text);
     background-color: var(--accent);
     filter: none;
+}
+
+#rsLog {
+    background-color: var(--bg-secondary);
+    border-right: 2px solid var(--accent);
+    border-left: 2px solid var(--accent);
+    width: 25%;
+    position: absolute;
+    left: 50%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 5px 20px;
+}
+
+#rsLog p {
+    line-height: 2;
 }

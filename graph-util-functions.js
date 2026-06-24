@@ -46,7 +46,7 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
         case 'dfs': {
             const source = getSource("Enter source vertex");
             result = dfs(edgesRaw, source || undefined, directed);
-            label = `DFS through ${displayName}${source ? ` with ${source} as source node` : ''}: `;
+            label = `DFS with ${source} as source node}`;
             break;
         }
         case 'dijkstra': {
@@ -95,6 +95,7 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
     }
 
     if (result !== null) {
+        console.log(result)
         resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} <br>`;
         methodsElement.appendChild(resultContainer);
         methodsElement.style.display = 'block';
@@ -343,7 +344,8 @@ function generateRandomTree(vertexCount, options = {}) {
         minWeightValue = parseInt(minWeight.value),
         maxWeightValue = parseInt(maxWeight.value),
         isDirectedValue = isDirected.checked,
-        checkedTreeType = [...treeTypeRadios].find(radio => radio.checked)
+        // Pick the selected option directly from the select element
+        treeTypeValue = treeTypeSelect ? treeTypeSelect.value : 'regular'
     } = options;
 
     if (vertexCount <= 0) {
@@ -353,7 +355,7 @@ function generateRandomTree(vertexCount, options = {}) {
     }
 
     const edgeList = [];
-    const treeType = checkedTreeType ? checkedTreeType.id : 'regular';
+    const treeType = treeTypeValue;
 
     // Initialize vertices. Index 0 is explicitly "root".
     const vertices = vertexCount > 0 ? ['rt'] : [];
@@ -423,7 +425,7 @@ function generateRandomTree(vertexCount, options = {}) {
             }
         }
         else if (treeType === 'avl' || treeType === 'redBlack') {
-            // AVL and RB are self-balancing
+            // AVL and RB are self-balancing (balanced binary tree, max 2 children)
             const balancedNodes = ['rt', ...remaining];
 
             for (let i = 1; i < balancedNodes.length; i++) {
@@ -431,12 +433,31 @@ function generateRandomTree(vertexCount, options = {}) {
                 let u = balancedNodes[parentIndex];
                 let v = balancedNodes[i];
 
-                let edge = { source: u, target: v, weight: getRandomWeight() };
-                // Red black coloring - Not in scope for now
-                // if (treeType === 'redBlack') {
-                //     edge.color = (Math.floor(Math.log2(i + 1)) % 2 === 0) ? 'red' : 'black';
-                // }
-                edgeList.push(edge);
+                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
+            }
+        }
+        else if (treeType === 'twoThree') {
+            // 2-3 Tree simulation (balanced ternary tree, max 3 children)
+            const balancedNodes = ['rt', ...remaining];
+
+            for (let i = 1; i < balancedNodes.length; i++) {
+                let parentIndex = Math.floor((i - 1) / 3);
+                let u = balancedNodes[parentIndex];
+                let v = balancedNodes[i];
+
+                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
+            }
+        }
+        else if (treeType === 'twoThreeFour') {
+            // 2-3-4 Tree simulation (balanced quaternary tree, max 4 children)
+            const balancedNodes = ['rt', ...remaining];
+
+            for (let i = 1; i < balancedNodes.length; i++) {
+                let parentIndex = Math.floor((i - 1) / 4);
+                let u = balancedNodes[parentIndex];
+                let v = balancedNodes[i];
+
+                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
             }
         }
     }
@@ -446,14 +467,14 @@ function generateRandomTree(vertexCount, options = {}) {
     addGraph();
 }
 
-generateRandomGraphButton.addEventListener('click', () => {
+generateRandomButton.addEventListener('click', () => {
     const vertexCount = vertexInput.value;
-    const edgeCount = edgeInput.value;
-    generateRandomGraph(vertexCount, edgeCount);
-});
-generateRandomTreeButton.addEventListener('click', () => {
-    const vertexCount = vertexInput.value;
-    generateRandomTree(vertexCount);
+    if (document.getElementById('genTypeGraph').checked) {
+        const edgeCount = edgeInput.value;
+        generateRandomGraph(vertexCount, edgeCount);
+    } else {
+        generateRandomTree(vertexCount);
+    }
 });
 
 function isTree(edgesInput, directed = true) {

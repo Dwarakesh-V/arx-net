@@ -62,44 +62,82 @@ function updateMinMax() {
                 maxEdges = n * (n - 1) / 2; // undirected without self-loops
             }
         }
-        maxRecEl.innerHTML = maxEdges;
+        let minEdges = 0;
+        if (connected.checked) {
+            minEdges = n - 1
+        }
+        maxRecEl.innerHTML = `${maxEdges}/${minEdges}`;
     }
 }
 
-function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false) {
+function dispMinMax() {
+    document.getElementById('wtinp').style.display = document.getElementById('wtinp').style.display == 'none' ? 'flex' : 'none';
+}
+
+function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false, scale = 4) {
     const rect = svgElement.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
 
+    // Clone so we don't mutate the live element
+    const clone = svgElement.cloneNode(true);
+
+    // ✅ Force the SVG's own dimensions to match its rendered size.
+    // Without this, the browser picks intrinsic size from attributes/viewBox
+    // when loading as <img>, causing a stretch mismatch with the canvas.
+    clone.setAttribute('width', width);
+    clone.setAttribute('height', height);
+
+    // Preserve the viewBox if present, so internal layout isn't distorted
+    if (!clone.getAttribute('viewBox')) {
+        clone.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    }
+
+    const computedColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim() || '#000000';
+    const style = document.createElement('style');
+    style.textContent = `
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-decoration: none;
+            outline: none;
+            color: ${computedColor};
+        }
+    `;
+    clone.prepend(style);
+
     const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svgElement);
+    const svgString = serializer.serializeToString(clone);
 
     const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
-
     const img = new Image();
+
+    //  Give the img element explicit dimensions too, so drawImage has an unambiguous source size to map from
+    img.width = width;
+    img.height = height;
+
     img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = width * 0.9;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
+        canvas.width = width * scale;
+        canvas.height = height * scale;
 
-        // Optionally fill with white background
-        ctx.fillStyle = isTransparent ? 'transparent' : '#1d1d1d';  // Or transparent if you prefer
-        ctx.fillRect(0, 0, width, height);
+        const ctx = canvas.getContext('2d');
+        ctx.filter = 'grayscale(100%)';
+        ctx.fillStyle = isTransparent ? 'transparent' : '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.save();
-        ctx.scale(0.9, 1); // Scale X by 0.9 (reduce width by 10%)
+        ctx.scale(scale, scale);
+        // Explicitly pass source dimensions
         ctx.drawImage(img, 0, 0, width, height);
         ctx.restore();
-
 
         const pngUrl = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = pngUrl;
         a.download = filename;
         a.click();
-
         URL.revokeObjectURL(url);
     };
 
@@ -108,8 +146,22 @@ function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false)
         URL.revokeObjectURL(url);
     };
 
-    // Important: force correct scale by setting width/height attributes
-    img.width = width;
-    img.height = height;
     img.src = url;
+}
+
+
+function handleTypeChange(type) {
+    if (type=='Tree') {
+        treeTypeSelect.style.display = 'flex';
+        graphOptions.style.display = 'none';
+        minMaxRec.style.display = 'none';
+        edgeInput.style.display = 'none';
+        edgeLabel.style.display = 'none';
+    } else {
+        treeTypeSelect.style.display = 'none';
+        graphOptions.style.display = 'flex';
+        minMaxRec.style.display = 'block';
+        edgeInput.style.display = 'flex';
+        edgeLabel.style.display = 'flex';
+    }
 }

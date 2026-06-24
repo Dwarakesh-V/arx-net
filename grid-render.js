@@ -4,30 +4,41 @@ function drawGrid(svg, grid) {
     const viewBox = svg.attr('viewBox').split(' ').map(Number);
     const [minX, minY, width, height] = viewBox;
 
+    // Get the actual physical dimensions of the SVG on the screen
+    const svgNode = svg.node();
+    const rect = svgNode.getBoundingClientRect();
+
+    // Calculate the scale factor the browser is currently applying 
+    const scale = Math.min(rect.width / width, rect.height / height);
+
+    // Calculate the TRUE visible width and height in SVG coordinate space
+    const visibleWidth = rect.width / scale;
+    const visibleHeight = rect.height / scale;
+
     const startX = Math.floor(minX / gridSize) * gridSize;
     const startY = Math.floor(minY / gridSize) * gridSize;
     const endX = minX + width;
     const endY = minY + height;
 
-    // Buffer size based on viewBox dimensions
-    const buffer = Math.max(width, height);
+    // Use the true visible dimensions for your buffers
+    const bufferX = visibleWidth;
+    const bufferY = visibleHeight;
 
-    // Remove existing grid lines
     grid.selectAll('*').remove();
 
-    // Draw vertical grid lines
-    for (let x = startX - buffer; x < endX + buffer; x += gridSize) {
+    // Vertical lines
+    for (let x = startX - bufferX; x < endX + bufferX; x += gridSize) {
         grid.append('line')
-            .attr('x1', x).attr('y1', minY - buffer)
-            .attr('x2', x).attr('y2', endY + buffer)
+            .attr('x1', x).attr('y1', minY - bufferY)
+            .attr('x2', x).attr('y2', endY + bufferY)
             .attr('stroke', gridLineColor).attr('stroke-width', 1);
     }
 
-    // Draw horizontal grid lines
-    for (let y = startY - buffer; y < endY + buffer; y += gridSize) {
+    // Horizontal lines
+    for (let y = startY - bufferY; y < endY + bufferY; y += gridSize) {
         grid.append('line')
-            .attr('x1', minX - buffer).attr('y1', y)
-            .attr('x2', endX + buffer).attr('y2', y)
+            .attr('x1', minX - bufferX).attr('y1', y)
+            .attr('x2', endX + bufferX).attr('y2', y)
             .attr('stroke', gridLineColor).attr('stroke-width', 1);
     }
 }

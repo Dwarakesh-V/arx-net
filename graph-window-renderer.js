@@ -913,10 +913,15 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         })
 
         addMenuItem('Save as PNG', 'Save this graph as a PNG image', () => {
+            updateColors();
             saveSvgAsPng(svgElement, `${nameInput.value}.png`);
+            revertColors();
         });
+
         addMenuItem('Save as transparent PNG', 'Save this graph as a PNG image with a transparent background', () => {
+            updateColors();
             saveSvgAsPng(svgElement, `${nameInput.value}.png`, true);
+            revertColors();
         });
 
         // Remove menu on click elsewhere
@@ -929,6 +934,52 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
         document.body.appendChild(menu);
     });
+
+    /* Function to save printable png */
+    function updateColors() {
+        // document.documentElement.style.setProperty("--edge-color", "#888");
+        document.documentElement.style.setProperty("--node-color", "#ccc");
+        document.documentElement.style.setProperty("--edge-weight-color", "#000");
+        document.documentElement.style.setProperty("--grid-line-color", "transparent");
+        edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
+        nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
+        edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-weight-color').trim();
+        gridLineColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line-color').trim();
+
+        nodeLayer.selectAll('circle')
+            .attr('fill', nodeColor)
+
+        edgeLayer.selectAll('.link')
+            .attr('stroke', edgeColor)
+
+        labelLayer.selectAll('.edge-label')
+            .attr('fill', edgeWeightColor)
+
+        drawGrid(svg, grid);
+    }
+
+    function revertColors() {
+        // document.documentElement.style.setProperty("--edge-color", "#a3bf60");
+        document.documentElement.style.setProperty("--node-color", "#ffc66d");
+        document.documentElement.style.setProperty("--edge-weight-color", "#fff");
+        document.documentElement.style.setProperty("--grid-line-color", "#3c3d3c");
+        edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
+        nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
+        nodeLabelColor = getComputedStyle(document.documentElement).getPropertyValue('--node-label-color').trim();
+        edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-weight-color').trim();
+        gridLineColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line-color').trim();
+
+        nodeLayer.selectAll('circle')
+            .attr('fill', nodeColor)
+
+        edgeLayer.selectAll('.link')
+            .attr('stroke', edgeColor)
+
+        labelLayer.selectAll('.edge-label')
+            .attr('fill', edgeWeightColor)
+
+        drawGrid(svg, grid);
+    }
 
     const resizeHandles = container.querySelectorAll('.resize-handle');
 
@@ -1134,7 +1185,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             if (initialPinchDistance) {
                 const diff = currentDistance - initialPinchDistance;
                 // Threshold of 15 limits hypersensitivity
-                if (diff > 15) { 
+                if (diff > 15) {
                     zoomIn(svg, grid);
                     initialPinchDistance = currentDistance;
                 } else if (diff < -15) {

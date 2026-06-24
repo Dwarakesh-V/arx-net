@@ -11,13 +11,16 @@ const minWeight = document.getElementById('minWeight'); // Minimum weight input
 const maxWeight = document.getElementById('maxWeight'); // Maximum weight input
 const vertexInput = document.getElementById('numNodes'); // Number of vertices input
 const edgeInput = document.getElementById('numEdges'); // Number of edges input
+const edgeLabel = document.getElementById('edgeCountLabel');
 const generateRandomGraphButton = document.getElementById('generateRandomGraph'); // Generate random graph button
 const generateRandomTreeButton = document.getElementById('generateRandomTree');
+const treeTypeSelect = document.getElementById('treeTypeSelect')
+const graphOptions = document.getElementById('goptions')
+const minMaxRec = document.getElementById('minMaxRec')
 
 const selfLoops = document.getElementById('selfLoops');
 const duplicateEdges = document.getElementById('duplicateEdges');
 const isDirected = document.getElementById('directed');
-const treeTypeRadios = document.querySelectorAll('input[name="treeType"]');
 
 const outliner = document.querySelector('.outliner'); // Outliner - Contains created graphs
 
@@ -34,14 +37,16 @@ let showHideAllGraphs = true; // Show/Hide All graphs state
 
 const clearAll = document.getElementById('clearAll'); // Clear All graphs button
 
-let edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
-let edgeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-hover-color').trim();
-let nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
-let nodeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--node-hover-color').trim();
-let nodeLabelColor = getComputedStyle(document.documentElement).getPropertyValue('--node-label-color').trim();
-let edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-weight-color').trim();
-let gridLineColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line-color').trim();
-let dragNodeColor = getComputedStyle(document.documentElement).getPropertyValue('--drag-node-color').trim();
+const resultLog = document.getElementById('resultLog'); // Explanations are displayed here
+
+var edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
+var edgeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-hover-color').trim();
+var nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
+var nodeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--node-hover-color').trim();
+var nodeLabelColor = getComputedStyle(document.documentElement).getPropertyValue('--node-label-color').trim();
+var edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-weight-color').trim();
+var gridLineColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line-color').trim();
+var dragNodeColor = getComputedStyle(document.documentElement).getPropertyValue('--drag-node-color').trim();
 
 // Available methods
 const algorithms = [
