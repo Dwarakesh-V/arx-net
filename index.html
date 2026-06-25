@@ -16,12 +16,13 @@
                 <button id='about' title='About this application'><img src='images/about.png'></button>
                 <button id='createGraphButton' title='Show/hide create graph menu'><img
                         src='images/sidebarclose.png'></button>
+                <button id='genExplain' title='View generic explanations'><img src='images/explain.png'></button>
             </h2>
             <div class='sourceInput' id='sourceInput'>
                 <input type='text' id='graphName' placeholder='Graph name (Can be blank)'> <br>
                 <input type='text' id='vertices' placeholder='Vertices in Graph: E.G., A, B, C (Can be blank)'
                     style='text-transform: uppercase;'> <br>
-                <input type='text' id='edges' placeholder='Edges in Graph: E.G., AB5, 12-3.14, (B_C_-2.71)'
+                <input type='text' id='edges' placeholder='Edges in Graph: E.G., AB5, 12-3.14, (B,C,-2.71)'
                     autocomplete='off' spellcheck='false'
                     value='AB7, AA6, BA9, AC5, AD3, BC4, BE6, CD2, CF8, DE5, DG7, EE2, EF3, EH4, FG6, FI7, GH2, HI5, HJ9, IJ4'
                     style='text-transform: uppercase;'>
@@ -75,78 +76,144 @@
                     Max/Min edge count for current settings: <b id='maxRec' style='color: #ffc66d;'> 90/0 </b>
                 </p>
                 <button id='generateRandomButton'>Generate random graph/tree</button>
-                <hr style='color: #ccc;'>
+            </div>
+
+            <div class='outliner'>
+                <div class='graphNameTitle'>
+                    <b style='margin-right: 20px; font-size: larger;'>Graph list</b>
+                    <button id='showHideAll' title='Minimize/Maximize all graphs'>
+                        <img src='images/show.png'>
+                    </button>
+                    <button id='clearAll' title='Delete all graphs'>
+                        <img src='images/delete.png'>
+                    </button>
+                </div>
             </div>
         </div>
-        <div class='outliner'>
-            <b style='margin-right: 20px; font-size: larger;'>Graphs</b>
-            <button id='view4' title='Scale graphs to fit 4 graphs in the space'>
-                <img src='images/disable4g.png'>
-            </button>
-            <button id='view9' title='Scale graphs to fit 9 graphs in the space'>
-                <img src='images/disable9g.png'>
-            </button>
-            <button id='snap'
-                title='Snap to increments when moving graph windows. Works only when 4 graph view or 9 graph view is enabled.'>
-                <img src='images/disablesnap.png'>
-            </button>
-            <button id='showHideAll' title='Minimize/Maximize all graphs'>
-                <img src='images/show.png'>
-            </button>
-            <button id='clearAll' title='Delete all graphs'>
-                <img src='images/delete.png'>
-            </button>
+    </div>
+
+    <div class="aboutDiv" id="aboutDiv"
+        style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #e0e0e0; margin: 0 auto; padding: 30px; background: #141414; border-radius: 8px; border: 1px solid #333; box-shadow: 0 8px 32px rgba(0,0,0,0.6);">
+        <div style="text-align: left; margin-bottom: 30px;">
+            <h1
+                style="color: #ffc66d; margin-bottom: 5px; font-size: 2em; text-transform: uppercase; letter-spacing: 1px;">
+                Arx Net Guide
+            </h1>
+            <div style="font-size: 0.9em; color: #777; margin-bottom: 15px;">
+                &copy; 2025 arx-net (Dwarakesh Venkatesh - MIT license)
+            </div>
+            <div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>
+            <p style="font-size: 1.05em; color: #a0a0a0; max-width: 850px; margin-top: 0;">
+                This section provides guidance on how to use the Arx Net application effectively. To learn more about
+                how the underlying application operates, please refer the <a
+                    href='https://github.com/Dwarakesh-V/arx-net/tree/no-react'>GitHub</a>
+            </p>
+        </div>
+
+        <div
+            style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
+            <h2
+                style="margin-top: 0; color: #ffc66d; font-size: 1.25em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
+                Graph Generation
+            </h2>
+            <ul style="margin-bottom: 0; color: #ccc; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">Graph names must be <strong>unique</strong>.</li>
+                <li style="margin-bottom: 10px;">Edges must be declared in one of the following formats:
+                    <ul style="margin-top: 10px; margin-bottom: 12px; padding-left: 20px; color: #a0a0a0;">
+                        <li style="margin-bottom: 6px;"><code
+                                style="background: #141414; padding: 2px 6px; border-radius: 3px; border: 1px solid #333; color: #ffc66d; font-family: monospace;">(A,B,5)</code>
+                            &mdash; Edge from vertex A to B with a weight of 5</li>
+                        <li style="margin-bottom: 6px;"><code
+                                style="background: #141414; padding: 2px 6px; border-radius: 3px; border: 1px solid #333; color: #ffc66d; font-family: monospace;">AB-4</code>
+                            &mdash; Edge from vertex A to B with a weight of -4</li>
+                        <li style="margin-bottom: 6px;"><code
+                                style="background: #141414; padding: 2px 6px; border-radius: 3px; border: 1px solid #333; color: #ffc66d; font-family: monospace;">12-6</code>
+                            &mdash; Edge from vertex 1 to 2 with a weight of -6</li>
+                    </ul>
+                    <span style="font-size: 0.95em;">Edges can be directed or undirected, and weighted or unweighted.
+                        These states are dynamically evaluated based on your active checkbox selections.</span>
+                </li>
+                <li style="margin-bottom: 10px;">Click <strong>'Generate Graph'</strong> to compile the inputted
+                    topology.</li>
+                <li>Alternatively, click <strong>'Generate random graph/tree'</strong> to procedurally build a network
+                    based on your configuration parameters:
+                    <ul style="margin-top: 10px; margin-bottom: 0; padding-left: 20px; color: #a0a0a0;">
+                        <li style="margin-bottom: 6px;">Settings within this section restrict the procedural generation.
+                            For instance, self-loops are explicitly disallowed unless the corresponding checkbox is
+                            activated.</li>
+                        <li>The <em>weighted</em> and <em>directed</em> checkboxes dictate the structural properties of
+                            the resulting procedural topology.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div
+            style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
+            <h2
+                style="margin-top: 0; color: #ffc66d; font-size: 1.25em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
+                Outliner Controls
+            </h2>
+            <ul style="margin-bottom: 0; color: #ccc; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">The outliner displays a hierarchical list of all generated graphs,
+                    offering global toggles to delete or hide all structures simultaneously.</li>
+                <li style="margin-bottom: 10px;"><strong>Double-click</strong> on a graph's name to rename it.
+                    <em>(Remember: All names must remain unique.)</em>
+                </li>
+                <li style="margin-bottom: 10px;">Click the <strong>'Focus'</strong> button to immediately center the
+                    associated graph window, bringing it to the visual foreground and highlighting its active state.
+                </li>
+                <li><strong>Right-click</strong> on a graph name to access contextual actions (Delete / Duplicate):
+                    <ul style="margin-top: 10px; margin-bottom: 0; padding-left: 20px; color: #a0a0a0;">
+                        <li style="margin-bottom: 6px;"><em>Warning:</em> Deleting a graph is a destructive action and
+                            cannot be undone.</li>
+                        <li>Duplicating a graph allows you to alter its fundamental properties by toggling the
+                            <em>directed</em> and <em>weighted</em> checkboxes prior to executing the duplication.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div
+            style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 30px;">
+            <h2
+                style="margin-top: 0; color: #ffc66d; font-size: 1.25em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
+                Graph Window Controls
+            </h2>
+            <ul style="margin-bottom: 0; color: #ccc; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">Use the <strong>Left Mouse Button (LMB)</strong> to select and interact
+                    directly with vertices and edges.</li>
+                <li style="margin-bottom: 10px;">Use the <strong>Middle Mouse Button</strong>, <strong>Ctrl +
+                        LMB</strong>, or <strong>double-click & drag</strong> to pan across the viewport canvas.</li>
+                <li style="margin-bottom: 10px;">Use the <strong>Scroll Wheel</strong> (or trackpad pinch) to smoothly
+                    zoom in and out of the active topology.</li>
+                <li style="margin-bottom: 10px;"><strong>Right-click</strong> anywhere within the window background to
+                    summon a contextual menu containing advanced viewport interactions.</li>
+                <li style="margin-bottom: 10px;"><strong>Double-click</strong> on an empty area of the window to
+                    automatically reset and re-center the graph relative to your current camera view.</li>
+                <li style="margin-bottom: 10px;">Click the <strong>Book Icon</strong> to toggle the algorithm results
+                    panel. Every computed algorithm features an interactive <span
+                        style="color: #ffc66d;">[Explanation]</span> link that dynamically maps out the step-by-step
+                    logic in the right-hand panel.</li>
+                <li>The <strong>Force</strong> checkbox activates a physics-based layout engine. This applies simulated
+                    repulsions and attractions to the nodes collectively, preventing visual overlap or excessive spacing
+                    while dragging.</li>
+            </ul>
+        </div>
+
+        <div
+            style="text-align: center; color: #666; font-size: 0.9em; border-top: 1px solid #333; padding-top: 15px; cursor: default;">
+            <em>Click anywhere outside this window to close the guide.</em>
         </div>
     </div>
 
-    <div class='aboutDiv' id='aboutDiv'>
-        <span style='color: #ffc66d; font-weight: bold; font-size:x-large;'>Arx Net guide</span> <br>
-        © 2025 arx-net
-        <p>
-            This section provides guidance on how to use the Arx Net application effectively. To know about how the
-            application works, please refer to the documentation.
-        </p>
-
-        <span style='color: #ffc66d; font-weight: bold;'>Graph Generation:</span>
-        <ul>
-            <li>Enter the graph name and edges in the specified format.</li>
-            <li>The edges can be directed or undirected, and weighted or unweighted.</li>
-            <li>Click on 'Generate Graph' to create the graph.</li>
-            <li>Alternatively, click on 'Generate random graph' to generate a random graph with the specified
-                number of nodes and edges.</li>
-        </ul>
-
-
-        <span style='color: #ffc66d; font-weight: bold;'>Outliner controls:</span>
-        <ul>
-            <li>The outliner displays all the generated graphs.</li>
-            <li>You can minimize, maximize, or clear all graphs using the provided buttons.</li>
-            <li>The 'View 4' and 'View 9' buttons allow you to scale the graphs to fit 4 or 9 graphs in the
-                available space, respectively.</li>
-            <li>The 'Snap' button enables snapping of graph windows to increments when moving them.</li>
-            <li>You can double click on the graph name to edit it, but each graph must have a unique name.</li>
-            <li>Click on the 'Focus' button to focus on the graph window, which will bring it to the front and
-                highlight it.</li>
-        </ul>
-
-
-        <span style='color: #ffc66d; font-weight: bold;'>Graph window controls:</span>
-        <ul>
-            <li>Use the Left mouse button to interact with the vertices and edges.</li>
-            <li>Use the middle mouse button, Ctrl + LMB or double click drag to pan the graph view.</li>
-            <li>Use the scroll wheel (or pinch) to zoom in and out of the graph.</li>
-            <li>Right clicking on the window or the graph elements will toggle a menu with options corresponding
-                to that element.</li>
-            <li>Double clicking on the window will re-center the graph based on your current view.</li>
-        </ul>
-        Click anywhere outside this window to close the guide.
-    </div>
-    <div id='resultLog'>
-    </div>
+    <div class='resultLog' id='resultLog'></div>
 </body>
 </script>
 <script src='D3.js'></script>
 <script src='globals.js'></script>
+<script src='ctext.js'></script>
 <script src='container-functions.js'></script>
 <script src='svg-functions.js'></script>
 <script src='grid-render.js'></script>

@@ -443,20 +443,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     const operationPanel = document.createElement('div');
     operationPanel.className = 'operation-panel';
 
-    // Rearrange nodes button
-    const rearrangeNodes = document.createElement('button');
-    rearrangeNodes.title = 'Rearrange vertices spaced evenly in a circle';
-    const rearrangeNodesImg = document.createElement('img');
-    rearrangeNodesImg.src = 'images/rearrange.png';
-    rearrangeNodes.appendChild(rearrangeNodesImg);
-    operationPanel.appendChild(rearrangeNodes);
-
-    // Applicable methods button
-    const methodsButton = document.createElement('button');
-    methodsButton.title = 'Show available methods';
-    methodsButton.innerHTML = '<b>&#8964;</b>';
-    operationPanel.appendChild(methodsButton);
-
     headerSpan.appendChild(operationPanel);
 
     // Input Validation - Parse edges
@@ -466,39 +452,53 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         return;
     }
     const applicableAlgorithms = filterAlgorithms(algorithms, directed, weighted);
-    // Create new div for available methods button
+
     /* Available methods */
-    const methodsDiv = document.createElement('div');
-    methodsDiv.className = 'floating-menu';
-    methodsDiv.style.display = 'none';
+    const methodsSelect = document.createElement('select');
+    methodsSelect.id = 'methodsSelect';
 
-    // Create buttons for each applicable algorithm
+    // Placeholder option
+    const placeholder = document.createElement('option');
+    placeholder.textContent = 'Available Methods';
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    methodsSelect.appendChild(placeholder);
+
+    // Add algorithm options
     applicableAlgorithms.forEach(algorithm => {
-        const button = document.createElement('button');
-        button.id = algorithm.name;
-        button.textContent = algorithm.text;
-        button.title = algorithm.title;
-
-        button.addEventListener('click', () => {
-            handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, nameInput.value, methodsElement, svgElement);
-        });
-        methodsDiv.appendChild(button);
+        const option = document.createElement('option');
+        option.value = algorithm.name;
+        option.textContent = algorithm.text;
+        option.title = algorithm.title;
+        option.dataset.algorithm = algorithm.name;
+        methodsSelect.appendChild(option);
     });
 
-    headerSpan.appendChild(methodsDiv);
+    headerSpan.appendChild(methodsSelect);
 
-    // Right click to display available methods
-    methodsButton.addEventListener('click', (event) => {
-        methodsDiv.style.left = `${methodsButton.offsetLeft}px`;
-        methodsElement.style.display = 'none'; // Hide methodsElement if it is visible
-        svgElement.style.height = '100%';
-        methodsDiv.style.display = methodsDiv.style.display === 'none' ? 'block' : 'none';
-        methodsDiv.addEventListener('mouseleave', () => {
-            methodsDiv.style.display = 'none';
-        }, { once: true });
+    // Handle selection
+    methodsSelect.addEventListener('change', (event) => {
+        const selectedAlgorithm = applicableAlgorithms.find(
+            algorithm => algorithm.name === event.target.value
+        );
+
+        if (selectedAlgorithm) {
+            handleAlgorithmClick(
+                selectedAlgorithm,
+                edgesRaw,
+                nodes,
+                directed,
+                weighted,
+                nameInput.value,
+                methodsElement,
+                svgElement
+            );
+        }
+
+        // Reset back to placeholder after running
+        methodsSelect.selectedIndex = 0;
     });
-
-    headerSpan.appendChild(methodsDiv);
     /* End of Available methods */
     /* End of header span content */
 
@@ -506,25 +506,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     graphHeader.appendChild(headerSpan);
 
     // Create the controls div - contains the close button
-    /* Controls */
-    const controlsSpan = document.createElement('span');
-
-    // Create the fullScreen button
-    const fullScreenButton = document.createElement('button');
-    fullScreenButton.className = 'FSButton'
-    fullScreenButton.innerHTML = '<b>&#9744;</b>';
-    fullScreenButton.title = 'Toggle full screen';
-    controlsSpan.appendChild(fullScreenButton);
-
     // Create the close button
     const closeButton = document.createElement('button');
     closeButton.innerHTML = '&#10005;';
     closeButton.title = 'Close graph';
-    controlsSpan.appendChild(closeButton);
-    /* End of Controls */
 
     // Append the controls div to the graphHeader
-    graphHeader.appendChild(controlsSpan);
+    graphHeader.appendChild(closeButton);
     /* End of graph header content */
 
     // Append the graphHeader to the container
@@ -561,18 +549,18 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     const copyr = document.createElement('div');
     copyr.style.display = 'inline-block';
-    copyr.style.margin = '5px 0px 0px 10px';
-    copyr.innerHTML = '© 2025 arx-net';
+    copyr.style.margin = '15px';
+    copyr.innerHTML = '© 2025 arx-net. Your algorithm answers and explanation link will be displayed here. Click on the book icon above to hide.';
     methodsElement.appendChild(copyr);
 
     const methodsElementToggle = document.createElement('button');
     methodsElementToggle.id = 'methodsElementToggle';
-    methodsElementToggle.innerHTML = '&#9776'; // Hamburger menu
+    methodsElementToggle.innerHTML = '<img src=images/log.png />'
     methodsElementToggle.title = 'Toggle visibility for called methods on this graph';
     methodsElementToggle.addEventListener('click', () => {
         if (methodsElement.style.display === 'block') {
             methodsElement.style.display = 'none'
-            svgElement.style.height = "100%";
+            svgElement.style.height = '100%';
         } else {
             methodsElement.style.display = 'block';
             const meHeight = methodsElement.offsetHeight;
@@ -581,344 +569,340 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     })
     operationPanel.appendChild(methodsElementToggle);
 
-    const closeButtonME = document.createElement('button');
-    closeButtonME.className = 'closeButtonME'
-    closeButtonME.innerHTML = '&#10005;';
-    closeButtonME.title = 'Close graph methods window';
-    closeButtonME.addEventListener('click', () => {
-        methodsElementToggle.click();
-    })
-    methodsElement.appendChild(closeButtonME);
-
     // Append the graphContent to the container
     container.appendChild(graphContent);
     /* End of content of container */
     focusAndCenterContainer(container); // Focus on the container when it is created
 
     // Right clicking will display options to reset zoom, focus, hide, and delete graph.
-    container.addEventListener('contextmenu', function (event) {
+    const menuElement = document.createElement("div");
+    menuElement.className = "floating-menu";
+    document.body.appendChild(menuElement);
+
+    const menu = new FloatingMenu(menuElement);
+
+    // Helper to add menu items
+    function addMenuItem(label, title, onClick) {
+        const item = document.createElement('button');
+        item.textContent = label;
+        item.title = title;
+        item.addEventListener('click', () => {
+            onClick();
+            menu.hide();
+        });
+
+        menuElement.appendChild(item);
+    }
+
+    addMenuItem('Rearrange nodes', 'Rearrange nodes for better visibility', () => {
+        autoLayoutNodes(nodes, simulation, width, height, edgesInput);
+        // Apply positions to nodes
+        node.attr('cx', d => d.x).attr('cy', d => d.y);
+
+        // Update link positions
+        setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+        setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+        adjustViewBox(svg, nodes, grid);
+        drawGrid(svg, grid);
+
+        // autoLayoutNodes sets the simulation forces to null, enabling it based on use force checkbox
+        simulation.alphaDecay(1);
+        simulation.alphaTarget(0);
+        if (useForceCheckbox.checked) {
+            enableForceSimulation(simulation, edges, width, height);
+        };
+    });
+
+    // Focus (center and bring to front)
+    addMenuItem('Focus', 'Bring this window to the center of the screen', () => {
+        focusAndCenterContainer(container);
+    });
+
+    // Hide container
+    addMenuItem('Hide', 'Hide this graph', () => {
+        showHideGraph.click();
+    });
+
+    // Delete container
+    addMenuItem('Delete', 'Delete this graph', () => {
+        deleteThisGraph.click();
+    });
+
+    // Create new vertex
+    addMenuItem('Create new vertex', 'Add a new vertex to this graph', () => {
+        let newVertex = prompt("Enter new vertex name (e.g., A, B, C):");
+        if (newVertex) {
+            newVertex = newVertex.toUpperCase();
+            if (nodes.some(node => node.id === newVertex)) {
+                alert(`Vertex ${newVertex} already exists.`);
+            } else {
+                // Place the new node at the cursor
+                // Calculate the SVG coordinates corresponding to the mouse position
+                const pt = svg.node().createSVGPoint();
+                pt.x = event.clientX;
+                pt.y = event.clientY;
+                const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
+                const centerX = svgP.x;
+                const centerY = svgP.y;
+                nodes.push({ id: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 });
+
+                let nodeSelection = nodeLayer.selectAll('circle')
+                    .data(nodes, d => d.id);
+
+                // 3. Handle new nodes with enter()
+                let nodeEnter = nodeSelection.enter()
+                    .append('circle')
+                    .attr('r', 20)
+                    .attr('fill', nodeColor)
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y)
+                    .on('mouseover', function () {
+                        d3.select(this).attr('fill', nodeHoverColor);
+                    })
+                    .on('mouseout', function () {
+                        d3.select(this).attr('fill', nodeColor);
+                    })
+                    .call(
+                        d3.drag()
+                            .on('start', function (event, d) {
+                                dragStarted(event, d, simulation, this);
+                            })
+                            .on('drag', function (event, d) {
+                                dragged(event, d, this);
+                            })
+                            .on('end', function (event, d) {
+                                dragEnded(event, d, simulation, useForceCheckbox.checked, this);
+                            })
+                    )
+                    .on('contextmenu', function (event, d) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        // Create context menu
+                        const menu = document.createElement('div');
+                        menu.className = 'floating-menu';
+                        menu.style.position = 'fixed';
+                        menu.style.left = `${event.clientX}px`;
+                        menu.style.top = `${event.clientY}px`;
+
+                        // Delete node option
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete this vertex';
+                        deleteBtn.onclick = () => {
+                            // Remove the node from the nodes array
+                            const idx = nodes.indexOf(d);
+                            if (idx !== -1) {
+                                nodes.splice(idx, 1);
+                                edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
+                                edgesRaw = edgesRaw.filter(edge => edge.source !== d && edge.target !== d); // Remove from raw edges as well
+                            }
+                            // Remove the node visually
+                            d3.select(this).remove();
+                            // Remove labels associated with this node
+                            label.filter(l => l === d).remove();
+                            if (edgeLabel) {
+                                edgeLabel.filter(e => e.source === d || e.target === d).remove();
+                            }
+                            // Remove edges that go to and from this node
+                            link.filter(l => l.source === d || l.target === d).remove();
+                            // Update edges and edgesRaw
+                            edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
+                            edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                            // Remove context menu
+                            menu.remove();
+                        };
+                        menu.appendChild(deleteBtn);
+
+                        // Create new edge
+                        const newEdgeButton = document.createElement('button');
+                        newEdgeButton.textContent = 'Create new edge from this vertex';
+                        newEdgeButton.onclick = () => {
+                            let targetId = prompt("Enter target vertex id:").toUpperCase();
+                            if (!targetId) {
+                                menu.remove();
+                                return;
+                            }
+                            const targetNode = nodes.find(n => n.id === targetId);
+                            if (!targetNode) {
+                                menu.remove();
+                                alert("Target vertex does not exist.");
+                                return;
+                            }
+                            let weight = 1;
+                            if (weighted) {
+                                let w = prompt("Enter weight for this edge:", "1");
+                                if (w === null) {
+                                    menu.remove();
+                                    return;
+                                }
+                                weight = parseFloat(w);
+                                if (isNaN(weight)) {
+                                    alert("Invalid weight.");
+                                    menu.remove();
+                                    return;
+                                }
+                            }
+                            // Check if the reverse edge exists (i.e., bidirectional)
+                            const reverseEdge = edges.find(e => e.source === targetNode && e.target === d);
+                            const isSelfLoop = d.id === targetId;
+                            if (isSelfLoop) {
+                                edges.push({ source: d, target: targetNode, weight, selfLoop: true })
+                            } else if (reverseEdge) {
+                                // Mark both edges as bidirectional
+                                edges.push({ source: d, target: targetNode, weight, bidirectional: true });
+                                reverseEdge.bidirectional = true;
+                            } else {
+                                edges.push({ source: d, target: targetNode, weight });
+                            }
+
+                            edgesRaw.push({ source: d.id, target: targetNode.id, weight });
+                            // Re-bind data and redraw links and edge labels
+                            link = edgeLayer.selectAll('.link')
+                                .data(edges)
+                                .join(
+                                    enter => enter.append('path')
+                                        .attr('class', 'link')
+                                        .attr('source-id', d => `${arrowId}${d.source.id}`)
+                                        .attr('target-id', d => `${arrowId}${d.target.id}`)
+                                        .attr('fill', 'none')
+                                        .attr('stroke', edgeColor)
+                                        .attr('stroke-width', 1.5)
+                                        .on('mouseover', function () {
+                                            handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
+                                        })
+                                        .on('mouseout', function () {
+                                            handleEdgeMouseOut(this, edgeColor, directed, svgElement);
+                                        })
+                                        .on('contextmenu', function (event, d) {
+                                            showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2);
+                                        }),
+                                    update => update,
+                                    exit => exit.remove()
+                                );
+
+                            // Re-bind data and redraw buffer links for edge hover/click
+                            link2 = edgeBufferLayer.selectAll('.link2')
+                                .data(edges)
+                                .join(
+                                    enter => enter.append('path')
+                                        .attr('class', 'link2')
+                                        .attr('fill', 'none')
+                                        .attr('stroke', 'transparent')
+                                        .attr('stroke-width', 20)
+                                        .style('pointer-events', 'stroke')
+                                        .on('mouseover', function (event, d) {
+                                            const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                            d3.select(selector).dispatch('mouseover');
+                                        })
+                                        .on('mouseout', function (event, d) {
+                                            const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                            d3.select(selector).dispatch('mouseout');
+                                        })
+                                        .on('contextmenu', function (event, d) {
+                                            const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                            d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', {
+                                                bubbles: false,
+                                                cancelable: true,
+                                                clientX: event.clientX,
+                                                clientY: event.clientY,
+                                                view: window
+                                            }));
+                                        }),
+                                    update => update,
+                                    exit => exit.remove()
+                                );
+
+                            // If weighted, update edge labels
+                            if (weighted) {
+                                edgeLabel.exit().remove();
+                                edgeLabel = labelLayer.selectAll('.edge-label')
+                                    .data(edges)
+                                    .join(
+                                        enter => enter.append('text')
+                                            .attr('class', 'edge-label')
+                                            .attr('font-size', 18)
+                                            .attr('fill', edgeWeightColor)
+                                            .text(d => d.weight)
+                                            .style('pointer-events', 'none'),
+                                        update => update.text(d => d.weight),
+                                        exit => exit.remove()
+                                    );
+                            }
+
+                            // Update positions
+                            setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+                            setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+
+                            menu.remove();
+                        }
+                        menu.appendChild(newEdgeButton);
+
+                        // Remove menu on click elsewhere
+                        function removeMenu(e) {
+                            if (!menu.contains(e.target)) {
+                                menu.remove();
+                                document.removeEventListener('mousedown', removeMenu);
+                            }
+                        }
+                        document.addEventListener('mousedown', removeMenu, { once: true });
+
+                        document.body.appendChild(menu);
+                    });
+
+                // Remove old nodes (optional, not always needed)
+                nodeSelection.exit().remove();
+
+                // Merge new and existing nodes if needed later
+                node = nodeEnter.merge(nodeSelection);
+
+                // Update labels
+                let labelSelection = labelLayer.selectAll('text')
+                    .data(nodes, d => d.id);
+
+                // ENTER: Add new labels
+                let labelEnter = labelSelection.enter()
+                    .append('text')
+                    .attr('dy', 3)
+                    .attr('text-anchor', 'middle')
+                    .text(d => d.id)
+                    .attr('font-size', 16)
+                    .attr('fill', nodeLabelColor)
+                    .style('pointer-events', 'none')
+                    .style('font-weight', 'bold');
+
+                // labelSelection.exit().remove();
+
+                // MERGE: Combine enter and update selections
+                label = labelEnter.merge(labelSelection);
+                setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            }
+        }
+    })
+
+    addMenuItem('Save as PNG', 'Save this graph as a PNG image', () => {
+        updateColors();
+        saveSvgAsPng(svgElement, `${nameInput.value}.png`);
+        revertColors();
+    });
+
+    addMenuItem('Save as transparent PNG', 'Save this graph as a PNG image with a transparent background', () => {
+        updateColors();
+        saveSvgAsPng(svgElement, `${nameInput.value}.png`, true);
+        revertColors();
+    });
+
+    container.addEventListener("contextmenu", (event) => {
         event.preventDefault();
 
         if (
-            event.target.closest('.link') ||
-            event.target.closest('.link2') ||
-            event.target.closest('.methodsDiv')
+            event.target.closest(".link") ||
+            event.target.closest(".link2") ||
+            event.target.closest(".methodsDiv")
         ) {
             return;
         }
 
-        // Create context menu
-        const menu = document.createElement('div');
-        menu.className = 'floating-menu';
-        menu.style.position = 'fixed';
-        menu.style.left = `${event.clientX}px`;
-        menu.style.top = `${event.clientY}px`;
-
-        // Helper to add menu items
-        function addMenuItem(label, title, onClick) {
-            const item = document.createElement('button');
-            item.textContent = label;
-            item.title = title;
-            item.addEventListener('click', () => {
-                onClick();
-                menu.remove();
-            });
-            menu.appendChild(item);
-        }
-
-        // Reset zoom
-        addMenuItem('Reset window zoom', 'Set the window size as it initially was', () => {
-            container.style.width = '50';
-            container.style.height = '80%';
-        });
-
-        // Focus (center and bring to front)
-        addMenuItem('Focus', 'Bring this window to the center of the screen', () => {
-            focusAndCenterContainer(container);
-        });
-
-        // Hide container
-        addMenuItem('Hide', 'Hide this graph', () => {
-            showHideGraph.click();
-        });
-
-        // Delete container
-        addMenuItem('Delete', 'Delete this graph', () => {
-            deleteThisGraph.click();
-        });
-
-        // Create new vertex
-        addMenuItem('Create new vertex', 'Add a new vertex to this graph', () => {
-            let newVertex = prompt("Enter new vertex name (e.g., A, B, C):");
-            if (newVertex) {
-                newVertex = newVertex.toUpperCase();
-                if (nodes.some(node => node.id === newVertex)) {
-                    alert(`Vertex ${newVertex} already exists.`);
-                } else {
-                    // Place the new node at the cursor
-                    // Calculate the SVG coordinates corresponding to the mouse position
-                    const pt = svg.node().createSVGPoint();
-                    pt.x = event.clientX;
-                    pt.y = event.clientY;
-                    const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
-                    const centerX = svgP.x;
-                    const centerY = svgP.y;
-                    nodes.push({ id: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 });
-
-                    let nodeSelection = nodeLayer.selectAll('circle')
-                        .data(nodes, d => d.id);
-
-                    // 3. Handle new nodes with enter()
-                    let nodeEnter = nodeSelection.enter()
-                        .append('circle')
-                        .attr('r', 20)
-                        .attr('fill', nodeColor)
-                        .attr('cx', d => d.x)
-                        .attr('cy', d => d.y)
-                        .on('mouseover', function () {
-                            d3.select(this).attr('fill', nodeHoverColor);
-                        })
-                        .on('mouseout', function () {
-                            d3.select(this).attr('fill', nodeColor);
-                        })
-                        .call(
-                            d3.drag()
-                                .on('start', function (event, d) {
-                                    dragStarted(event, d, simulation, this);
-                                })
-                                .on('drag', function (event, d) {
-                                    dragged(event, d, this);
-                                })
-                                .on('end', function (event, d) {
-                                    dragEnded(event, d, simulation, useForceCheckbox.checked, this);
-                                })
-                        )
-                        .on('contextmenu', function (event, d) {
-                            event.preventDefault();
-                            event.stopPropagation();
-
-                            // Create context menu
-                            const menu = document.createElement('div');
-                            menu.className = 'floating-menu';
-                            menu.style.position = 'fixed';
-                            menu.style.left = `${event.clientX}px`;
-                            menu.style.top = `${event.clientY}px`;
-
-                            // Delete node option
-                            const deleteBtn = document.createElement('button');
-                            deleteBtn.textContent = 'Delete this vertex';
-                            deleteBtn.onclick = () => {
-                                // Remove the node from the nodes array
-                                const idx = nodes.indexOf(d);
-                                if (idx !== -1) {
-                                    nodes.splice(idx, 1);
-                                    edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
-                                    edgesRaw = edgesRaw.filter(edge => edge.source !== d && edge.target !== d); // Remove from raw edges as well
-                                }
-                                // Remove the node visually
-                                d3.select(this).remove();
-                                // Remove labels associated with this node
-                                label.filter(l => l === d).remove();
-                                if (edgeLabel) {
-                                    edgeLabel.filter(e => e.source === d || e.target === d).remove();
-                                }
-                                // Remove edges that go to and from this node
-                                link.filter(l => l.source === d || l.target === d).remove();
-                                // Update edges and edgesRaw
-                                edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
-                                edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
-                                // Remove context menu
-                                menu.remove();
-                            };
-                            menu.appendChild(deleteBtn);
-
-                            // Create new edge
-                            const newEdgeButton = document.createElement('button');
-                            newEdgeButton.textContent = 'Create new edge from this vertex';
-                            newEdgeButton.onclick = () => {
-                                let targetId = prompt("Enter target vertex id:").toUpperCase();
-                                if (!targetId) {
-                                    menu.remove();
-                                    return;
-                                }
-                                const targetNode = nodes.find(n => n.id === targetId);
-                                if (!targetNode) {
-                                    menu.remove();
-                                    alert("Target vertex does not exist.");
-                                    return;
-                                }
-                                let weight = 1;
-                                if (weighted) {
-                                    let w = prompt("Enter weight for this edge:", "1");
-                                    if (w === null) {
-                                        menu.remove();
-                                        return;
-                                    }
-                                    weight = parseFloat(w);
-                                    if (isNaN(weight)) {
-                                        alert("Invalid weight.");
-                                        menu.remove();
-                                        return;
-                                    }
-                                }
-                                // Check if the reverse edge exists (i.e., bidirectional)
-                                const reverseEdge = edges.find(e => e.source === targetNode && e.target === d);
-                                const isSelfLoop = d.id === targetId;
-                                if (isSelfLoop) {
-                                    edges.push({ source: d, target: targetNode, weight, selfLoop: true })
-                                } else if (reverseEdge) {
-                                    // Mark both edges as bidirectional
-                                    edges.push({ source: d, target: targetNode, weight, bidirectional: true });
-                                    reverseEdge.bidirectional = true;
-                                } else {
-                                    edges.push({ source: d, target: targetNode, weight });
-                                }
-
-                                edgesRaw.push({ source: d.id, target: targetNode.id, weight });
-                                // Re-bind data and redraw links and edge labels
-                                link = edgeLayer.selectAll('.link')
-                                    .data(edges)
-                                    .join(
-                                        enter => enter.append('path')
-                                            .attr('class', 'link')
-                                            .attr('source-id', d => `${arrowId}${d.source.id}`)
-                                            .attr('target-id', d => `${arrowId}${d.target.id}`)
-                                            .attr('fill', 'none')
-                                            .attr('stroke', edgeColor)
-                                            .attr('stroke-width', 1.5)
-                                            .on('mouseover', function () {
-                                                handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
-                                            })
-                                            .on('mouseout', function () {
-                                                handleEdgeMouseOut(this, edgeColor, directed, svgElement);
-                                            })
-                                            .on('contextmenu', function (event, d) {
-                                                showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2);
-                                            }),
-                                        update => update,
-                                        exit => exit.remove()
-                                    );
-
-                                // Re-bind data and redraw buffer links for edge hover/click
-                                link2 = edgeBufferLayer.selectAll('.link2')
-                                    .data(edges)
-                                    .join(
-                                        enter => enter.append('path')
-                                            .attr('class', 'link2')
-                                            .attr('fill', 'none')
-                                            .attr('stroke', 'transparent')
-                                            .attr('stroke-width', 20)
-                                            .style('pointer-events', 'stroke')
-                                            .on('mouseover', function (event, d) {
-                                                const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                                d3.select(selector).dispatch('mouseover');
-                                            })
-                                            .on('mouseout', function (event, d) {
-                                                const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                                d3.select(selector).dispatch('mouseout');
-                                            })
-                                            .on('contextmenu', function (event, d) {
-                                                const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                                d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', {
-                                                    bubbles: false,
-                                                    cancelable: true,
-                                                    clientX: event.clientX,
-                                                    clientY: event.clientY,
-                                                    view: window
-                                                }));
-                                            }),
-                                        update => update,
-                                        exit => exit.remove()
-                                    );
-
-                                // If weighted, update edge labels
-                                if (weighted) {
-                                    edgeLabel.exit().remove();
-                                    edgeLabel = labelLayer.selectAll('.edge-label')
-                                        .data(edges)
-                                        .join(
-                                            enter => enter.append('text')
-                                                .attr('class', 'edge-label')
-                                                .attr('font-size', 18)
-                                                .attr('fill', edgeWeightColor)
-                                                .text(d => d.weight)
-                                                .style('pointer-events', 'none'),
-                                            update => update.text(d => d.weight),
-                                            exit => exit.remove()
-                                        );
-                                }
-
-                                // Update positions
-                                setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-                                setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
-
-                                menu.remove();
-                            }
-                            menu.appendChild(newEdgeButton);
-
-                            // Remove menu on click elsewhere
-                            function removeMenu(e) {
-                                if (!menu.contains(e.target)) {
-                                    menu.remove();
-                                    document.removeEventListener('mousedown', removeMenu);
-                                }
-                            }
-                            document.addEventListener('mousedown', removeMenu, { once: true });
-
-                            document.body.appendChild(menu);
-                        });
-
-                    // Remove old nodes (optional, not always needed)
-                    nodeSelection.exit().remove();
-
-                    // Merge new and existing nodes if needed later
-                    node = nodeEnter.merge(nodeSelection);
-
-                    // Update labels
-                    let labelSelection = labelLayer.selectAll('text')
-                        .data(nodes, d => d.id);
-
-                    // ENTER: Add new labels
-                    let labelEnter = labelSelection.enter()
-                        .append('text')
-                        .attr('dy', 3)
-                        .attr('text-anchor', 'middle')
-                        .text(d => d.id)
-                        .attr('font-size', 16)
-                        .attr('fill', nodeLabelColor)
-                        .style('pointer-events', 'none')
-                        .style('font-weight', 'bold');
-
-                    // labelSelection.exit().remove();
-
-                    // MERGE: Combine enter and update selections
-                    label = labelEnter.merge(labelSelection);
-                    setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-                }
-            }
-        })
-
-        addMenuItem('Save as PNG', 'Save this graph as a PNG image', () => {
-            updateColors();
-            saveSvgAsPng(svgElement, `${nameInput.value}.png`);
-            revertColors();
-        });
-
-        addMenuItem('Save as transparent PNG', 'Save this graph as a PNG image with a transparent background', () => {
-            updateColors();
-            saveSvgAsPng(svgElement, `${nameInput.value}.png`, true);
-            revertColors();
-        });
-
-        // Remove menu on click elsewhere
-        document.addEventListener('mousedown', function handler(e) {
-            if (!menu.contains(e.target)) {
-                menu.remove();
-                document.removeEventListener('mousedown', handler);
-            }
-        }, { once: true });
-
-        document.body.appendChild(menu);
+        menu.show(event);
     });
 
     /* Function to save printable png */
@@ -972,22 +956,24 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* Container elements' functionality */
     /* Drag functionality */
     graphHeader.addEventListener('mousedown', (e) => {
-        setContainerPosition(e, container, fullScreenButton);
+        setContainerPosition(e, container);
+    });
+    graphHeader.addEventListener('contextmenu', (e) => {
+        e.preventDefault();          // Prevent browser context menu
+        e.stopPropagation();         // Prevent bubbling
+        e.stopImmediatePropagation(); // Prevent other listeners on this element
     });
     /* End of drag functionality */
 
     /* Resize functionality */
     resizeHandles.forEach(handle => {
         handle.addEventListener('mousedown', (e) => {
+            methodsElement.style.display = 'none';
+            svgElement.style.height = '100%';
             handleResizeStart(e, handle, container);
         });
     });
     /* End of resize functionality */
-
-    // Full screen button
-    fullScreenButton.addEventListener('click', () => {
-        toggleContainerFullScreen(container, focusAndCenterContainer);
-    });
 
     /* Outliner elements */
     // Div for the show/hide graph button and delete button
@@ -1063,9 +1049,23 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     });
 
     /* General graph methods div */
-    const graphOptions = document.createElement('div');
-    graphOptions.className = 'floating-menu';
-    graphOptions.style.display = 'none';
+    /* End of general graph methods div */
+    /* End of outliner graph functionalities */
+
+    // Span for the buttons
+    const showHideSpanButtons = document.createElement('span');
+    showHideSpanButtons.className = 'SHSB'
+    showHideSpanButtons.appendChild(focusButton);
+    showHideSpanButtons.appendChild(showHideGraph);
+    showHideDeleteDiv.appendChild(showHideSpanButtons);
+
+    // Div that contains operations of the outliner
+    const outMethods = document.createElement('div');
+    outMethods.className = 'outMethods';
+    outMethods.style.padding = '50px';
+    /* End of outliner elements */
+
+    outliner.appendChild(showHideDeleteDiv);
 
     const duplicateGraph = document.createElement('button'); // Duplicate graph with weights and directions turned on/off
     duplicateGraph.textContent = 'Duplicate graph';
@@ -1074,7 +1074,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     duplicateGraph.addEventListener('click', () => {
         let edgesRawString = stringifyEdges(edgesRaw);
         addGraph(edgesRawString, nodes, `${nameInput.value} copy`);
-        graphOptions.style.display = "none";
     });
 
     const deleteThisGraph = document.createElement('button'); // Delete this graph
@@ -1085,50 +1084,20 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         deleteGraph(container, displayName);
     });
 
-    graphOptions.appendChild(duplicateGraph);
-    graphOptions.appendChild(deleteThisGraph);
-    outliner.appendChild(graphOptions);
-    /* End of general graph methods div */
+    const dupDelMenuObj = document.createElement('div');
+    dupDelMenuObj.id = 'dupDelMenu';
+    dupDelMenuObj.className = 'floating-menu';
 
-    /* Modify graph functionality */
-    const graphmodifierButton = document.createElement('button');
-    graphmodifierButton.innerHTML = '<b>...</b>';
-    graphmodifierButton.title = 'Modify graph';
-    graphmodifierButton.addEventListener('click', () => {
-        graphOptions.style.display = graphOptions.style.display === 'none' ? 'block' : 'none';
-        graphOptions.style.left = `${graphmodifierButton.offsetLeft - 100}px`;
-        graphOptions.style.top = `${graphmodifierButton.offsetTop + graphmodifierButton.offsetHeight}px`;
+    dupDelMenuObj.appendChild(duplicateGraph);
+    dupDelMenuObj.appendChild(deleteThisGraph);
+
+    document.body.appendChild(dupDelMenuObj);
+
+    const dupDelMenu = new FloatingMenu(dupDelMenuObj);
+
+    showHideDeleteDiv.addEventListener("contextmenu", (e) => {
+        dupDelMenu.show(e);
     });
-
-    graphmodifierButton.addEventListener('mouseleave', (event) => {
-        if (!graphOptions.contains(event.relatedTarget)) {
-            graphOptions.style.display = 'none';
-        }
-    });
-
-    graphOptions.addEventListener('mouseleave', (event) => {
-        if (!graphmodifierButton.contains(event.relatedTarget)) {
-            graphOptions.style.display = 'none';
-        }
-    });
-    /* End of modify graph functionality */
-    /* End of outliner graph functionalities */
-
-    // Span for the buttons
-    const showHideSpanButtons = document.createElement('span');
-    showHideSpanButtons.className = 'SHSB'
-    showHideSpanButtons.appendChild(focusButton);
-    showHideSpanButtons.appendChild(showHideGraph);
-    showHideSpanButtons.appendChild(graphmodifierButton);
-    showHideDeleteDiv.appendChild(showHideSpanButtons);
-
-    // Div that contains operations of the outliner
-    const outMethods = document.createElement('div');
-    outMethods.className = 'outMethods';
-    outMethods.style.padding = '50px';
-    /* End of outliner elements */
-
-    outliner.appendChild(showHideDeleteDiv);
 
     // Clear previous graph
     const svg = d3.select(svgElement);
@@ -1561,6 +1530,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* Functions to update positions */
     autoLayoutNodes(nodes, simulation, width, height, edgesInput); // Initial call to generate the graph
+
     // Apply positions to nodes
     node.attr('cx', d => d.x).attr('cy', d => d.y);
     adjustViewBox(svg, nodes, grid); // Initial call to center the graph
@@ -1570,26 +1540,5 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
         setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
     });
-
-    /* Auto-rearrange nodes functionality */
-    rearrangeNodes.addEventListener('click', () => {
-        autoLayoutNodes(nodes, simulation, width, height, edgesInput);
-        // Apply positions to nodes
-        node.attr('cx', d => d.x).attr('cy', d => d.y);
-
-        // Update link positions
-        setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-        setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
-        adjustViewBox(svg, nodes, grid);
-        drawGrid(svg, grid);
-
-        // autoLayoutNodes sets the simulation forces to null, enabling it based on use force checkbox
-        simulation.alphaDecay(1);
-        simulation.alphaTarget(0);
-        if (useForceCheckbox.checked) {
-            enableForceSimulation(simulation, edges, width, height);
-        };
-    });
-    /* End of auto-rearrange nodes functionality */
     /* End of functions to update positions */
 };

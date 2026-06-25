@@ -106,32 +106,6 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
     }
 }
 
-// Snapping functionality for 4 and 9 graph views
-function snapPosition(x, y) {
-    let parentWidth = document.body.offsetWidth;
-    let parentHeight = document.body.offsetHeight;
-
-    if (snapping && view4gen) {
-        let snapX = (x / parentWidth) < 0.1875 ? 0 : 0.375 * parentWidth;
-        let snapY = (y / parentHeight) < 0.25 ? 0 : 0.5 * parentHeight;
-        return [snapX, snapY];
-    }
-    else if (snapping && view9gen) {
-        let snapXValues = [0, 0.25, 0.50].map(val => val * parentWidth);
-        let snapYValues = [0, 0.3333, 0.6666].map(val => val * parentHeight);
-
-        let snapX = snapXValues.reduce((prev, curr) =>
-            Math.abs(curr - x) < Math.abs(prev - x) ? curr : prev
-        );
-        let snapY = snapYValues.reduce((prev, curr) =>
-            Math.abs(curr - y) < Math.abs(prev - y) ? curr : prev
-        );
-        return [snapX, snapY];
-    }
-
-    return [x, y];
-}
-
 // Parse edges input into an array of edge objects
 function parseEdges(edgesInput, directed = true) {
     // Split on commas, but ignore commas that are inside parentheses
@@ -180,7 +154,7 @@ function parseEdges(edgesInput, directed = true) {
             target = null;
             weight = null;
         } else {
-            alert("Invalid edge format: " + edge);
+            console.error("Invalid edge format: " + edge);
             return null;
         }
 
@@ -621,5 +595,4 @@ function deleteGraph(container, displayName) {
 
     // Decrement graph count and hide graph options
     graphCount--;
-    graphOptions.style.display = "none";
 }

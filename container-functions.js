@@ -18,50 +18,35 @@ function focusAndCenterContainer(container, resize = true) {
     const offsetX = container.offsetWidth / 2;
     const offsetY = container.offsetHeight / 2;
 
-    container.style.left = '0px';
+    container.style.left = '25%';
     container.style.top = '10%';
 
     focusOnThisContainer(container);
 }
 
 // Dragging functionality for the container
-function setContainerPosition(e, container, fullScreenButton) {
-    if (e.target.tagName.toLowerCase() === 'input' || e.target.closest('button')) return;
+function setContainerPosition(e, container) {
+    if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.closest('button')) return;
     e.preventDefault();
-
-    if (isFullScreen) {
-        fullScreenButton.click(); // Exit full screen if it is in full screen mode
-        container.style.top = (e.clientY - 10) + 'px'; // Offset top by 10px
-        container.style.left = (e.clientX - 0.8 * container.offsetWidth) + 'px'; // Offset left by 80% of container width
-    }
 
     let offsetX = e.clientX - container.offsetLeft;
     let offsetY = e.clientY - container.offsetTop;
 
-    function setSnappedContainerPosition(event) {
+    function relocateContainer(event) {
         let x = event.clientX - offsetX;
         let y = event.clientY - offsetY;
-        let [snapX, snapY] = snapPosition(x, y);
-        container.style.left = `${snapX}px`;
-        container.style.top = `${snapY}px`;
+        container.style.left = `${x}px`;
+        container.style.top = `${y}px`;
     }
 
-    document.addEventListener('mousemove', setSnappedContainerPosition);
+    document.addEventListener('mousemove', relocateContainer);
     document.addEventListener('mouseup', () => {
-        document.removeEventListener('mousemove', setSnappedContainerPosition);
+        document.removeEventListener('mousemove', relocateContainer);
     }, { once: true });
 }
 
 function handleResizeStart(event, handle, container) {
     event.preventDefault();
-
-    if (view4gen) {
-        view4.click(); // Disable resizing for 4-graph view
-        return;
-    } else if (view9gen) {
-        view9.click(); // Disable resizing for 9-graph view
-        return;
-    }
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -105,8 +90,8 @@ function performResize(event, { startX, startY, startWidth, startHeight, startLe
         newTop = startTop + (event.clientY - startY);
     }
 
-    const minWidth = window.innerWidth * 0.25;
-    const minHeight = window.innerHeight * 0.33;
+    const minWidth = window.innerWidth * 0.33;
+    const minHeight = window.innerHeight * 0.5;
     const maxWidth = window.innerWidth;
     const maxHeight = window.innerHeight;
 
@@ -148,34 +133,4 @@ function performTopResize(event, startY, startHeight, methodsElement, container,
         methodsElement.style.height = `${newHeight}px`;
         svgElement.style.height = `calc(100% - ${newHeight}px)`;
     }
-}
-
-function toggleContainerFullScreen(container, focusAndCenterFn) {
-    if (!isFullScreen) {
-        saveOldContainerDimensions(container);
-        enterFullScreen(container);
-        focusAndCenterFn(container, false, true);
-    } else {
-        exitFullScreen(container);
-        focusAndCenterFn(container, false, null, oldContainerLeft, oldContainerTop);
-    }
-}
-
-function saveOldContainerDimensions(container) {
-    oldContainerWidth = container.style.width;
-    oldContainerHeight = container.style.height;
-    oldContainerLeft = container.offsetLeft;
-    oldContainerTop = container.offsetTop;
-    isFullScreen = true;
-}
-
-function enterFullScreen(container) {
-    container.style.width = `${window.innerWidth}px`;
-    container.style.height = `${window.innerHeight}px`;
-}
-
-function exitFullScreen(container) {
-    container.style.width = oldContainerWidth;
-    container.style.height = oldContainerHeight;
-    isFullScreen = false;
 }

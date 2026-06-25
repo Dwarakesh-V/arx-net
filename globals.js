@@ -1,4 +1,5 @@
 const aboutBtn = document.getElementById('about');
+const genBtn = document.getElementById('genExplain');
 const aboutDiv = document.getElementById('aboutDiv');
 
 const cgb = document.getElementById('createGraphButton'); // Create graph button
@@ -23,14 +24,6 @@ const duplicateEdges = document.getElementById('duplicateEdges');
 const isDirected = document.getElementById('directed');
 
 const outliner = document.querySelector('.outliner'); // Outliner - Contains created graphs
-
-const view4 = document.getElementById('view4'); // View 4 button
-const view9 = document.getElementById('view9'); // View 9 button
-let view4gen = false; // View 4 generation state
-let view9gen = false; // View 9 generation state
-
-const snap = document.getElementById('snap'); // Snapping for 4 and 9 graph view
-let snapping = false; // Snapping state
 
 const showHideAll = document.getElementById('showHideAll'); // Show/Hide All graphs button
 let showHideAllGraphs = true; // Show/Hide All graphs state
@@ -75,3 +68,129 @@ let oldContainerWidth, oldContainerHeight, oldContainerLeft, oldContainerTop;
 // Graph management variables
 let graphCount = 0;
 let availableGraphs = [];
+
+class FloatingMenu {
+    constructor(menu) {
+        if (typeof menu === "string") {
+            this.menu = document.querySelector(menu);
+        } else {
+            this.menu = menu;
+        }
+
+        if (!this.menu) {
+            throw new Error("Floating menu element not found.");
+        }
+
+        this.menu.classList.add("floating-menu");
+        this.menu.style.position = "fixed";
+        this.menu.style.display = "none";
+
+        this.visible = false;
+
+        this.#setupEvents();
+    }
+
+    #setupEvents() {
+        document.addEventListener("mousedown", (e) => {
+            if (!this.visible) return;
+
+            if (!this.menu.contains(e.target)) {
+                this.hide();
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                this.hide();
+            }
+        });
+
+        window.addEventListener("resize", () => {
+            if (this.visible) {
+                this.#keepInsideViewport();
+            }
+        });
+
+        window.addEventListener("scroll", () => {
+            if (this.visible) {
+                this.#keepInsideViewport();
+            }
+        });
+    }
+
+    show(eventOrX, y = null) {
+        let x;
+
+        if (eventOrX instanceof MouseEvent) {
+            x = eventOrX.clientX;
+            y = eventOrX.clientY;
+
+            // Prevent browser context menu if desired
+            eventOrX.preventDefault();
+        } else {
+            x = eventOrX;
+        }
+
+        this.menu.style.display = "block";
+
+        // Position first
+        this.menu.style.left = `${x}px`;
+        this.menu.style.top = `${y}px`;
+
+        this.#position(x, y);
+
+        this.visible = true;
+    }
+
+    hide() {
+        this.menu.style.display = "none";
+        this.visible = false;
+    }
+
+    toggle(eventOrX, y = null) {
+        if (this.visible) {
+            this.hide();
+        } else {
+            this.show(eventOrX, y);
+        }
+    }
+
+    #position(x, y) {
+        const rect = this.menu.getBoundingClientRect();
+
+        let left = x;
+        let top = y;
+
+        const padding = 4;
+
+        // Right edge
+        if (left + rect.width > window.innerWidth - padding) {
+            left = window.innerWidth - rect.width - padding;
+        }
+
+        // Bottom edge
+        if (top + rect.height > window.innerHeight - padding) {
+            top = window.innerHeight - rect.height - padding;
+        }
+
+        // Left edge
+        if (left < padding) {
+            left = padding;
+        }
+
+        // Top edge
+        if (top < padding) {
+            top = padding;
+        }
+
+        this.menu.style.left = `${left}px`;
+        this.menu.style.top = `${top}px`;
+
+        this.lastX = left;
+        this.lastY = top;
+    }
+
+    #keepInsideViewport() {
+        this.#position(this.lastX, this.lastY);
+    }
+}
