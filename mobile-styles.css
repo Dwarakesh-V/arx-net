@@ -15,6 +15,10 @@
         left:7.5%;
     }
 
+    .resultLog {
+        display: none;
+    }
+
     .FSButton {
         display: none;
     }
@@ -45,8 +49,7 @@
     }
 
     #generateGraph,
-    #generateRandomGraph,
-    #generateRandomTree {
+    #generateRandomButton {
         font-size: 11px;
         padding: 6px 7px;
         width: calc(100% - 20px);
