@@ -188,4 +188,8 @@ class FloatingMenu { /* Resuable floating menu that works like browser right cli
     }
 }
 
-const isMobile = window.innerWidth <= 768; // Mobile device support modification
+let isMobile = window.innerWidth <= 768; // Mobile device support modification
+
+window.addEventListener("resize", () => {
+    isMobile = window.innerWidth <= 768;
+});
