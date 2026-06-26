@@ -39,5 +39,14 @@
 
     svg {
         touch-action: none;
+        /* Prevents native scroll/zoom */
+        user-select: none;
+        /* Prevents text selection */
+        -webkit-user-select: none;
+        /* Safari support */
+        -webkit-touch-callout: none;
+        /* Prevents iOS long-press context menu */
+        -webkit-user-drag: none;
+        /* Prevents native element dragging */
     }
 }
