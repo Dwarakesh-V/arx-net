@@ -1155,15 +1155,23 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* Pan functionality to middle mouse hold or Ctrl + LMB and drag */
     /* Pan functionality functions */
-    svg.on('mousedown', (event) => {
+    /* Pan functionality functions */
+    svg.on('pointerdown', (event) => {
         svgPanStart(event);
     });
-    svg.on('mousemove', (event) => {
+    svg.on('pointermove', (event) => {
         svgPanMove(event, svg, drawGrid, grid);
     });
-    svg.on('mouseup', () => {
+    svg.on('pointerup', () => {
         svgPanEnd();
     });
+    svg.on('pointerleave', () => {
+        svgPanEnd(); // Stops panning if the cursor/finger leaves the SVG
+    });
+    svg.on('pointercancel', () => {
+        svgPanEnd(); // Handles mobile touch interruptions
+    });
+    /* End of pan functionality */
     /* End of pan functionality */
 
     // CHANGED: Prevent adjustViewBox from firing if we just finished a double-click pan

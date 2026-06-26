@@ -58,10 +58,6 @@ const algorithms = [
 // Drawing grid
 const gridSize = 40; // Defines the distance between lines
 
-// SVG panning variables
-let isSvgPanning = false;
-let panStartX, panStartY;
-
 // Graph management variables
 let graphCount = 0;
 let availableGraphs = [];
