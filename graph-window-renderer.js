@@ -1058,11 +1058,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     showHideSpanButtons.appendChild(focusButton);
     showHideSpanButtons.appendChild(showHideGraph);
     showHideDeleteDiv.appendChild(showHideSpanButtons);
-
-    // Div that contains operations of the outliner
-    const outMethods = document.createElement('div');
-    outMethods.className = 'outMethods';
-    outMethods.style.padding = '50px';
     /* End of outliner elements */
 
     outliner.appendChild(showHideDeleteDiv);

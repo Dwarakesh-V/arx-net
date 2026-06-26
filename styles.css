@@ -191,7 +191,6 @@ img {
     background-color: var(--bg-secondary);
     padding: 0.625rem;
     z-index: 1;
-    overflow: visible;
 }
 
 .container p,

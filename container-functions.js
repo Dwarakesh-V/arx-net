@@ -10,23 +10,22 @@ function focusOnThisContainer(container) {
 
 // Focus on this container and center it in the viewport
 function focusAndCenterContainer(container, resize = true) {
-
-    container.style.height = '80%';
-    container.style.width = '50%';
-    isFullScreen = false; // Reset full screen state
-
-    const offsetX = container.offsetWidth / 2;
-    const offsetY = container.offsetHeight / 2;
-
-    container.style.left = '25%';
-    container.style.top = '10%';
+    if (!isMobile) {
+        container.style.height = '80%';
+        container.style.width = '50%';
+        container.style.left = '25%';
+        container.style.top = '10%';
+    } else {
+        container.style.height = '50%';
+        container.style.width = '100%';
+    }
 
     focusOnThisContainer(container);
 }
 
 // Dragging functionality for the container
 function setContainerPosition(e, container) {
-    if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.closest('button')) return;
+    if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.closest('button') || isMobile) return;
     e.preventDefault();
 
     let offsetX = e.clientX - container.offsetLeft;
@@ -47,6 +46,7 @@ function setContainerPosition(e, container) {
 
 function handleResizeStart(event, handle, container) {
     event.preventDefault();
+    if (isMobile) return;
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -108,6 +108,7 @@ function performResize(event, { startX, startY, startWidth, startHeight, startLe
 
 function handleTopResizeMouseDown(event, methodsElement, container, svgElement) {
     event.preventDefault();
+    if (isMobile) return;
 
     const startY = event.clientY;
     const startHeight = methodsElement.offsetHeight;

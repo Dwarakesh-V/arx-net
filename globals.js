@@ -61,15 +61,11 @@ const gridSize = 40; // Defines the distance between lines
 let isSvgPanning = false;
 let panStartX, panStartY;
 
-// Fullscreen mode variables
-let isFullScreen = false;
-let oldContainerWidth, oldContainerHeight, oldContainerLeft, oldContainerTop;
-
 // Graph management variables
 let graphCount = 0;
 let availableGraphs = [];
 
-class FloatingMenu {
+class FloatingMenu { /* Resuable floating menu that works like browser right click menu */
     constructor(menu) {
         if (typeof menu === "string") {
             this.menu = document.querySelector(menu);
@@ -194,3 +190,5 @@ class FloatingMenu {
         this.#position(this.lastX, this.lastY);
     }
 }
+
+const isMobile = window.innerWidth <= 768; // Mobile device support modification
