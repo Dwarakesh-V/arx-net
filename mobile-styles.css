@@ -7,6 +7,11 @@
         overflow: auto;
     }
 
+    .aboutDiv {
+        position: fixed;
+        width: 90%;
+    }
+
     .graphContainer {
         position: fixed;
         top: 0;
