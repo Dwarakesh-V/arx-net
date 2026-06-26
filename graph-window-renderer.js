@@ -429,7 +429,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     useForceCheckbox.title = 'Apply a force when dragging a node to affect other nodes';
     useForceCheckbox.checked = false;
     headerSpan.appendChild(useForceCheckbox);
-    headerSpan.appendChild(document.createTextNode('Use Force'));
+    headerSpan.appendChild(document.createTextNode('Force'));
 
     // Create the "Show grid" checkbox
     const gridCheckbox = document.createElement('input');
@@ -437,7 +437,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     gridCheckbox.title = 'Show/Hide grid';
     gridCheckbox.checked = true;
     headerSpan.appendChild(gridCheckbox);
-    headerSpan.appendChild(document.createTextNode('Show grid'));
+    headerSpan.appendChild(document.createTextNode('Grid'));
 
     // Create a div for the rearrange nodes and applicable methods
     const operationPanel = document.createElement('div');

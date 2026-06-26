@@ -31,6 +31,14 @@ cgb.addEventListener('click', function () {
     }
 });
 
+fullScreenBtn.addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+    } else {
+        document.exitFullscreen()
+    }
+});
+
 // Maximum edges calculation functionality
 function updateMinMax() {
     const updatedValue = parseInt(document.getElementById("numNodes").value);

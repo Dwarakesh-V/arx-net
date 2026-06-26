@@ -1,6 +1,7 @@
 const aboutBtn = document.getElementById('about');
 const genBtn = document.getElementById('genExplain');
 const aboutDiv = document.getElementById('aboutDiv');
+const fullScreenBtn = document.getElementById('toggleFullScreen');
 
 const cgb = document.getElementById('createGraphButton'); // Create graph button
 const graphGenMenu = document.getElementById('sourceInput')
