@@ -205,6 +205,52 @@
         </div>
 
         <div
+            style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
+            <h2
+                style="margin-top: 0; color: #ffc66d; font-size: 1.25em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
+                Miscellaneous
+            </h2>
+            <ul style="margin-bottom: 0; color: #ccc; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">There is also python support for this application that allows Arx-Net
+                    style parsing and seamless type conversion between adjacency list, edge list and adjacency matrix to
+                    use in combination with networkx. </li>
+                <li style="margin-bottom: 10px;">To get started, run &nbsp;<span
+                        style="color: #ffc66d; font-family: monospace;">pip install arx-net networkx</span>&nbsp; from
+                    your python
+                    environment.</li>
+                <li style="margin-bottom: 10px;">This is a sample program on how they can be used together: <br></li>
+            </ul>
+            <center>
+                <div
+                    style="font-family: monospace; background-color: #141414; color: #d4d4d4; border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem; margin: 1rem; overflow-x: auto; white-space: nowrap; text-align: left;">
+                    <span style="color: #c586c0; font-family: monospace;">import</span> arx_net <br>
+                    <span style="color: #c586c0; font-family: monospace;">import</span> networkx <span
+                        style="color: #c586c0; font-family: monospace;">as</span> nx <br>
+                    adjList = arx_net.parse_edges(<span style="color: #ce9178; font-family: monospace;">"AB7,
+                        AA6,
+                        BA9, AC5, AD3, BC4, BE6, CD2, CF8, DE5, DG7, EE2, EF3, EH4, FG6, FI7, GH2, HI5, HJ9,
+                        IJ4"</span>) <br>
+                    edges = arx_net.convert_type(adjList, <span
+                        style="color: #ce9178; font-family: monospace;">"edge"</span>) <span
+                        style="color: #6a9955; font-family: monospace;"># Converts to edge list - This type is
+                        directly supported by Arx-Net and networkx</span> <br>
+                    G = nx.Graph() <span style="color: #6a9955; font-family: monospace;"># or nx.DiGraph() if
+                        the
+                        graph is directed</span> <br>
+                    G.add_weighted_edges_from(edges) <br>
+                    bfs_nodes = <span style="color: #dcdcaa; font-family: monospace;">list</span>(nx.bfs_tree(G,
+                    source=<span style="color: #ce9178; font-family: monospace;">"A"</span>).nodes()) <br>
+                    <span style="color: #dcdcaa; font-family: monospace;">print</span>(bfs_nodes)
+                </div>
+            </center>
+            <ul style="margin-bottom: 0; color: #ccc; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">For more details, please refer to the <a
+                        href="https://networkx.org/documentation/stable/" style="color:#5bc0de;">networkx
+                        documentation</a></li>
+            </ul>
+        </div>
+
+        <div
             style="text-align: center; color: #666; font-size: 0.9em; border-top: 1px solid #333; padding-top: 15px; cursor: default;">
             <em>Click anywhere outside this window to close the guide.</em>
         </div>
