@@ -106,10 +106,143 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
     }
 }
 
+/* Parse edges functionality */
 // Parse edges input into an array of edge objects
 function parseEdges(edgesInput, directed = true) {
-    // Split on commas, but ignore commas that are inside parentheses
-    // (needed because the paren format itself now uses commas: (a,b,5))
+    const trimmed = edgesInput.trim();
+    if (trimmed.startsWith('{')) {
+        return parsePythonAdjacencyDict(trimmed, directed);
+    }
+
+    if (trimmed.startsWith('[')) {
+        return parsePythonEdgeList(trimmed, directed);
+    }
+
+    return parseCompactEdges(trimmed, directed);
+}
+
+function tokeniseTopLevel(input, delimiter = ',') {
+    const result = [];
+    let depth = 0;
+    let current = '';
+    for (const char of input) {
+        if (char === '(' || char === '[' || char === '{') depth++;
+        if (char === ')' || char === ']' || char === '}') depth--;
+        if (char === delimiter && depth === 0) {
+            if (current.trim()) result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    if (current.trim()) result.push(current.trim());
+    return result;
+}
+
+function stripOuter(s, open, close) {
+    s = s.trim();
+    if (s.startsWith(open) && s.endsWith(close)) return s.slice(1, -1).trim();
+    return s;
+}
+
+function parseNode(token) {
+    token = token.trim();
+    if ((token.startsWith('"') && token.endsWith('"')) ||
+        (token.startsWith("'") && token.endsWith("'"))) {
+        return token.slice(1, -1);
+    }
+    return token; // bare identifier or integer
+}
+
+function parseWeight(token) {
+    if (token === undefined || token === null) return 1;
+    const w = parseFloat(token.trim());
+    return isNaN(w) ? 1 : w;
+}
+
+function parseNeighbourEntry(entry) {
+    entry = entry.trim();
+    if (entry.startsWith('(')) {
+        const inner = stripOuter(entry, '(', ')');
+        const parts = tokeniseTopLevel(inner);
+        if (parts.length >= 2) {
+            return { target: parseNode(parts[0]), weight: parseWeight(parts[1]) };
+        }
+        if (parts.length === 1) {
+            return { target: parseNode(parts[0]), weight: 1 };
+        }
+    }
+    // bare node token
+    return { target: parseNode(entry), weight: 1 };
+}
+
+function parsePythonAdjacencyDict(input, directed) {
+    const edges = [];
+    const inner = stripOuter(input, '{', '}');
+    if (!inner) return edges;
+
+    const pairs = tokeniseTopLevel(inner);
+
+    for (const pair of pairs) {
+        // Split on the FIRST colon that is at depth 0
+        let colonIdx = -1;
+        let depth = 0;
+        for (let i = 0; i < pair.length; i++) {
+            const c = pair[i];
+            if (c === '(' || c === '[' || c === '{') depth++;
+            if (c === ')' || c === ']' || c === '}') depth--;
+            if (c === ':' && depth === 0) { colonIdx = i; break; }
+        }
+        if (colonIdx === -1) { console.error('Invalid adjacency entry:', pair); continue; }
+
+        const source = parseNode(pair.slice(0, colonIdx).trim());
+        const valueStr = pair.slice(colonIdx + 1).trim();
+
+        // Value is a list [...] or a single neighbour
+        if (valueStr.startsWith('[')) {
+            const listInner = stripOuter(valueStr, '[', ']');
+            if (!listInner) continue; // empty list → isolated node (no edges)
+            const neighbours = tokeniseTopLevel(listInner);
+            for (const nb of neighbours) {
+                const { target, weight } = parseNeighbourEntry(nb);
+                edges.push({ source, target, weight });
+            }
+        } else {
+            // single bare neighbour (unusual but handle gracefully)
+            const { target, weight } = parseNeighbourEntry(valueStr);
+            edges.push({ source, target, weight });
+        }
+    }
+
+    return deduplicateEdges(edges, directed);
+}
+
+function parsePythonEdgeList(input, directed) {
+    const edges = [];
+    const inner = stripOuter(input, '[', ']');
+    if (!inner) return edges;
+
+    const tuples = tokeniseTopLevel(inner);
+
+    for (const tuple of tuples) {
+        const t = tuple.trim();
+        if (!t.startsWith('(')) { console.error('Expected tuple, got:', t); continue; }
+        const tupleInner = stripOuter(t, '(', ')');
+        const parts = tokeniseTopLevel(tupleInner);
+
+        if (parts.length < 2) { console.error('Edge tuple needs ≥2 elements:', t); continue; }
+
+        const source = parseNode(parts[0]);
+        const target = parseNode(parts[1]);
+        const weight = parts.length >= 3 ? parseWeight(parts[2]) : 1;
+
+        edges.push({ source, target, weight });
+    }
+
+    return deduplicateEdges(edges, directed);
+}
+
+function parseCompactEdges(edgesInput, directed) {
     function splitTopLevel(input) {
         const result = [];
         let depth = 0;
@@ -125,18 +258,14 @@ function parseEdges(edgesInput, directed = true) {
             }
         }
         result.push(current);
-        return result.filter(s => s.trim() !== ''); // drop empty segments (e.g. trailing comma)
+        return result.filter(s => s.trim() !== '');
     }
 
-    let edgesRaw = splitTopLevel(edgesInput).map(edge => {
+    const simpleFormat = /^([a-zA-Z0-9]{2})(-?\d*\.?\d*)$/;
+    const parenFormat  = /^\(\s*([a-zA-Z0-9]+)\s*,\s*([a-zA-Z0-9]+)\s*(?:,\s*(-?\d*\.?\d*)\s*)?\)$/;
+
+    const edgesRaw = splitTopLevel(edgesInput).map(edge => {
         edge = edge.trim();
-
-        // Validate the edge format
-        // Matches 'ab5', 'ab-2.5', '1250' (-> 1,2,w50), '12-2.5' (-> 1,2,w-2.5)
-        const simpleFormat = /^([a-zA-Z0-9]{2})(-?\d*\.?\d*)$/;
-        // Matches '(a,b,5)', '(a,b,-2.5)', '(a,b)'
-        const parenFormat = /^\(\s*([a-zA-Z0-9]+)\s*,\s*([a-zA-Z0-9]+)\s*(?:,\s*(-?\d*\.?\d*)\s*)?\)$/;
-
         let source, target, weight;
 
         if (simpleFormat.test(edge)) {
@@ -154,37 +283,32 @@ function parseEdges(edgesInput, directed = true) {
             target = null;
             weight = null;
         } else {
-            console.error("Invalid edge format: " + edge);
+            console.error('Invalid edge format:', edge);
             return null;
         }
 
-        if (isNaN(weight)) {
-            weight = 1;
-        }
-
+        if (isNaN(weight)) weight = 1;
         return { source, target, weight };
-    }).filter(edge => edge !== null);
+    }).filter(Boolean);
 
-    // Remove duplicate edges, keeping only the last occurrence. Can be removed for multigraph functionality
+    return deduplicateEdges(edgesRaw, directed);
+}
+
+function deduplicateEdges(edges, directed) {
     const edgeMap = new Map();
-    for (const edge of edgesRaw) {
+    for (const edge of edges) {
         if (edge.source && edge.target) {
             const key = `${edge.source}_${edge.target}`;
-            edgeMap.set(key, edge); // Overwrites previous, so last stays
-            // If not directed, also remove the reverse edge
+            edgeMap.set(key, edge);
             if (!directed) {
                 const reverseKey = `${edge.target}_${edge.source}`;
-                if (edgeMap.has(reverseKey)) {
-                    edgeMap.delete(reverseKey);
-                }
+                if (edgeMap.has(reverseKey)) edgeMap.delete(reverseKey);
             }
         }
     }
-    edgesRaw = Array.from(edgeMap.values());
-    // Disabling multigraph functionality for now. Comment out the above lines to enable it.
-
-    return edgesRaw;
+    return Array.from(edgeMap.values());
 }
+/* End of edge parsing functionality */
 
 // Inverse of parseEdges function
 function stringifyEdges(edgesRaw) {
@@ -255,7 +379,7 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
 
     const usedVertices = new Set();
 
-    // Step 1: Build spanning tree if needed
+    // Build spanning tree if needed
     if (ensureConnected && vertexCount > 1) {
         const shuffled = [...vertices];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -275,7 +399,7 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
         }
     }
 
-    // Step 2: Add additional edges, but with a loop cap
+    // Add additional edges, but with a loop cap
     let attempts = 0;
     const maxAttempts = edgeCount * 10;
 

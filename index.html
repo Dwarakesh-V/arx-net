@@ -131,6 +131,9 @@
                         <li style="margin-bottom: 6px;"><code
                                 style="background: #141414; padding: 2px 6px; border-radius: 3px; border: 1px solid #333; color: #ffc66d; font-family: monospace;">12-6</code>
                             &mdash; Edge from vertex 1 to 2 with a weight of -6</li>
+                        <li style="margin-bottom: 6px;"><code
+                                style="background: #141414; padding: 2px 6px; border-radius: 3px; border: 1px solid #333; color: #ffc66d; font-family: monospace;">12-6</code>
+                            &mdash; Adjacency list and edge list format that python directly supports {"A":["b",2]... [("A","B",2...</li>
                     </ul>
                     <span style="font-size: 0.95em;">Edges can be directed or undirected, and weighted or unweighted.
                         These states are dynamically evaluated based on your active checkbox selections.</span>
@@ -233,7 +236,7 @@
                     edges = arx_net.convert_type(adjList, <span
                         style="color: #ce9178; font-family: monospace;">"edge"</span>) <span
                         style="color: #6a9955; font-family: monospace;"># Converts to edge list - This type is
-                        directly supported by Arx-Net and networkx</span> <br>
+                        directly supported by networkx</span> <br>
                     G = nx.Graph() <span style="color: #6a9955; font-family: monospace;"># or nx.DiGraph() if
                         the
                         graph is directed</span> <br>
