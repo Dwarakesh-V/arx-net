@@ -41,6 +41,7 @@ var nodeLabelColor = getComputedStyle(document.documentElement).getPropertyValue
 var edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-weight-color').trim();
 var gridLineColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line-color').trim();
 var dragNodeColor = getComputedStyle(document.documentElement).getPropertyValue('--drag-node-color').trim();
+var nodeVisitColor = getComputedStyle(document.documentElement).getPropertyValue('--node-visited-color').trim();
 
 // Available methods
 const algorithms = [
@@ -185,6 +186,157 @@ class FloatingMenu { /* Resuable floating menu that works like browser right cli
 
     #keepInsideViewport() {
         this.#position(this.lastX, this.lastY);
+    }
+}
+
+const PLAY_ICON = `
+<svg
+    id="playIcon"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="-0.5 0 8 8"
+    style="width:1rem;height:1rem"
+>
+    <g>
+        <g transform="translate(-427 -3765)">
+            <g transform="translate(56 160)">
+                <polygon points="371 3605 371 3613 378 3609"/>
+            </g>
+        </g>
+    </g>
+</svg>
+`;
+
+const PAUSE_ICON = `
+<svg
+    id="pauseIcon"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="-1 0 8 8"
+    style="width:1rem;height:1rem"
+>
+    <g>
+        <g transform="translate(-67 -3765)">
+            <g transform="translate(56 160)">
+                <path d="M11 3613H13V3605H11V3613ZM15 3613H17V3605H15V3613Z"/>
+            </g>
+        </g>
+    </g>
+</svg>
+`;
+
+class GraphPlaybackController {
+    constructor(svg, totalSteps, container, callbacks = {}) {
+        this.svg = svg;
+        this.totalSteps = totalSteps;
+        this.container = container;
+        this.callbacks = callbacks;
+
+        // Internal State
+        this.currentStep = 0;
+        this.speed = 1;
+        this.isPlaying = true;
+
+        // DOM Elements
+        this.controlBar = null;
+        this.timeline = null;
+        this.playPauseBtn = null;
+
+        this.#buildUI();
+    }
+
+    #buildUI() {
+        this.controlBar = document.createElement("div");
+        this.controlBar.className = "playback-controls";
+
+        // Apply configurable positioning
+        Object.assign(this.controlBar.style, this.position);
+
+        this.playPauseBtn = document.createElement("button");
+        this.playPauseBtn.className = "playback-btn";
+        this.playPauseBtn.innerHTML = PAUSE_ICON;
+        this.playPauseBtn.title = "Pause";
+
+        this.playPauseBtn.addEventListener("click", () => {
+            this.togglePlayState(!this.isPlaying);
+
+            if (this.isPlaying && this.callbacks.onPlay) {
+                this.callbacks.onPlay();
+            } else if (!this.isPlaying && this.callbacks.onPause) {
+                this.callbacks.onPause();
+            }
+        });
+
+        const endBtn = document.createElement("button");
+        endBtn.className = "playback-btn";
+        endBtn.innerHTML = "&#9724;";
+        endBtn.title = "End Animation";
+        endBtn.addEventListener("click", () => {
+            this.destroy();
+            this.callbacks.onEnd?.();
+        });
+
+        this.timeline = document.createElement("input");
+        this.timeline.type = "range";
+        this.timeline.className = "playback-timeline";
+        this.timeline.min = 0;
+        this.timeline.max = this.totalSteps;
+        this.timeline.value = 0;
+
+        this.timeline.addEventListener("input", (e) => {
+            this.currentStep = parseInt(e.target.value, 10);
+            this.callbacks.onSeek?.(this.currentStep);
+        });
+
+        const speedSelect = document.createElement("select");
+        speedSelect.className = "playback-speed";
+
+        [0.25, 0.5, 1, 1.5, 2].forEach(speed => {
+            const option = document.createElement("option");
+            option.value = speed;
+            option.textContent = `${speed}x`;
+            if (speed === 1) option.selected = true;
+            speedSelect.appendChild(option);
+        });
+
+        speedSelect.addEventListener("change", (e) => {
+            this.speed = parseFloat(e.target.value);
+            this.callbacks.onSpeedChange?.(this.speed);
+        });
+
+        this.controlBar.append(
+            this.playPauseBtn,
+            this.timeline,
+            speedSelect,
+            endBtn
+        );
+
+        this.container.appendChild(this.controlBar);
+    }
+
+    togglePlayState(isNowPlaying) {
+        this.isPlaying = isNowPlaying;
+
+        if (this.playPauseBtn) {
+            this.playPauseBtn.innerHTML = this.isPlaying
+                ? PAUSE_ICON
+                : PLAY_ICON;
+            this.playPauseBtn.title = this.isPlaying ? "Pause" : "Play";
+        }
+    }
+
+    updateTimeline(step) {
+        this.currentStep = step;
+        if (this.timeline) this.timeline.value = step;
+    }
+
+    destroy() {
+        this.isPlaying = false;
+
+        if (this.controlBar) {
+            this.controlBar.remove();
+            this.controlBar = null;
+        }
+
+        this.svg?.select("#bfs-interaction-blocker").remove();
     }
 }
 

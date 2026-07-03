@@ -465,6 +465,9 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     placeholder.selected = true;
     methodsSelect.appendChild(placeholder);
 
+    // Algorithm playback and speed
+
+
     // Add algorithm options
     applicableAlgorithms.forEach(algorithm => {
         const option = document.createElement('option');
@@ -611,6 +614,10 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         if (useForceCheckbox.checked) {
             enableForceSimulation(simulation, edges, width, height);
         };
+    });
+
+    addMenuItem('Visualize BFS', 'Run Breadth-First Search from this node', () => {
+        visualizeBFS("A", nodes, edges, svg, arrowId, directed, container);
     });
 
     // Focus (center and bring to front)
@@ -1075,9 +1082,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     deleteThisGraph.className = 'deleteCurrentGraph';
     deleteThisGraph.textContent = 'Delete graph';
     deleteThisGraph.title = 'Delete this graph';
-    deleteThisGraph.addEventListener('click', () => {
-        deleteGraph(container, displayName);
-    });
 
     const dupDelMenuObj = document.createElement('div');
     dupDelMenuObj.id = 'dupDelMenu';
@@ -1085,6 +1089,10 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     dupDelMenuObj.appendChild(duplicateGraph);
     dupDelMenuObj.appendChild(deleteThisGraph);
+
+    deleteThisGraph.addEventListener('click', () => {
+        deleteGraph(container, displayName, dupDelMenuObj);
+    });
 
     document.body.appendChild(dupDelMenuObj);
 

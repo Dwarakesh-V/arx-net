@@ -70,7 +70,6 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
         steps.push(`<li>${stepDesc}</li>`);
     }
 
-    // --- GENERATE HTML EXPLANATION ---
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
     
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
@@ -257,7 +256,7 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
 
     const distances = {};
     const previous = {};
-    const queue = new PriorityQueue(); // Assumes your PriorityQueue implementation is available
+    const queue = new PriorityQueue();
     const steps = [];
 
     // Initialization

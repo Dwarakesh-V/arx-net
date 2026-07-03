@@ -25,7 +25,7 @@ function filterAlgorithms(algorithms, directed, weighted) {
     return applicableAlgorithms;
 }
 
-function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, displayName, methodsElement, svgElement) {
+function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, displayName, methodsElement) {
     const resultContainer = document.createElement('p');
     let result = null;
     let label = '';
@@ -40,6 +40,7 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
             const source = getSource("Enter source vertex");
             if (!source) break;
             result = bfs(edgesRaw, source, directed);
+
             label = `BFS with ${source} as source node: `;
             break;
         }
@@ -57,7 +58,7 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
             break;
         }
         case 'floydWarshall':
-            result = floydWarshall(edgesRaw, nodes, directed);
+            result = floydWarshall(edgesRaw, directed);
             label = `Floyd Warshall through ${displayName}: `;
             break;
 
@@ -94,7 +95,6 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
     }
 
     if (result !== null) {
-        console.log(result)
         resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} <br>`;
         methodsElement.appendChild(resultContainer);
         methodsElement.style.display = 'block';
@@ -706,7 +706,9 @@ function enableGraphNameEditing(nameInput, displayName) {
     availableGraphs = availableGraphs.filter(graph => graph !== displayName);
 }
 
-function deleteGraph(container, displayName) {
+function deleteGraph(container, displayName, dupDelMenuObj) {
+
+    dupDelMenuObj.style.display = 'none';
     // Remove the container from the DOM
     container.remove();
 
