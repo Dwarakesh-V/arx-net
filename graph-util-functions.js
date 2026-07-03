@@ -25,7 +25,7 @@ function filterAlgorithms(algorithms, directed, weighted) {
     return applicableAlgorithms;
 }
 
-function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, displayName, methodsElement) {
+function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edges, arrowId, edgesRaw, directed, weighted, displayName, methodsElement) {
     const resultContainer = document.createElement('p');
     let result = null;
     let label = '';
@@ -35,11 +35,23 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
         return input ? input.toUpperCase() : null;
     };
 
+    const av = document.createElement("a");
+    av.href = "javascript:void(0)";
+    av.textContent = "[Visualize]";
+    av.style.color = "#ffc66d";
+    av.style.textDecoration = "underline";
+    av.style.cursor = "pointer";
+
     switch (algorithm.name) {
         case 'bfs': {
             const source = getSource("Enter source vertex");
             if (!source) break;
+
             result = bfs(edgesRaw, source, directed);
+
+            av.onclick = () => {
+                visualizeBFS(source, container, nodes, edges, svg, arrowId, directed);
+            };
 
             label = `BFS with ${source} as source node: `;
             break;
@@ -95,7 +107,8 @@ function handleAlgorithmClick(algorithm, edgesRaw, nodes, directed, weighted, di
     }
 
     if (result !== null) {
-        resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} <br>`;
+        resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} `;
+        resultContainer.appendChild(av);
         methodsElement.appendChild(resultContainer);
         methodsElement.style.display = 'block';
         const meHeight = methodsElement.offsetHeight;
@@ -262,7 +275,7 @@ function parseCompactEdges(edgesInput, directed) {
     }
 
     const simpleFormat = /^([a-zA-Z0-9]{2})(-?\d*\.?\d*)$/;
-    const parenFormat  = /^\(\s*([a-zA-Z0-9]+)\s*,\s*([a-zA-Z0-9]+)\s*(?:,\s*(-?\d*\.?\d*)\s*)?\)$/;
+    const parenFormat = /^\(\s*([a-zA-Z0-9]+)\s*,\s*([a-zA-Z0-9]+)\s*(?:,\s*(-?\d*\.?\d*)\s*)?\)$/;
 
     const edgesRaw = splitTopLevel(edgesInput).map(edge => {
         edge = edge.trim();

@@ -1,4 +1,4 @@
-function visualizeBFS(startNodeId, nodes, edges, svg, arrowId, directed, container) {
+function visualizeBFS(startNodeId, container, nodes, edges, svg, arrowId, directed) {
     // Block user interactions with the graph during visualization
     svg.select('#bfs-interaction-blocker').remove(); // Clear any old ones
     svg.append('style')

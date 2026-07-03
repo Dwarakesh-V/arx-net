@@ -489,13 +489,17 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         if (selectedAlgorithm) {
             handleAlgorithmClick(
                 selectedAlgorithm,
-                edgesRaw,
+                container,
+                svgElement,
+                svg, // svg is d3.select(svgElement)
                 nodes,
+                edges,
+                arrowId,
+                edgesRaw,
                 directed,
                 weighted,
                 nameInput.value,
                 methodsElement,
-                svgElement
             );
         }
 
@@ -614,10 +618,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         if (useForceCheckbox.checked) {
             enableForceSimulation(simulation, edges, width, height);
         };
-    });
-
-    addMenuItem('Visualize BFS', 'Run Breadth-First Search from this node', () => {
-        visualizeBFS("A", nodes, edges, svg, arrowId, directed, container);
     });
 
     // Focus (center and bring to front)
