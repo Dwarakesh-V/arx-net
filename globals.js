@@ -119,7 +119,6 @@ class FloatingMenu { /* Resuable floating menu that works like browser right cli
             x = eventOrX.clientX;
             y = eventOrX.clientY;
 
-            // Prevent browser context menu if desired
             eventOrX.preventDefault();
         } else {
             x = eventOrX;
@@ -336,7 +335,9 @@ class GraphPlaybackController {
             this.controlBar = null;
         }
 
+        // Must be updated for all algorithms
         this.svg?.select("#bfs-interaction-blocker").remove();
+        this.svg?.select("#dfs-interaction-blocker").remove();
     }
 }
 

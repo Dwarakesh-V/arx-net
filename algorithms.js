@@ -228,7 +228,6 @@ class PriorityQueue {
 }
 
 function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected = true) {
-    // Utilize the external validation function
     if (!vertexExists(edges, start, isDirected)) {
         alert("Vertex " + start + " not found.");
         return null;
@@ -240,14 +239,13 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
         if (!graph[source]) graph[source] = [];
         graph[source].push({ target, weight });
         
-        // For undirected graphs, also include reverse:
         if (!isDirected) {
             if (!graph[target]) graph[target] = [];
             graph[target].push({ target: source, weight });
         }
     }
 
-    // Ensure all nodes exist in the graph (even disconnected ones)
+    // Ensure all nodes exist in the graph
     for (const node of nodes) {
         if (!graph[node.id]) {
             graph[node.id] = [];
@@ -357,7 +355,6 @@ function floydWarshall(edges, directed = true) {
         if (!graph[target]) graph[target] = {};
         graph[source][target] = weight;
         
-        // For undirected graphs, also include reverse:
         if (!directed) graph[target][source] = weight; 
         
         nodes.add(source);
@@ -368,14 +365,14 @@ function floydWarshall(edges, directed = true) {
     const next = {};
     const steps = [];
 
-    // Initialization Phase
+    // Initialization
     for (const node of nodes) {
         dist[node] = {};
         next[node] = {};
         for (const otherNode of nodes) {
             if (node === otherNode) {
                 dist[node][otherNode] = 0;
-            } else if (graph[node][otherNode] !== undefined) { // Patched to support 0-weight edges
+            } else if (graph[node][otherNode] !== undefined) {
                 dist[node][otherNode] = graph[node][otherNode];
             } else {
                 dist[node][otherNode] = Infinity;
@@ -429,7 +426,6 @@ function floydWarshall(edges, directed = true) {
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
 
-    // Generate the original table structures
     const tablesHtml = Array.from(nodes).map(i => `
         <div style="margin-bottom: 15px;">
             <h4 style="margin: 0 0 5px 0;">From: ${i}</h4>
@@ -468,7 +464,6 @@ function floydWarshall(edges, directed = true) {
         </div>
     `).join('');
 
-    // Return the tables appended with the formatted link
     return `
         <div>
             ${tablesHtml}
@@ -478,21 +473,19 @@ function floydWarshall(edges, directed = true) {
 }
 
 function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirected = true) {
-    // Utilize the external validation function
     if (!vertexExists(edges, start, isDirected)) {
         alert("Vertex " + start + " not found.");
         return null;
     }
 
     const graph = {};
-    const allEdges = []; // Fixed: explicitly track all edges for the relaxation loop
+    const allEdges = [];
 
     for (const { source, target, weight } of edges) {
         if (!graph[source]) graph[source] = [];
         graph[source].push({ target, weight });
         allEdges.push({ source, target, weight });
 
-        // For undirected graphs, also include reverse:
         if (!isDirected) {
             if (!graph[target]) graph[target] = [];
             graph[target].push({ target: source, weight });
@@ -500,7 +493,6 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
         }
     }
 
-    // Ensure all nodes exist in the graph (even disconnected ones)
     for (const node of nodes) {
         if (!graph[node.id]) {
             graph[node.id] = [];
@@ -543,7 +535,7 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
         } else {
             steps.push(`<li><strong>Iteration ${i} of ${numVertices - 1}:</strong> No edges were relaxed. Algorithm can safely terminate early.</li>`);
             earlyTermination = true;
-            break; // Optimization: If no distances changed, further iterations are useless
+            break;
         }
     }
 
@@ -593,7 +585,6 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
         `;
     }
 
-    // Generate the standard table if successful
     const tableHtml = `
     <table border="1" cellpadding="5" cellspacing="0" style="margin-bottom: 10px;">
         <tr><th>Vertex</th><th>Distance</th><th>Path</th></tr>

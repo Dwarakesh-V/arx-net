@@ -9,7 +9,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
             const offsetX = 0; // Offset to make the loop visible
             const offsetY = -25; // No vertical offset for the loop
 
-            // Draw a loop using an elliptical arc command, offset slightly so it's visible
+            // Draw a loop using an elliptical arc command
             // Draw a visible self-loop as an elliptical arc
             return `M${x + offsetX},${y + offsetY - loopRadius}
                 a${loopRadius},${loopRadius} 0 1,1 0,${2 * loopRadius}
@@ -656,7 +656,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 let nodeSelection = nodeLayer.selectAll('circle')
                     .data(nodes, d => d.id);
 
-                // 3. Handle new nodes with enter()
+                // Handle new nodes with enter()
                 let nodeEnter = nodeSelection.enter()
                     .append('circle')
                     .attr('r', 20)
@@ -914,7 +914,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* Function to save printable png */
     function updateColors() {
-        // document.documentElement.style.setProperty("--edge-color", "#888");
         document.documentElement.style.setProperty("--node-color", "#ccc");
         document.documentElement.style.setProperty("--edge-weight-color", "#000");
         document.documentElement.style.setProperty("--grid-line-color", "transparent");
@@ -936,7 +935,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     }
 
     function revertColors() {
-        // document.documentElement.style.setProperty("--edge-color", "#a3bf60");
         document.documentElement.style.setProperty("--node-color", "#ffc66d");
         document.documentElement.style.setProperty("--edge-weight-color", "#fff");
         document.documentElement.style.setProperty("--grid-line-color", "#3c3d3c");

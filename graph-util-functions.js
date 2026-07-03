@@ -59,6 +59,11 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
         case 'dfs': {
             const source = getSource("Enter source vertex");
             result = dfs(edgesRaw, source || undefined, directed);
+
+            av.onclick = () => {
+                visualizeDFS(source, container, nodes, edges, svg, arrowId, directed);
+            };
+
             label = `DFS with ${source} as source node}`;
             break;
         }
@@ -214,14 +219,13 @@ function parsePythonAdjacencyDict(input, directed) {
         // Value is a list [...] or a single neighbour
         if (valueStr.startsWith('[')) {
             const listInner = stripOuter(valueStr, '[', ']');
-            if (!listInner) continue; // empty list → isolated node (no edges)
+            if (!listInner) continue; 
             const neighbours = tokeniseTopLevel(listInner);
             for (const nb of neighbours) {
                 const { target, weight } = parseNeighbourEntry(nb);
                 edges.push({ source, target, weight });
             }
         } else {
-            // single bare neighbour (unusual but handle gracefully)
             const { target, weight } = parseNeighbourEntry(valueStr);
             edges.push({ source, target, weight });
         }
@@ -599,7 +603,7 @@ function isTree(edgesInput, directed = true) {
 
     if (vertices.size <= 1) return edges.length === 0;
 
-    // Rule 1: A tree must have exactly V - 1 edges
+    // A tree must have exactly V - 1 edges
     if (edges.length !== vertices.size - 1) {
         return false;
     }
