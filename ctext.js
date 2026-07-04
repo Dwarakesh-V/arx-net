@@ -1,3 +1,5 @@
+const genBtn = document.getElementById('genExplain');
+
 const genTheory = `
 <div style="text-align: left; margin-bottom: 40px;">
     <h3 style="color: #ffc66d; margin-bottom: 10px; text-transform: uppercase;">

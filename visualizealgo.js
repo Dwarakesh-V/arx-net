@@ -1,4 +1,4 @@
-function visualizeBFS(startNodeId, container, nodes, edges, svg, arrowId, directed) {
+function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arrowId, directed) {
     if (algoGraphs.has(container)) {
         return;
     } else {
@@ -15,8 +15,11 @@ function visualizeBFS(startNodeId, container, nodes, edges, svg, arrowId, direct
     const visited = new Set();
     visited.add(startNodeId);
 
+    const levels = {};
+    levels[startNodeId] = 0;
+
     const animationSteps = [];
-    animationSteps.push({ type: 'node', id: startNodeId });
+    animationSteps.push({ type: 'node', id: startNodeId, level: 0, fromEdge: null });
 
     while (queue.length > 0) {
         const currentId = queue.shift();
@@ -39,184 +42,19 @@ function visualizeBFS(startNodeId, container, nodes, edges, svg, arrowId, direct
             if (isTraversable) {
                 visited.add(nextNodeId);
                 queue.push(nextNodeId);
-                animationSteps.push({ type: 'edge', sourceId: sId, targetId: tId });
-                animationSteps.push({ type: 'node', id: nextNodeId });
-            }
-        });
-    }
-
-    // Playback State Variables
-    const totalSteps = animationSteps.length;
-    const BASE_DELAY = 600; // ms per step at 1x speed
-    let currentStep = 0;
-    let playInterval = null;
-
-    // Core Render Function
-    const renderGraphState = (targetStep, animate = false) => {
-        // Build sets of all nodes and edges that should be highlighted up to targetStep
-        const activeNodes = new Set();
-        const activeEdges = new Set(); // Stored as "sourceId-targetId"
-
-        for (let i = 0; i < targetStep; i++) {
-            const step = animationSteps[i];
-            if (step.type === 'node') activeNodes.add(step.id);
-            if (step.type === 'edge') activeEdges.add(`${step.sourceId}-${step.targetId}`);
-        }
-
-        // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
-            const el = d3.select(this);
-            const isActive = activeNodes.has(d.id);
-            const targetColor = isActive ? nodeVisitColor : nodeColor;
-
-            // Check if this specific node is the one that was JUST added in the current step
-            const lastStepIndex = targetStep - 1;
-            const isLatestNode = lastStepIndex >= 0 &&
-                animationSteps[lastStepIndex].type === 'node' &&
-                animationSteps[lastStepIndex].id === d.id;
-
-            if (animate && isLatestNode) {
-                el.transition().duration(300).attr('fill', targetColor);
-            } else {
-                el.interrupt().attr('fill', targetColor);
-            }
-        });
-
-        // Apply Edge & Arrow Colors
-        svg.selectAll('.link').each(function () {
-            const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
-            const isActive = activeEdges.has(`${sId}-${tId}`);
-
-            const targetColor = isActive ? nodeVisitColor : edgeColor;
-
-            // Update edge path
-            if (animate && isActive) {
-                el.transition().duration(300).attr('stroke', targetColor);
-            } else {
-                el.interrupt().attr('stroke', targetColor);
-            }
-
-            // Update associated arrow head
-            if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
-                const markerPath = svg.select(`#${uniqueMarkerId} path`);
-                if (!markerPath.empty()) {
-                    if (animate && isActive) {
-                        markerPath.transition().duration(300).attr('fill', targetColor);
-                    } else {
-                        markerPath.interrupt().attr('fill', targetColor);
-                    }
-                }
-            }
-        });
-    };
-    const startLoop = () => {
-        if (currentStep >= totalSteps) {
-            currentStep = 0; // Auto-restart if at end
-            playback.updateTimeline(0);
-        }
-
-        if (currentStep === 0) renderGraphState(0, false);
-
-        playInterval = setInterval(() => {
-            if (currentStep < totalSteps) {
-                currentStep++;
-                playback.updateTimeline(currentStep);
-                renderGraphState(currentStep, true);
-            } else {
-                stopLoop();
-                playback.togglePlayState(false);
-            }
-        }, BASE_DELAY / playback.speed);
-    };
-
-    const stopLoop = () => {
-        if (playInterval) {
-            clearInterval(playInterval);
-            playInterval = null;
-        }
-    };
-
-    const rect = container.getBoundingClientRect();
-
-    const x = rect.left + window.scrollX;
-    const y = rect.top + window.scrollY;
-
-    // Instantiate controller
-    const playback = new GraphPlaybackController(svg, totalSteps, container,
-        {
-            onPlay: startLoop,
-            onPause: stopLoop,
-            onSeek: (step) => {
-                currentStep = step;
-                renderGraphState(currentStep, false);
-            },
-            onSpeedChange: () => {
-                if (playInterval) {
-                    stopLoop();
-                    startLoop();
-                }
-            },
-            onEnd: () => {
-                stopLoop();
-                renderGraphState(0, false);
-            }
-        });
-    startLoop();
-    renderGraphState(0, false);
-}
-
-function visualizeDFS(startNodeId, container, nodes, edges, svg, arrowId, directed) {
-    if (algoGraphs.has(container)) {
-        return;
-    } else {
-        algoGraphs.add(container);
-    }
-    // Block user interactions with the graph during visualization
-    svg.select('#interaction-blocker').remove(); // Clear any old ones
-    svg.append('style')
-        .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
-
-    // Calculate DFS path
-    const visited = new Set();
-    const animationSteps = [];
-    
-    // Initialize start node
-    animationSteps.push({ type: 'node', id: startNodeId });
-    visited.add(startNodeId);
-
-    // Recursive helper to build steps in Depth-First order
-    function traverse(currentId) {
-        edges.forEach(edge => {
-            const sId = edge.source.id || edge.source;
-            const tId = edge.target.id || edge.target;
-
-            let isTraversable = false;
-            let nextNodeId = null;
-
-            if (sId === currentId && !visited.has(tId)) {
-                isTraversable = true;
-                nextNodeId = tId;
-            } else if ((!directed || edge.bidirectional) && tId === currentId && !visited.has(sId)) {
-                isTraversable = true;
-                nextNodeId = sId;
-            }
-
-            if (isTraversable) {
-                visited.add(nextNodeId);
-                animationSteps.push({ type: 'edge', sourceId: sId, targetId: tId });
-                animationSteps.push({ type: 'node', id: nextNodeId });
                 
-                // Recursively visit the next node before processing sibling edges
-                traverse(nextNodeId); 
+                levels[nextNodeId] = levels[currentId] + 1;
+
+                animationSteps.push({ type: 'edge', sourceId: sId, targetId: tId });
+                animationSteps.push({ 
+                    type: 'node', 
+                    id: nextNodeId, 
+                    level: levels[nextNodeId],
+                    fromEdge: { u: sId, v: tId }
+                });
             }
         });
     }
-
-    traverse(startNodeId);
 
     // Playback State Variables
     const totalSteps = animationSteps.length;
@@ -229,11 +67,26 @@ function visualizeDFS(startNodeId, container, nodes, edges, svg, arrowId, direct
         // Build sets of all nodes and edges that should be highlighted up to targetStep
         const activeNodes = new Set();
         const activeEdges = new Set(); // Stored as "sourceId-targetId"
+        
+        let logHTML = `<h3 style="color: #ffc66d;">BFS through graph <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
             if (step.type === 'node') activeNodes.add(step.id);
             if (step.type === 'edge') activeEdges.add(`${step.sourceId}-${step.targetId}`);
+            
+            if (step.type === 'node') {
+                if (step.level === 0) {
+                    logHTML += `<div>Started BFS at vertex <span style="color: #ffc66d">${step.id}</span> at level <span style="color: #ff5722">0</span></div><br>`;
+                } else {
+                    logHTML += `<div>Visited vertex <span style="color: #ffc66d">${step.id}</span> through edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> at level <span style="color: #ff5722">${step.level}</span></div><br>`;
+                }
+            }
+        }
+
+        if (typeof resultLog !== 'undefined') {
+            resultLog.innerHTML = logHTML;
+            resultLog.scrollTop = resultLog.scrollHeight; 
         }
 
         // Apply Node Colors
@@ -338,7 +191,6 @@ function visualizeDFS(startNodeId, container, nodes, edges, svg, arrowId, direct
                 renderGraphState(0, false);
             }
         });
-        
     startLoop();
     renderGraphState(0, false);
 }

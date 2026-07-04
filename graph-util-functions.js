@@ -50,7 +50,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             result = bfs(edgesRaw, source, directed);
 
             av.onclick = () => {
-                visualizeBFS(source, container, nodes, edges, svg, arrowId, directed);
+                visualizeBFS(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
             label = `BFS with ${source} as source node: `;

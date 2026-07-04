@@ -1,5 +1,4 @@
 const aboutBtn = document.getElementById('about');
-const genBtn = document.getElementById('genExplain');
 const aboutDiv = document.getElementById('aboutDiv');
 const fullScreenBtn = document.getElementById('toggleFullScreen');
 
@@ -271,8 +270,8 @@ class GraphPlaybackController {
         endBtn.innerHTML = "&#9724;"; // Square icon
         endBtn.title = "End Animation";
         endBtn.addEventListener("click", () => {
-            this.destroy();
             this.callbacks.onEnd?.();
+            this.destroy();
         });
 
         this.timeline = document.createElement("input");
@@ -339,6 +338,7 @@ class GraphPlaybackController {
         }
 
         this.svg?.select("#interaction-blocker").remove();
+        resultLog.innerHTML = genTheory;
     }
 }
 
