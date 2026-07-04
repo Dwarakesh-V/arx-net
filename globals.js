@@ -56,6 +56,8 @@ const algorithms = [
     { name: 'bcc', text: 'BCC', title: 'Biconnected Components' }
 ];
 
+const algoGraphs = new Set();
+
 // Drawing grid
 const gridSize = 40; // Defines the distance between lines
 
@@ -266,7 +268,7 @@ class GraphPlaybackController {
 
         const endBtn = document.createElement("button");
         endBtn.className = "playback-btn";
-        endBtn.innerHTML = "&#9724;";
+        endBtn.innerHTML = "&#9724;"; // Square icon
         endBtn.title = "End Animation";
         endBtn.addEventListener("click", () => {
             this.destroy();
@@ -328,6 +330,7 @@ class GraphPlaybackController {
     }
 
     destroy() {
+        algoGraphs.delete(this.container);
         this.isPlaying = false;
 
         if (this.controlBar) {
@@ -335,9 +338,7 @@ class GraphPlaybackController {
             this.controlBar = null;
         }
 
-        // Must be updated for all algorithms
-        this.svg?.select("#bfs-interaction-blocker").remove();
-        this.svg?.select("#dfs-interaction-blocker").remove();
+        this.svg?.select("#interaction-blocker").remove();
     }
 }
 

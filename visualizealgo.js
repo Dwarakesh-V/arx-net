@@ -1,8 +1,13 @@
 function visualizeBFS(startNodeId, container, nodes, edges, svg, arrowId, directed) {
+    if (algoGraphs.has(container)) {
+        return;
+    } else {
+        algoGraphs.add(container);
+    }
     // Block user interactions with the graph during visualization
-    svg.select('#bfs-interaction-blocker').remove(); // Clear any old ones
+    svg.select('#interaction-blocker').remove(); // Clear any old ones
     svg.append('style')
-        .attr('id', 'bfs-interaction-blocker')
+        .attr('id', 'interaction-blocker')
         .text('circle, .link, .link2 { pointer-events: none !important; }');
 
     // Calculate BFS path
@@ -164,10 +169,15 @@ function visualizeBFS(startNodeId, container, nodes, edges, svg, arrowId, direct
 }
 
 function visualizeDFS(startNodeId, container, nodes, edges, svg, arrowId, directed) {
+    if (algoGraphs.has(container)) {
+        return;
+    } else {
+        algoGraphs.add(container);
+    }
     // Block user interactions with the graph during visualization
-    svg.select('#dfs-interaction-blocker').remove(); // Clear any old ones
+    svg.select('#interaction-blocker').remove(); // Clear any old ones
     svg.append('style')
-        .attr('id', 'dfs-interaction-blocker')
+        .attr('id', 'interaction-blocker')
         .text('circle, .link, .link2 { pointer-events: none !important; }');
 
     // Calculate DFS path
