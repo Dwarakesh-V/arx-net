@@ -1023,15 +1023,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     outliner.appendChild(showHideDeleteDiv);
 
-    const duplicateGraph = document.createElement('button'); // Duplicate graph with weights and directions turned on/off
-    duplicateGraph.textContent = 'Duplicate graph';
-    duplicateGraph.title = 'Duplicate this graph';
-
-    duplicateGraph.addEventListener('click', () => {
-        let edgesRawString = stringifyEdges(edgesRaw);
-        addGraph(edgesRawString, nodes, `${nameInput.value} copy`);
-    });
-
     const deleteThisGraph = document.createElement('button'); // Delete this graph
     deleteThisGraph.className = 'deleteCurrentGraph';
     deleteThisGraph.textContent = 'Delete graph';
@@ -1040,6 +1031,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     const dupDelMenuObj = document.createElement('div');
     dupDelMenuObj.id = 'dupDelMenu';
     dupDelMenuObj.className = 'floating-menu';
+
+    const duplicateGraph = document.createElement('button'); // Duplicate graph with weights and directions turned on/off
+    duplicateGraph.textContent = 'Duplicate graph';
+    duplicateGraph.title = 'Duplicate this graph';
+
+    duplicateGraph.addEventListener('click', () => {
+        let edgesRawString = stringifyEdges(edgesRaw);
+        addGraph(edgesRawString, nodes, `${nameInput.value} copy`);
+        dupDelMenuObj.style.display = 'none';
+    });
 
     dupDelMenuObj.appendChild(duplicateGraph);
     dupDelMenuObj.appendChild(deleteThisGraph);
