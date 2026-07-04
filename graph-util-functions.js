@@ -27,6 +27,8 @@ function filterAlgorithms(algorithms, directed, weighted) {
 
 function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edges, arrowId, edgesRaw, directed, weighted, displayName, methodsElement) {
     const resultContainer = document.createElement('p');
+    resultContainer.style.width = "100%";
+    resultContainer.style.margin = "0";
     let result = null;
     let label = '';
 
@@ -41,6 +43,9 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     av.style.color = "#ffc66d";
     av.style.textDecoration = "underline";
     av.style.cursor = "pointer";
+
+    // let isPrims = false;
+    // let prims; // For extra visualization for Prim's and Kruskal's
 
     switch (algorithm.name) {
         case 'bfs': {
@@ -61,7 +66,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             result = dfs(edgesRaw, source || undefined, directed);
 
             av.onclick = () => {
-                visualizeDFS(source, container, nodes, edges, svg, arrowId, directed);
+                visualizeDFS(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
             label = `DFS with ${source} as source node}`;
@@ -71,11 +76,21 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             const source = getSource("Enter source vertex");
             if (!source) break;
             result = dijkstra(edgesRaw, source, nodes, directed);
+
+            av.onclick = () => {
+                visualizeDijkstra(displayName, source, container, nodes, edges, svg, arrowId, directed);
+            };
+
             label = `Dijkstra's through ${displayName} with ${source} as source node: <br> <br>`;
             break;
         }
         case 'floydWarshall':
             result = floydWarshall(edgesRaw, directed);
+
+            av.onclick = () => {
+                visualizeFloydWarshall(displayName, "", container, nodes, edges, svg, arrowId, directed);
+            };
+
             label = `Floyd Warshall through ${displayName}: `;
             break;
 
@@ -83,26 +98,66 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             const source = getSource("Enter source vertex");
             if (!source) break;
             result = bellmanFord(edgesRaw, source, nodes, directed);
+
+            av.onclick = () => {
+                visualizeBellmanFord(displayName, source, container, nodes, edges, svg, arrowId, directed);
+            };
+
             label = `Bellman Ford through ${displayName} with ${source} as source node: <br> <br>`;
             break;
         }
         case 'mst':
             result = mst(edgesRaw, weighted, displayName);
             label = `Generated MST through ${displayName}. `;
+
+            // av.textContent = "[Kruskals]"
+
+            av.onclick = () => {
+                // visualizeKruskal(displayName, container, nodes, edges, svg, arrowId);
+                visualizePrim(displayName, container, nodes, edges, svg, arrowId);
+            };
+
+            // isPrims = true;
+            // prims = document.createElement("a");
+            // prims.href = "javascript:void(0)";
+            // prims.textContent = "[Prims]";
+            // prims.style.color = "#ffc66d";
+            // prims.style.textDecoration = "underline";
+            // prims.style.cursor = "pointer";
+
+            // prims.onclick = () => {
+            //     visualizePrim(displayName, container, nodes, edges, svg, arrowId);
+            // };
+
             break;
 
         case 'topologicalSort':
             result = topologicalSort(edgesRaw);
+
+            av.onclick = () => {
+                visualizeTopologicalSort(displayName, container, nodes, edges, svg, arrowId, directed);
+            };
+
             label = `Topological Sort through ${displayName}: `;
             break;
 
         case 'scc':
             result = StronglyConnectedComponents(edgesRaw);
+
+            av.onclick = () => {
+                visualizeSCC(displayName, container, nodes, edges, svg, arrowId, directed);
+            };
+
             label = `SCC through ${displayName}: `;
             break;
 
         case 'bcc':
             result = BiconnectedComponents(edgesRaw);
+
+            av.onclick = () => {
+                visualizeBCC(displayName, container, nodes, edges, svg, arrowId);
+            };
+
             label = `BCC through ${displayName}: `;
             break;
 
@@ -114,6 +169,11 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     if (result !== null) {
         resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} `;
         resultContainer.appendChild(av);
+        // if (isPrims) {
+        //     const tn = document.createTextNode(" ");
+        //     resultContainer.append(tn);
+        //     resultContainer.append(prims);
+        // }
         methodsElement.appendChild(resultContainer);
         methodsElement.style.display = 'block';
         const meHeight = methodsElement.offsetHeight;
@@ -219,7 +279,7 @@ function parsePythonAdjacencyDict(input, directed) {
         // Value is a list [...] or a single neighbour
         if (valueStr.startsWith('[')) {
             const listInner = stripOuter(valueStr, '[', ']');
-            if (!listInner) continue; 
+            if (!listInner) continue;
             const neighbours = tokeniseTopLevel(listInner);
             for (const nb of neighbours) {
                 const { target, weight } = parseNeighbourEntry(nb);
@@ -724,7 +784,6 @@ function enableGraphNameEditing(nameInput, displayName) {
 }
 
 function deleteGraph(container, displayName, dupDelMenuObj) {
-
     dupDelMenuObj.style.display = 'none';
     // Remove the container from the DOM
     container.remove();

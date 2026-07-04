@@ -33,9 +33,9 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     // Initialize queues, sets, and tracking variables
     const visited = new Set([start]);
     const queue = [{ node: start, level: 0, parent: null }];
-    
+
     const result = [];
-    const levelMap = {}; 
+    const levelMap = {};
     const steps = [];
 
     // Traverse the graph
@@ -50,7 +50,7 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
         // Document the step
         let stepDesc = `<strong>Visited '${node}'</strong> at Level ${level}`;
         stepDesc += parent !== null ? ` <em>(reached via '${parent}')</em>.` : ` <em>(Starting Node)</em>.`;
-        
+
         const neighbors = graph[node] || [];
         const addedNeighbors = [];
 
@@ -71,7 +71,7 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     }
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">Breadth-First Search (BFS) explores a graph level by level radiating outward from the start vertex. It utilizes a <strong>Queue (First-In-First-Out)</strong> data structure. When a node is visited, all of its immediately adjacent, unvisited neighbors are pushed to the back of the queue. This guarantees that nodes closer to the start are completely processed before moving deeper.</p>`;
 
@@ -84,9 +84,9 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Answers (Level Permutations)</h3>`;
     explanation += `<p style="margin-top: 0;">Because nodes on the exact same level are equidistant from the start, they can theoretically be visited in any order (dictated purely by how they were ordered in the edge list). This results in multiple valid BFS arrays:</p>`;
     explanation += `<ul>`;
-    
+
     const factorial = n => n <= 1 ? 1 : n * factorial(n - 1);
-    
+
     let totalCombinations = 1;
     for (const [level, nodes] of Object.entries(levelMap)) {
         if (nodes.length > 1) {
@@ -102,8 +102,8 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    
-    return `BFS result: ${result.join(', ')} <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
+
+    return `[${result.join(', ')}] <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
 }
 
 function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
@@ -169,7 +169,7 @@ function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     visit(start, 0, null);
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">Depth-First Search (DFS) explores a graph by going as deep as possible along each branch before backtracking. It utilizes a <strong>Stack (Last-In-First-Out)</strong> data structure (handled automatically here via the Call Stack using recursion). When a node is visited, the algorithm immediately suspends the current search to explore the first unvisited neighbor it finds.</p>`;
 
@@ -182,10 +182,10 @@ function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Answers (Branching Permutations)</h3>`;
     explanation += `<p style="margin-top: 0;">In DFS, valid variations occur when a node has multiple unvisited neighbors. The order in which you choose to traverse these branches completely changes the resulting path:</p>`;
     explanation += `<ul>`;
-    
+
     // Helper function to calculate factorial for permutations
     const factorial = n => n <= 1 ? 1 : n * factorial(n - 1);
-    
+
     let totalCombinations = 1;
     const branchingNodes = Object.keys(branchingMap);
 
@@ -199,32 +199,13 @@ function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     } else {
         explanation += `<li>No branching permutations encountered during this specific traversal path.</li>`;
     }
-    
+
     explanation += `</ul>`;
     explanation += `<p><strong>&rarr; Total valid DFS permutations</strong> based on branching choices from vertex '${start}': <strong>${totalCombinations} variations</strong>.</p>`;
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    return `DFS result: ${result.join(', ')} <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
-}
-
-class PriorityQueue {
-    constructor() {
-        this.items = [];
-    }
-
-    enqueue(element, priority) {
-        this.items.push({ element, priority });
-        this.items.sort((a, b) => a.priority - b.priority);
-    }
-
-    dequeue() {
-        return this.items.shift();
-    }
-
-    isEmpty() {
-        return this.items.length === 0;
-    }
+    return `[${result.join(', ')}] <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
 }
 
 function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected = true) {
@@ -238,7 +219,7 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
     for (const { source, target, weight } of edges) {
         if (!graph[source]) graph[source] = [];
         graph[source].push({ target, weight });
-        
+
         if (!isDirected) {
             if (!graph[target]) graph[target] = [];
             graph[target].push({ target: source, weight });
@@ -299,7 +280,7 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
         steps.push(`<li>${stepDesc}</li>`);
     }
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">Dijkstra's Algorithm finds the shortest path from a starting vertex to all other vertices in a weighted graph. It uses a <strong>Priority Queue</strong> to continually explore the unvisited vertex with the smallest known accumulated distance. As it explores, it performs "edge relaxation"-if it finds a path to a neighbor that is cheaper than the currently known path, it updates the neighbor's shortest distance and pushes it into the queue.</p>`;
 
@@ -311,7 +292,7 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
 
     explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Paths (Tie-Breaking)</h3>`;
     explanation += `<p style="margin-top: 0;">If there are two distinct paths to the exact same node that share the exact same total weight, the algorithm breaks the tie arbitrarily (usually depending on the internal implementation of the Priority Queue or the order edges were parsed). Only one of the mathematically identical optimal paths will be returned in the final table.</p>`;
-    
+
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
@@ -320,28 +301,26 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
     <table border="1" cellpadding="5" cellspacing="0" style="margin-bottom: 10px;">
         <tr><th>Vertex</th><th>Distance</th><th>Path</th></tr>
         ${Object.keys(distances).map(vertex => {
-            let path = [];
-            let current = vertex;
-            while (current !== null) {
-                path.unshift(current);
-                current = previous[current];
-            }
-            return `
-                <tr>
-                    <td>${vertex}</td>
-                    <td>${distances[vertex] === Infinity ? "∞" : distances[vertex]}</td>
-                    <td>${distances[vertex] === Infinity ? "unreachable" : path.join(" → ")}</td>
-                </tr>
-            `;
-        }).join("")}
+        let path = [];
+        let current = vertex;
+        while (current !== null) {
+            path.unshift(current);
+            current = previous[current];
+        }
+        return `
+            <tr>
+                <td>${vertex}</td>
+                <td>${distances[vertex] === Infinity ? "∞" : distances[vertex]}</td>
+                <td>${distances[vertex] === Infinity ? "unreachable" : path.join(" → ")}</td>
+            </tr>
+        `;
+    }).join("")}
     </table>
     `;
 
     return `
-        <div>
-            ${tableHtml}
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
-        </div>
+        ${tableHtml}
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
     `;
 }
 
@@ -354,9 +333,9 @@ function floydWarshall(edges, directed = true) {
         if (!graph[source]) graph[source] = {};
         if (!graph[target]) graph[target] = {};
         graph[source][target] = weight;
-        
-        if (!directed) graph[target][source] = weight; 
-        
+
+        if (!directed) graph[target][source] = weight;
+
         nodes.add(source);
         nodes.add(target);
     }
@@ -399,7 +378,7 @@ function floydWarshall(edges, directed = true) {
                 }
             }
         }
-        
+
         // Document the updates for this phase
         if (updates.length > 0) {
             steps.push(`<li><strong>Phase k = '${k}':</strong> Allowed '${k}' to act as an intermediate routing node.<br><ul style="color: gray; font-size: 0.9em; list-style-type: none; padding-left: 15px; margin-top: 5px;"><li>${updates.join('</li><li>')}</li></ul></li>`);
@@ -409,7 +388,7 @@ function floydWarshall(edges, directed = true) {
     }
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">The Floyd-Warshall Algorithm solves the <strong>All-Pairs Shortest Path</strong> problem. Instead of starting from a single node like Dijkstra, it calculates the shortest path between every possible pair of vertices simultaneously using Dynamic Programming. It iteratively picks a vertex <em>k</em> and checks if routing a path through <em>k</em> makes the journey between any two other nodes <em>i</em> and <em>j</em> shorter than the previously known best distance.</p>`;
 
@@ -421,7 +400,7 @@ function floydWarshall(edges, directed = true) {
 
     explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Paths (Tie-Breaking)</h3>`;
     explanation += `<p style="margin-top: 0;">If multiple paths between two nodes share the exact same minimum weight, the algorithm breaks the tie by keeping the oldest path it found. Because the core condition strictly requires <code>dist[i][j] > dist[i][k] + dist[k][j]</code>, it will ignore newly discovered paths that merely equal the current best path.</p>`;
-    
+
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
@@ -432,43 +411,41 @@ function floydWarshall(edges, directed = true) {
             <table border="1" cellpadding="5" cellspacing="0">
                 <tr><th>To</th><th>Distance</th><th>Path</th></tr>
                 ${Array.from(nodes).map(j => {
-                    if (i === j) return '';
-                    const distance = dist[i][j] === Infinity ? "∞" : dist[i][j];
-                    let path = [];
-                    let u = i;
-                    
-                    if (next[i][j] === undefined) {
-                        return `
-                        <tr>
-                            <td>${j}</td>
-                            <td>∞</td>
-                            <td>unreachable</td>
-                        </tr>`;
-                    }
-                    
-                    while (u !== j) {
-                        path.push(u);
-                        u = next[u][j];
-                        if (u === undefined) break;
-                    }
-                    path.push(j);
-                    
-                    return `
-                    <tr>
-                        <td>${j}</td>
-                        <td>${distance}</td>
-                        <td>${distance === "∞" ? "unreachable" : path.join(" → ")}</td>
-                    </tr>`;
-                }).join('')}
+        if (i === j) return '';
+        const distance = dist[i][j] === Infinity ? "∞" : dist[i][j];
+        let path = [];
+        let u = i;
+
+        if (next[i][j] === undefined) {
+            return `
+                <tr>
+                    <td>${j}</td>
+                    <td>∞</td>
+                    <td>unreachable</td>
+                </tr>`;
+        }
+
+        while (u !== j) {
+            path.push(u);
+            u = next[u][j];
+            if (u === undefined) break;
+        }
+        path.push(j);
+
+        return `
+            <tr>
+                <td>${j}</td>
+                <td>${distance}</td>
+                <td>${distance === "∞" ? "unreachable" : path.join(" → ")}</td>
+            </tr>`;
+    }).join('')}
             </table>
         </div>
     `).join('');
 
     return `
-        <div>
-            ${tablesHtml}
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px;">[Explanation]</a>
-        </div>
+        ${tablesHtml}
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px;">[Explanation]</a>
     `;
 }
 
@@ -557,7 +534,7 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
     }
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">The Bellman-Ford Algorithm computes shortest paths from a single source vertex to all other vertices. Unlike Dijkstra's Algorithm, it is capable of handling graphs with negative edge weights. It operates on the principle of <strong>Edge Relaxation</strong>, iteratively checking every single edge in the graph. By repeating this process <em>V - 1</em> times (where V is the number of vertices), it guarantees that shortest paths propagate fully across the network.</p>`;
 
@@ -569,11 +546,11 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
 
     explanation += `<h3 style="margin-bottom: 5px;">Negative Weight Cycles</h3>`;
     explanation += `<p style="margin-top: 0;">A negative weight cycle is a loop of edges where the total sum of their weights is negative. If one exists, you could loop through it infinitely to keep reducing your total distance to ∞. Bellman-Ford detects this by running a final <em>V-th</em> check: if any distance can STILL be optimized after <em>V - 1</em> iterations, a negative cycle absolutely exists.</p>`;
-    
+
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    
+
     // If a negative cycle exists, alert the user and return a visual warning instead of the broken table
     if (hasNegativeCycle) {
         alert("Graph contains a negative weight cycle.");
@@ -589,28 +566,26 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
     <table border="1" cellpadding="5" cellspacing="0" style="margin-bottom: 10px;">
         <tr><th>Vertex</th><th>Distance</th><th>Path</th></tr>
         ${Object.keys(distances).map(vertex => {
-            let path = [];
-            let current = vertex;
-            while (current !== null) {
-                path.unshift(current);
-                current = previous[current];
-            }
-            return `
-                <tr>
-                    <td>${vertex}</td>
-                    <td>${distances[vertex] === Infinity ? "∞" : distances[vertex]}</td>
-                    <td>${distances[vertex] === Infinity ? "unreachable" : path.join(" → ")}</td>
-                </tr>
-            `;
-        }).join("")}
+        let path = [];
+        let current = vertex;
+        while (current !== null) {
+            path.unshift(current);
+            current = previous[current];
+        }
+        return `
+            <tr>
+                <td>${vertex}</td>
+                <td>${distances[vertex] === Infinity ? "∞" : distances[vertex]}</td>
+                <td>${distances[vertex] === Infinity ? "unreachable" : path.join(" → ")}</td>
+            </tr>
+        `;
+    }).join("")}
     </table>
     `;
 
     return `
-        <div>
-            ${tableHtml}
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
-        </div>
+        ${tableHtml}
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
     `;
 }
 
@@ -627,9 +602,9 @@ function mst(edges, weighted, graphName) {
     for (const { source, target, weight } of edges) {
         if (!graph[source]) graph[source] = [];
         if (!graph[target]) graph[target] = [];
-        
-        const w = weight !== undefined ? weight : 1; 
-        
+
+        const w = weight !== undefined ? weight : 1;
+
         graph[source].push({ target, weight: w });
         graph[target].push({ target: source, weight: w }); // Undirected by definition for MST
     }
@@ -653,7 +628,7 @@ function mst(edges, weighted, graphName) {
         pq.enqueue({ from: startNode, to: neighbor.target }, neighbor.weight);
         initialEdges.push(`'${startNode}' &rarr; '${neighbor.target}' (Cost: ${neighbor.weight})`);
     }
-    
+
     if (initialEdges.length > 0) {
         steps.push(`<li><span style="color: gray; font-size: 0.9em;">&rarr; Enqueued initial outgoing edges: [${initialEdges.join(', ')}].</span></li>`);
     }
@@ -710,7 +685,7 @@ function mst(edges, weighted, graphName) {
     addGraph(mstResult, null, `${graphName} MST`, false, false);
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">This uses <strong>Prim's Algorithm</strong> to find the Minimum Spanning Tree (MST). An MST is a subset of edges that connects all vertices in the graph together without any cycles, while ensuring the lowest possible total edge weight. Prim's operates greedily: it starts from an arbitrary node, throws all connected edges into a Priority Queue, and continually picks the cheapest available edge that expands the tree into an unvisited node.</p>`;
 
@@ -722,19 +697,17 @@ function mst(edges, weighted, graphName) {
 
     explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Trees (Tie-Breaking)</h3>`;
     explanation += `<p style="margin-top: 0;">If two available edges share the exact same minimum weight, the Priority Queue will break the tie arbitrarily. Choosing one edge over the other can drastically alter the shape and pathing of the final tree. However, it is mathematically guaranteed that all valid resulting tree shapes will share the exact same minimal total cost.</p>`;
-    
+
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    
+
     // Return the formatted result with the embedded link
     return `
-        <div>
-            <strong>MST edges:</strong> ${mstResult || "None"} <br>
-            <strong>Total Cost:</strong> ${totalCost} 
-            <br>
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
-        </div>
+        <strong>MST edges:</strong> ${mstResult || "None"} <br>
+        <strong>Total Cost:</strong> ${totalCost} 
+        <br>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
     `;
 }
 
@@ -808,7 +781,7 @@ function topologicalSort(edges) {
     }
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">This uses <strong>Kahn's Algorithm</strong> for Topological Sorting. It is used to linearly order a Directed Acyclic Graph (DAG) such that for every directed edge <em>U &rarr; V</em>, vertex <em>U</em> comes before <em>V</em>. It relies on calculating the <strong>In-Degree</strong> (number of incoming edges) of each node. Nodes with an In-Degree of 0 have no prerequisites and are placed in a Queue. As they are processed, they are "removed" from the graph, decreasing the In-Degree of their neighbors. If a neighbor drops to 0, it is added to the Queue.</p>`;
 
@@ -826,27 +799,24 @@ function topologicalSort(edges) {
     } else {
         explanation += `<p style="margin-top: 0;">During this traversal, the Queue never contained more than one node at a time. This implies that there is a strict, linear dependency chain across the entire graph. Consequently, <strong>there is exactly 1 valid topological sort permutation.</strong></p>`;
     }
-    
+
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    
+
     if (hasCycle) {
         alert("Graph has at least one cycle.");
         return `
             <div style="color: red; font-weight: bold; margin-bottom: 10px;">
-                &#9888; Algorithm Failed: Graph contains a dependency cycle. Topological sort is mathematically impossible.
+                Algorithm Failed: Graph contains a dependency cycle. Topological sort is mathematically impossible.
             </div>
             <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
         `;
     }
 
     return `
-        <div>
-            <strong>Topological Sort:</strong> [${sorted.join(', ')}]
-            <br>
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
-        </div>
+        [${sorted.join(', ')}]
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }
 
@@ -862,10 +832,10 @@ function StronglyConnectedComponents(edges) {
         if (!graph[target]) graph[target] = []; // Ensure targets exist as keys
         if (!reverseGraph[target]) reverseGraph[target] = [];
         if (!reverseGraph[source]) reverseGraph[source] = []; // Ensure sources exist in reverse
-        
+
         graph[source].push(target);
         reverseGraph[target].push(source);
-        
+
         // Track all unique nodes to prevent the "sink node" skipping bug
         allNodes.add(source);
         allNodes.add(target);
@@ -879,7 +849,7 @@ function StronglyConnectedComponents(edges) {
     function dfs(node) {
         visited.add(node);
         steps.push(`<li style="list-style-type: none;"><span style="color: gray; font-size: 0.9em;">&rarr; Visited '${node}'.</span></li>`);
-        
+
         for (const neighbor of graph[node] || []) {
             if (!visited.has(neighbor)) {
                 dfs(neighbor);
@@ -929,7 +899,7 @@ function StronglyConnectedComponents(edges) {
     }
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">This uses <strong>Kosaraju's Algorithm</strong> to find Strongly Connected Components (SCCs). An SCC is a self-contained cycle of vertices where every node can reach every other node within that specific group. The algorithm operates in two main passes: First, it performs a DFS on the original graph, pushing nodes to a Stack only after all their outgoing paths are fully explored (tracking their "finish times"). Second, it reverses all the edges in the graph. By popping nodes off the Stack and running a second DFS on this reversed graph, it isolates the strongly connected clusters without accidentally bleeding into adjacent components.</p>`;
 
@@ -941,7 +911,7 @@ function StronglyConnectedComponents(edges) {
 
     explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Paths vs. Fixed Outcomes</h3>`;
     explanation += `<p style="margin-top: 0;">During Phase 1, if a node has multiple outgoing edges, the order in which they are traversed can drastically change the final sequence of the Stack. However, Strongly Connected Components are an objective mathematical property of the graph. Regardless of the traversal permutations that shuffle the internal Stack, <strong>the final isolated groupings (the SCCs themselves) will always be exactly the same.</strong></p>`;
-    
+
     explanation += `</div>`;
 
     let sccResult = '';
@@ -953,13 +923,11 @@ function StronglyConnectedComponents(edges) {
     }
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    
+
     return `
-        <div>
-            <strong>SCC Result:</strong> ${sccResult || "None"} 
-            <br>
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
-        </div>
+        <strong>SCC Result:</strong> ${sccResult || "None"} 
+        <br>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }
 
@@ -974,7 +942,7 @@ function BiconnectedComponents(edges) {
         if (!graph[target]) graph[target] = [];
         graph[source].push(target);
         graph[target].push(source); // undirected
-        
+
         allNodes.add(source);
         allNodes.add(target);
     }
@@ -990,7 +958,7 @@ function BiconnectedComponents(edges) {
     function dfs(u) {
         disc[u] = low[u] = ++time;
         let children = 0;
-        
+
         steps.push(`<li style="list-style-type: none;"><span style="color: gray; font-size: 0.9em;">&rarr; Visited '${u}'. Assigned Discovery Time = ${disc[u]}, Low = ${low[u]}.</span></li>`);
 
         for (const v of graph[u] || []) {
@@ -1006,7 +974,7 @@ function BiconnectedComponents(edges) {
                 const oldLow = low[u];
                 low[u] = Math.min(low[u], low[v]);
                 if (low[u] !== oldLow) {
-                     steps.push(`<li style="list-style-type: none;"><span style="color: #5bc0de; font-size: 0.9em;">&larr; Backtracked to '${u}' from '${v}'. Updated Low['${u}'] from ${oldLow} to ${low[u]}.</span></li>`);
+                    steps.push(`<li style="list-style-type: none;"><span style="color: #5bc0de; font-size: 0.9em;">&larr; Backtracked to '${u}' from '${v}'. Updated Low['${u}'] from ${oldLow} to ${low[u]}.</span></li>`);
                 }
 
                 // Articulation Point condition check
@@ -1018,9 +986,9 @@ function BiconnectedComponents(edges) {
                         edge = stack.pop();
                         component.push(edge);
                     } while (edge[0] !== u || edge[1] !== v);
-                    
+
                     bcc.push(component);
-                    
+
                     const edgeStrs = component.map(e => `(${e[0]}-${e[1]})`).join(', ');
                     steps.push(`<li><strong style="color: #5cb85c;">Articulation Point detected at '${u}'. Extracted Biconnected Component:</strong> {${edgeStrs}}</li>`);
                 }
@@ -1039,11 +1007,11 @@ function BiconnectedComponents(edges) {
             parent[node] = null; // Explicitly mark as root
             steps.push(`<li><strong>Starting new DFS tree from unvisited node '${node}'.</strong></li>`);
             dfs(node);
-            
+
             if (stack.length > 0) {
                 const component = stack.splice(0); // Safely grab all remaining edges
                 bcc.push(component);
-                
+
                 const edgeStrs = component.map(e => `(${e[0]}-${e[1]})`).join(', ');
                 steps.push(`<li><strong style="color: #5cb85c;">DFS tree completed. Extracted remaining edges as Biconnected Component:</strong> {${edgeStrs}}</li>`);
             }
@@ -1051,7 +1019,7 @@ function BiconnectedComponents(edges) {
     }
 
     let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
-    
+
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">This uses the <strong>Hopcroft-Tarjan Algorithm</strong> to find Biconnected Components. A Biconnected Component is a maximal subgraph where the removal of any single vertex will NOT disconnect the subgraph. The algorithm performs a Depth-First Search (DFS) while maintaining two values for each node: <strong>Discovery Time</strong> (when it was first visited) and <strong>Low Time</strong> (the earliest discovered node reachable from its subtree, including back edges).</p>`;
     explanation += `<p style="margin-top: 0;">If a node <em>U</em> has a child <em>V</em> that cannot reach any node discovered before <em>U</em> (i.e., <code>low[V] &ge; disc[U]</code>), it means removing <em>U</em> traps <em>V</em> and breaks the graph apart. Therefore, <em>U</em> is an <strong>Articulation Point</strong>. Whenever this condition is met, the algorithm pops all recently traversed edges from a Stack to group them into an isolated Biconnected Component.</p>`;
@@ -1064,11 +1032,11 @@ function BiconnectedComponents(edges) {
 
     explanation += `<h3 style="margin-bottom: 5px;">Component Composition</h3>`;
     explanation += `<p style="margin-top: 0;">Unlike Strongly Connected Components which group <em>vertices</em>, Biconnected Components inherently group <strong>edges</strong>. A single Articulation Point (vertex) can belong to multiple Biconnected Components, acting as the bridge between them. Edges, however, belong strictly to one component.</p>`;
-    
+
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    
+
     // Generate the Result String
     let bccResult = '';
     for (let i = 0; i < bcc.length; i++) {
@@ -1084,10 +1052,8 @@ function BiconnectedComponents(edges) {
     }
 
     return `
-        <div>
-            <strong>Biconnected Components:</strong> ${bccResult || "None"} 
-            <br>
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
-        </div>
+        <strong>Biconnected Components:</strong> ${bccResult || "None"} 
+        <br>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }

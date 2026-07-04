@@ -1,3 +1,7 @@
+/* html {
+  filter: invert(1) brightness(1) contrast(0.8) saturate(1);
+} */
+
 /* Global Styles */
 :root {
     /* Global colors, can be changed for light mode */
@@ -32,6 +36,8 @@
 
     /* Animation colors */
     --node-visited-color: #ff5722;
+    --edge-eval-color: #ff8df9;
+    --error-color: #e74c3c;
 
     --default-font-size: clamp(12px, 1.2vw, 16px);
 }
@@ -231,7 +237,7 @@ img {
 }
 
 #treeTypeSelect,
-#methodsSelect {
+.methodsSelect {
     display: none;
     width: 50%;
     color: var(--inverted-text);
@@ -244,14 +250,14 @@ img {
     transition: background-color 0.3s, border-color 0.3s;
 }
 
-#methodsSelect {
+.methodsSelect {
     width: 45%;
     display: inline-block;
     margin-left: 0.675rem;
 }
 
 #treeTypeSelect:hover,
-#methodsSelect:hover {
+.methodsSelect:hover {
     background-color: transparent;
     border-color: var(--accent);
     color: var(--accent)
@@ -264,7 +270,7 @@ img {
 }
 
 #treeTypeSelect option,
-#methodsSelect option {
+.methodsSelect option {
     background-color: var(--bg-secondary);
     border: 1.5px solid var(--accent);
     color: #fff;

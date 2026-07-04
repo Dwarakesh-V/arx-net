@@ -41,6 +41,15 @@ var edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValu
 var gridLineColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line-color').trim();
 var dragNodeColor = getComputedStyle(document.documentElement).getPropertyValue('--drag-node-color').trim();
 var nodeVisitColor = getComputedStyle(document.documentElement).getPropertyValue('--node-visited-color').trim();
+var edgeEvalColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-eval-color').trim();
+var errorColor = getComputedStyle(document.documentElement).getPropertyValue('--error-color').trim();
+
+const disColors = [
+        '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+        '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+        '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
+        '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+    ]; // Colors will start repeating after 20 SCCs
 
 // Available methods
 const algorithms = [
@@ -63,6 +72,25 @@ const gridSize = 40; // Defines the distance between lines
 // Graph management variables
 let graphCount = 0;
 let availableGraphs = [];
+
+class PriorityQueue {
+    constructor() {
+        this.items = [];
+    }
+
+    enqueue(element, priority) {
+        this.items.push({ element, priority });
+        this.items.sort((a, b) => a.priority - b.priority);
+    }
+
+    dequeue() {
+        return this.items.shift();
+    }
+
+    isEmpty() {
+        return this.items.length === 0;
+    }
+}
 
 class FloatingMenu { /* Resuable floating menu that works like browser right click menu */
     constructor(menu) {

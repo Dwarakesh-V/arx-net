@@ -5,7 +5,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
         if (d.selfLoop) {
             const x = d.source.x;
             const y = d.source.y;
-            const loopRadius = 30; // You can tweak this
+            const loopRadius = 30;
             const offsetX = 0; // Offset to make the loop visible
             const offsetY = -25; // No vertical offset for the loop
 
@@ -452,7 +452,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* Available methods */
     const methodsSelect = document.createElement('select');
-    methodsSelect.id = 'methodsSelect';
+    methodsSelect.className = 'methodsSelect';
 
     // Placeholder option
     const placeholder = document.createElement('option');
@@ -816,7 +816,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                         menu.show(event);
                     });
 
-                // Remove old nodes (optional, not always needed)
                 nodeSelection.exit().remove();
 
                 // Merge new and existing nodes if needed later
@@ -837,9 +836,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     .style('pointer-events', 'none')
                     .style('font-weight', 'bold');
 
-                // labelSelection.exit().remove();
-
-                // MERGE: Combine enter and update selections
                 label = labelEnter.merge(labelSelection);
                 setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
             }
