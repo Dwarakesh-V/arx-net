@@ -285,19 +285,29 @@ function handleEdgeMouseOut(pathElement, edgeColor, directed, svgElement) {
     }
 }
 
+// Helper to add an item to a floating menu. Usable anywhere a FloatingMenu instance exists, so it is defined globally instead of being scoped to a single function.
+function addMenuItem(menuElement, menu, label, title, onClick) {
+    const item = document.createElement('button');
+    item.textContent = label;
+    if (title) item.title = title;
+    item.addEventListener('click', () => {
+        onClick();
+        menu.hide();
+    });
+    menuElement.appendChild(item);
+    return item;
+}
+
 function showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2) {
     event.preventDefault();
     event.stopPropagation();
 
-    const menu = document.createElement('div');
-    menu.className = 'floating-menu';
-    menu.style.position = 'fixed';
-    menu.style.left = `${event.clientX}px`;
-    menu.style.top = `${event.clientY}px`;
+    const menuElement = document.createElement('div');
+    menuElement.className = 'floating-menu';
+    document.body.appendChild(menuElement);
+    const menu = new FloatingMenu(menuElement);
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Delete this edge';
-    deleteBtn.onclick = () => {
+    addMenuItem(menuElement, menu, 'Delete this edge', null, () => {
         const idx = edges.indexOf(d);
         if (idx !== -1) {
             edges.splice(idx, 1);
@@ -326,14 +336,9 @@ function showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, la
 
         setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
         setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+    });
 
-        menu.remove();
-    };
-    menu.appendChild(deleteBtn);
-
-    const changeWeightBtn = document.createElement('button');
-    changeWeightBtn.textContent = 'Change edge weight';
-    changeWeightBtn.onclick = () => {
+    addMenuItem(menuElement, menu, 'Change edge weight', null, () => {
         let newWeight = parseFloat(prompt('Enter new weight for this edge:', d.weight));
         if (newWeight == null || isNaN(newWeight)) {
             alert('Weight must be a valid number.');
@@ -346,17 +351,9 @@ function showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, la
             );
             if (raw) raw.weight = newWeight;
         }
-        menu.remove();
-    };
-    menu.appendChild(changeWeightBtn);
+    });
 
-    document.addEventListener('mousedown', function removeMenu(e) {
-        if (!menu.contains(e.target)) {
-            menu.remove();
-        }
-    }, { once: true });
-
-    document.body.appendChild(menu);
+    menu.show(event);
 }
 
 function addGraph(edgesInput = null, nodes = null, inputName = null, directed = null, weighted = null) { // Core function will all functionalities
@@ -588,20 +585,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     const menu = new FloatingMenu(menuElement);
 
-    // Helper to add menu items
-    function addMenuItem(label, title, onClick) {
-        const item = document.createElement('button');
-        item.textContent = label;
-        item.title = title;
-        item.addEventListener('click', () => {
-            onClick();
-            menu.hide();
-        });
-
-        menuElement.appendChild(item);
-    }
-
-    addMenuItem('Rearrange nodes', 'Rearrange nodes for better visibility', () => {
+    addMenuItem(menuElement, menu, 'Rearrange nodes', 'Rearrange nodes for better visibility', () => {
         autoLayoutNodes(nodes, simulation, width, height, edgesInput);
         // Apply positions to nodes
         node.attr('cx', d => d.x).attr('cy', d => d.y);
@@ -621,22 +605,22 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     });
 
     // Focus (center and bring to front)
-    addMenuItem('Focus', 'Bring this window to the center of the screen', () => {
+    addMenuItem(menuElement, menu, 'Focus', 'Bring this window to the center of the screen', () => {
         focusAndCenterContainer(container);
     });
 
     // Hide container
-    addMenuItem('Hide', 'Hide this graph', () => {
+    addMenuItem(menuElement, menu, 'Hide', 'Hide this graph', () => {
         showHideGraph.click();
     });
 
     // Delete container
-    addMenuItem('Delete', 'Delete this graph', () => {
+    addMenuItem(menuElement, menu, 'Delete', 'Delete this graph', () => {
         deleteThisGraph.click();
     });
 
     // Create new vertex
-    addMenuItem('Create new vertex', 'Add a new vertex to this graph', () => {
+    addMenuItem(menuElement, menu, 'Create new vertex', 'Add a new vertex to this graph', () => {
         let newVertex = prompt("Enter new vertex name (e.g., A, B, C):");
         if (newVertex) {
             newVertex = newVertex.toUpperCase();
@@ -686,16 +670,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                         event.stopPropagation();
 
                         // Create context menu
-                        const menu = document.createElement('div');
-                        menu.className = 'floating-menu';
-                        menu.style.position = 'fixed';
-                        menu.style.left = `${event.clientX}px`;
-                        menu.style.top = `${event.clientY}px`;
+                        const menuElement = document.createElement('div');
+                        menuElement.className = 'floating-menu';
+                        document.body.appendChild(menuElement);
+                        const menu = new FloatingMenu(menuElement);
 
                         // Delete node option
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.textContent = 'Delete this vertex';
-                        deleteBtn.onclick = () => {
+                        addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
                             // Remove the node from the nodes array
                             const idx = nodes.indexOf(d);
                             if (idx !== -1) {
@@ -715,23 +696,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             // Update edges and edgesRaw
                             edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
                             edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
-                            // Remove context menu
-                            menu.remove();
-                        };
-                        menu.appendChild(deleteBtn);
+                        });
 
                         // Create new edge
-                        const newEdgeButton = document.createElement('button');
-                        newEdgeButton.textContent = 'Create new edge from this vertex';
-                        newEdgeButton.onclick = () => {
+                        addMenuItem(menuElement, menu, 'Create new edge from this vertex', null, () => {
                             let targetId = prompt("Enter target vertex id:").toUpperCase();
                             if (!targetId) {
-                                menu.remove();
                                 return;
                             }
                             const targetNode = nodes.find(n => n.id === targetId);
                             if (!targetNode) {
-                                menu.remove();
                                 alert("Target vertex does not exist.");
                                 return;
                             }
@@ -739,13 +713,11 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             if (weighted) {
                                 let w = prompt("Enter weight for this edge:", "1");
                                 if (w === null) {
-                                    menu.remove();
                                     return;
                                 }
                                 weight = parseFloat(w);
                                 if (isNaN(weight)) {
                                     alert("Invalid weight.");
-                                    menu.remove();
                                     return;
                                 }
                             }
@@ -839,21 +811,9 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             // Update positions
                             setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
                             setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+                        });
 
-                            menu.remove();
-                        }
-                        menu.appendChild(newEdgeButton);
-
-                        // Remove menu on click elsewhere
-                        function removeMenu(e) {
-                            if (!menu.contains(e.target)) {
-                                menu.remove();
-                                document.removeEventListener('mousedown', removeMenu);
-                            }
-                        }
-                        document.addEventListener('mousedown', removeMenu, { once: true });
-
-                        document.body.appendChild(menu);
+                        menu.show(event);
                     });
 
                 // Remove old nodes (optional, not always needed)
@@ -886,13 +846,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         }
     })
 
-    addMenuItem('Save as PNG', 'Save this graph as a PNG image', () => {
+    addMenuItem(menuElement, menu, 'Save as PNG', 'Save this graph as a PNG image', () => {
         updateColors();
         saveSvgAsPng(svgElement, `${nameInput.value}.png`);
         revertColors();
     });
 
-    addMenuItem('Save as transparent PNG', 'Save this graph as a PNG image with a transparent background', () => {
+    addMenuItem(menuElement, menu, 'Save as transparent PNG', 'Save this graph as a PNG image with a transparent background', () => {
         updateColors();
         saveSvgAsPng(svgElement, `${nameInput.value}.png`, true);
         revertColors();
@@ -1339,16 +1299,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             event.stopPropagation();
 
             // Create context menu
-            const menu = document.createElement('div');
-            menu.className = 'floating-menu';
-            menu.style.position = 'fixed';
-            menu.style.left = `${event.clientX}px`;
-            menu.style.top = `${event.clientY}px`;
+            const menuElement = document.createElement('div');
+            menuElement.className = 'floating-menu';
+            document.body.appendChild(menuElement);
+            const menu = new FloatingMenu(menuElement);
 
             // Delete node option
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete this vertex';
-            deleteBtn.onclick = () => {
+            addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
                 // Remove the node from the nodes array
                 const idx = nodes.indexOf(d);
                 if (idx !== -1) {
@@ -1368,23 +1325,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 // Update edges and edgesRaw
                 edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
                 edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
-                // Remove context menu
-                menu.remove();
-            };
-            menu.appendChild(deleteBtn);
+            });
 
             // Create new edge
-            const newEdgeButton = document.createElement('button');
-            newEdgeButton.textContent = 'Create new edge from this vertex';
-            newEdgeButton.onclick = () => {
+            addMenuItem(menuElement, menu, 'Create new edge from this vertex', null, () => {
                 let targetId = prompt("Enter target vertex id:").toUpperCase();
                 if (!targetId) {
-                    menu.remove();
                     return;
                 }
                 const targetNode = nodes.find(n => n.id === targetId);
                 if (!targetNode) {
-                    menu.remove();
                     alert("Target vertex does not exist.");
                     return;
                 }
@@ -1392,13 +1342,11 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 if (weighted) {
                     let w = prompt("Enter weight for this edge:", "1");
                     if (w === null) {
-                        menu.remove();
                         return;
                     }
                     weight = parseFloat(w);
                     if (isNaN(weight)) {
                         alert("Invalid weight.");
-                        menu.remove();
                         return;
                     }
                 }
@@ -1492,21 +1440,9 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 // Update positions
                 setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
                 setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            });
 
-                menu.remove();
-            }
-            menu.appendChild(newEdgeButton);
-
-            // Remove menu on click elsewhere
-            function removeMenu(e) {
-                if (!menu.contains(e.target)) {
-                    menu.remove();
-                    document.removeEventListener('mousedown', removeMenu);
-                }
-            }
-            document.addEventListener('mousedown', removeMenu, { once: true });
-
-            document.body.appendChild(menu);
+            menu.show(event);
         });
 
     // Add labels for nodes
