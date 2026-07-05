@@ -10,10 +10,17 @@ function focusOnThisContainer(container) {
 
 // Focus on this container and center it in the viewport
 function focusAndCenterContainer(container) {
-    container.style.height = '80%';
-    container.style.width = '50%';
-    container.style.left = '25%';
-    container.style.top = '10%';
+    if (!isMobile) {
+        container.style.height = '80%';
+        container.style.width = '50%';
+        container.style.left = '25%';
+        container.style.top = '10%';
+    } else {
+        container.style.height = '50%';
+        container.style.width = '100%';
+        container.style.left = '0';
+        container.style.top = '0';
+    }
 
     focusOnThisContainer(container);
 }
