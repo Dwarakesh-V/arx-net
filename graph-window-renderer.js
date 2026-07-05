@@ -1046,7 +1046,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     dupDelMenuObj.appendChild(deleteThisGraph);
 
     deleteThisGraph.addEventListener('click', () => {
-        deleteGraph(container, displayName, dupDelMenuObj);
+        deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv);
     });
 
     document.body.appendChild(dupDelMenuObj);

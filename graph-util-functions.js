@@ -787,10 +787,11 @@ function smoothFunction(x, k = 0.02, c = 275) {
     return result;
 }
 
-function deleteGraph(container, displayName, dupDelMenuObj) {
+function deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv) {
     dupDelMenuObj.style.display = 'none';
     // Remove the container from the DOM
     container.remove();
+    showHideDeleteDiv.remove();
 
     // Remove from global list of graph names
     availableGraphs.delete(displayName);
@@ -798,7 +799,4 @@ function deleteGraph(container, displayName, dupDelMenuObj) {
     // Remove from the methods list UI
     const methodsEntry = document.getElementById(displayName);
     if (methodsEntry) methodsEntry.remove();
-
-    // Decrement graph count and hide graph options
-    graphCount--;
 }
