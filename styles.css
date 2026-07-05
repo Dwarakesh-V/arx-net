@@ -59,6 +59,10 @@
     filter: invert(1);
 }
 
+.light-mode ::selection{
+    background-color: #f57b00;
+}
+
 #treeTypeSelect option,
 .methodsSelect option {
     background-color: var(--bg-secondary);
@@ -369,7 +373,6 @@ h2 button:hover {
     padding-left: 0.675rem;
 }
 
-
 /* Graph window styles */
 /* Show/Hide/Delete Div - Contains the entry of the graph in the outliner */
 .showHideDeleteDiv {
@@ -405,7 +408,7 @@ h2 button:hover {
     cursor: default;
     border: none;
     background: none;
-    width: 30%;
+    width: 70%;
     padding: 0.33rem;
     border: 1px solid transparent;
 }
@@ -413,6 +416,7 @@ h2 button:hover {
 .showHideDeleteDiv [type='text'].editable {
     cursor: text;
     border: 1px solid var(--accent);
+    width: 70%;
     background-color: var(--bg-primary);
 }
 
@@ -572,7 +576,6 @@ svg {
 
 .floating-menu button:hover {
     background: #0a84ff;
-    background: AccentColor;
     filter: none;
 }
 
