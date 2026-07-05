@@ -23,11 +23,9 @@ cgb.addEventListener('click', function () {
     if (this.getElementsByTagName('img')[0].src.endsWith('sidebaropen.png')) {
         this.getElementsByTagName('img')[0].src = 'images/sidebarclose.png';
         graphGenMenu.style.display = 'block';
-        outliner.style.height = '25vh';
     } else {
         this.getElementsByTagName('img')[0].src = 'images/sidebaropen.png';
         graphGenMenu.style.display = 'none';
-        outliner.style.height = '84vh';
     }
 });
 

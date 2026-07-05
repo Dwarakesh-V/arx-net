@@ -1140,7 +1140,7 @@ function visualizeKruskal(graphName, container, nodes, edges, svg, arrowId) {
             const step = animationSteps[idx];
             
             if (step.type === 'eval') {
-                logHTML += `<div>Evaluating edge <span style="color: #a3bf60">${step.u} &mdash; ${step.v}</span> (w: ${step.w})...</div>`;
+                logHTML += `<div>Evaluating edge <span style="color: #a3bf60">${step.u} - ${step.v}</span> (w: ${step.w})...</div>`;
                 evaluatingEdge = `${step.u}-${step.v}`;
             } else if (step.type === 'accept') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Accepted! Does not form a cycle.</div><br>`;
@@ -1349,7 +1349,7 @@ function visualizePrim(graphName, container, nodes, edges, svg, arrowId) {
                 logHTML += `<div>Started growing tree from node <span style="color: #ffc66d">${step.node}</span></div><br>`;
                 mstNodes.add(step.node);
             } else if (step.type === 'eval') {
-                logHTML += `<div>Evaluating frontier edge <span style="color: #a3bf60">${step.u} &mdash; ${step.v}</span> (w: ${step.w})...</div>`;
+                logHTML += `<div>Evaluating frontier edge <span style="color: #a3bf60">${step.u} - ${step.v}</span> (w: ${step.w})...</div>`;
                 evaluatingEdge = `${step.u}-${step.v}`;
             } else if (step.type === 'accept') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Accepted! Added node ${step.newNode} to MST.</div><br>`;
@@ -2108,7 +2108,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId) {
                 activeNode = step.u;
             } else if (step.type === 'eval_edge') {
                 const eType = step.edgeType === 'tree' ? 'Tree-edge' : 'Back-edge';
-                logHTML += `<div style="padding-left: 10px;">Evaluating ${eType}: <span style="color: #a3bf60">${step.u} &mdash; ${step.v}</span></div>`;
+                logHTML += `<div style="padding-left: 10px;">Evaluating ${eType}: <span style="color: #a3bf60">${step.u} - ${step.v}</span></div>`;
                 evaluatingEdge = `${step.u}-${step.v}`;
                 activeNode = step.u;
                 if (step.edgeType === 'back') {
