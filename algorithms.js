@@ -103,7 +103,7 @@ function bfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
 
-    return `[${result.join(', ')}] <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
+    return `[${result.join(', ')}] <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
 }
 
 function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
@@ -205,7 +205,7 @@ function dfs(edges, start = prompt("Enter start vertex"), isDirected = true) {
     explanation += `</div>`;
 
     const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
-    return `[${result.join(', ')}] <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
+    return `[${result.join(', ')}] <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
 }
 
 function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected = true) {
@@ -320,7 +320,7 @@ function dijkstra(edges, start = prompt("Enter start vertex"), nodes, isDirected
 
     return `
         ${tableHtml}
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
     `;
 }
 
@@ -445,7 +445,7 @@ function floydWarshall(edges, directed = true) {
 
     return `
         ${tablesHtml}
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px;">[Explanation]</a>
     `;
 }
 
@@ -558,7 +558,7 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
             <div style="color: red; font-weight: bold; margin-bottom: 10px;">
                 &#9888; Algorithm Failed: Graph contains a Negative Weight Cycle. Distances cannot be calculated.
             </div>
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
+            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
         `;
     }
 
@@ -585,7 +585,7 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
 
     return `
         ${tableHtml}
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
     `;
 }
 
@@ -707,7 +707,7 @@ function mst(edges, weighted, graphName) {
         <strong>MST edges:</strong> ${mstResult || "None"} <br>
         <strong>Total Cost:</strong> ${totalCost} 
         <br>
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
     `;
 }
 
@@ -810,13 +810,13 @@ function topologicalSort(edges) {
             <div style="color: red; font-weight: bold; margin-bottom: 10px;">
                 Algorithm Failed: Graph contains a dependency cycle. Topological sort is mathematically impossible.
             </div>
-            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer;">[Explanation]</a>
+            <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
         `;
     }
 
     return `
         [${sorted.join(', ')}]
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }
 
@@ -927,7 +927,7 @@ function StronglyConnectedComponents(edges) {
     return `
         <strong>SCC Result:</strong> ${sccResult || "None"} 
         <br>
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }
 
@@ -1054,6 +1054,6 @@ function BiconnectedComponents(edges) {
     return `
         <strong>Biconnected Components:</strong> ${bccResult || "None"} 
         <br>
-        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ffc66d; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }

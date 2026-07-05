@@ -5,9 +5,9 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
         if (d.selfLoop) {
             const x = d.source.x;
             const y = d.source.y;
-            const loopRadius = 30;
+            const loopRadius = 50;
             const offsetX = 0; // Offset to make the loop visible
-            const offsetY = -25; // No vertical offset for the loop
+            const offsetY = -35; // No vertical offset for the loop
 
             // Draw a loop using an elliptical arc command
             // Draw a visible self-loop as an elliptical arc
@@ -40,15 +40,15 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
                     svg.append('defs')
                         .append('marker')
                         .attr('id', uniqueArrowId)
+                        .attr('class', 'directed-arrow')
                         .attr('viewBox', '0 -5 10 10')
-                        .attr('refX', 25)
+                        .attr('refX', 24.5)
                         .attr('refY', 0)
-                        .attr('markerWidth', 8)
-                        .attr('markerHeight', 8)
+                        .attr('markerWidth', 5)
+                        .attr('markerHeight', 5)
                         .attr('orient', 'auto')
                         .append('path')
                         .attr('d', 'M0,-5L10,0L0,5')
-                        .attr('fill', edgeColor);
                 }
 
                 // Update the marker-end attribute of the path to use the unique marker to match the curve of bidirectional edge
@@ -101,7 +101,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
                     const length = Math.sqrt(dx * dx + dy * dy);
                     const angle = Math.atan2(dy, dx);
                     if (d.selfLoop === true) {
-                        const offsetY = -27;
+                        const offsetY = -40;
                         return midpointY + offsetY;
                     }
                     else if (d.bidirectional === true) {
@@ -597,11 +597,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         showHideGraph.click();
     });
 
-    // Delete container
-    addMenuItem(menuElement, menu, 'Delete', 'Delete this graph', () => {
-        deleteThisGraph.click();
-    });
-
     // Create new vertex
     addMenuItem(menuElement, menu, 'Create new vertex', 'Add a new vertex to this graph', () => {
         let newVertex = prompt("Enter new vertex name (e.g., A, B, C):");
@@ -626,16 +621,11 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 // Handle new nodes with enter()
                 let nodeEnter = nodeSelection.enter()
                     .append('circle')
-                    .attr('r', 20)
+                    .attr('class', 'node')
                     .attr('fill', nodeColor)
+                    .attr('stroke', primaryBG)
                     .attr('cx', d => d.x)
                     .attr('cy', d => d.y)
-                    .on('mouseover', function () {
-                        d3.select(this).attr('fill', nodeHoverColor);
-                    })
-                    .on('mouseout', function () {
-                        d3.select(this).attr('fill', nodeColor);
-                    })
                     .call(
                         d3.drag()
                             .on('start', function (event, d) {
@@ -728,7 +718,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                         .attr('target-id', d => `${arrowId}${d.target.id}`)
                                         .attr('fill', 'none')
                                         .attr('stroke', edgeColor)
-                                        .attr('stroke-width', 1.5)
+                                        .attr('stroke-width', 4)
                                         .on('mouseover', function () {
                                             handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
                                         })
@@ -811,8 +801,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     .attr('dy', 3)
                     .attr('text-anchor', 'middle')
                     .text(d => d.id)
-                    .attr('font-size', 16)
-                    .attr('fill', nodeLabelColor)
+                    .attr('class', 'node-label')
                     .style('pointer-events', 'none')
                     .style('font-weight', 'bold');
 
@@ -832,6 +821,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         updateColors();
         saveSvgAsPng(svgElement, `${nameInput.value}.png`, true);
         revertColors();
+    });
+
+    // Duplicate graph
+    addMenuItem(menuElement, menu, 'Delete', 'Delete this graph', () => {
+        deleteThisGraph.click();
+    });
+
+    // Delete graph
+    addMenuItem(menuElement, menu, 'Duplicate', 'Duplicate this graph with weights and direction determined by the checkboxes', () => {
+        duplicateGraph.click();
     });
 
     container.addEventListener("contextmenu", (event) => {
@@ -871,7 +870,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     }
 
     function revertColors() {
-        document.documentElement.style.setProperty("--node-color", "#ffc66d");
+        document.documentElement.style.setProperty("--node-color", "#42baff");
         document.documentElement.style.setProperty("--edge-weight-color", "#fff");
         document.documentElement.style.setProperty("--grid-line-color", "#3c3d3c");
         edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
@@ -1206,7 +1205,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         .attr('target-id', d => `${arrowId}${d.target.id}`)
         .attr('fill', 'none')
         .attr('stroke', edgeColor)
-        .attr('stroke-width', 1.5)
+        .attr('stroke-width', 4)
         .on('mouseover', function () {
             handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
         })
@@ -1253,14 +1252,9 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         .data(nodes, d => d.id)
         .enter()
         .append('circle')
-        .attr('r', 20)
+        .attr('class', 'node')
         .attr('fill', nodeColor)
-        .on('mouseover', function () {
-            d3.select(this).attr('fill', nodeHoverColor);
-        })
-        .on('mouseout', function () {
-            d3.select(this).attr('fill', nodeColor);
-        })
+        .attr('stroke', primaryBG)
         .call(
             d3.drag()
                 .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
@@ -1347,7 +1341,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             .attr('target-id', d => `${arrowId}${d.target.id}`)
                             .attr('fill', 'none')
                             .attr('stroke', edgeColor)
-                            .attr('stroke-width', 1.5)
+                            .attr('stroke-width', 4)
                             .on('mouseover', function () {
                                 handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
                             })
@@ -1420,11 +1414,11 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         .data(nodes)
         .enter()
         .append('text')
-        .attr('dy', 3)
+        .attr('dy', 7)
+        .attr('color', '#ffffff')
         .attr('text-anchor', 'middle')
         .text(d => d.id)
-        .attr('font-size', 16)
-        .attr('fill', nodeLabelColor)
+        .attr('class', 'node-label')
         .style('pointer-events', 'none')
         .style('font-weight', 'bold');
 

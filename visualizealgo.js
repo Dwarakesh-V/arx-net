@@ -68,7 +68,7 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
         const activeNodes = new Set();
         const activeEdges = new Set(); // Stored as "sourceId-targetId"
 
-        let logHTML = `<h3 style="color: #ffc66d;">BFS through graph <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">BFS through graph <span style="color: #00759a;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
@@ -77,9 +77,9 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
             if (step.type === 'node') {
                 if (step.level === 0) {
-                    logHTML += `<div>Started BFS at vertex <span style="color: #ffc66d">${step.id}</span> at level <span style="color: #ff5722">0</span></div><br>`;
+                    logHTML += `<div>Started BFS at vertex <span style="color: #ff8a65">${step.id}</span> at level <span style="color: #ff5722">0</span></div><br>`;
                 } else {
-                    logHTML += `<div>Visited vertex <span style="color: #ffc66d">${step.id}</span> through edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> at level <span style="color: #ff5722">${step.level}</span></div><br>`;
+                    logHTML += `<div>Visited vertex <span style="color: #ff8a65">${step.id}</span> through edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> at level <span style="color: #ff5722">${step.level}</span></div><br>`;
                 }
             }
         }
@@ -280,7 +280,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
         const activeNodes = new Set();
         const activeEdges = new Set(); // Stored as "sourceId-targetId"
 
-        let logHTML = `<h3 style="color: #ffc66d;">DFS through graph <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">DFS through graph <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
@@ -289,9 +289,9 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
             if (step.type === 'node') {
                 if (step.level === 0) {
-                    logHTML += `<div>Started DFS at vertex <span style="color: #ffc66d">${step.id}</span> at level <span style="color: #ff5722">0</span></div><br>`;
+                    logHTML += `<div>Started DFS at vertex <span style="color: #ff8a65">${step.id}</span> at level <span style="color: #ff5722">0</span></div><br>`;
                 } else {
-                    logHTML += `<div>Visited vertex <span style="color: #ffc66d">${step.id}</span> through edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> at level <span style="color: #ff5722">${step.level}</span></div><br>`;
+                    logHTML += `<div>Visited vertex <span style="color: #ff8a65">${step.id}</span> through edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> at level <span style="color: #ff5722">${step.level}</span></div><br>`;
                 }
             }
         }
@@ -504,7 +504,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
         const activeNodes = new Set();
         const activeEdges = new Set();
 
-        let logHTML = `<h3 style="color: #ffc66d;">Dijkstra's Algorithm through graph <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Dijkstra's Algorithm through graph <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
@@ -513,9 +513,9 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
 
             if (step.type === 'node') {
                 if (step.dist === 0) {
-                    logHTML += `<div>Started at vertex <span style="color: #ffc66d">${step.id}</span> (Distance: <span style="color: #ff5722">0</span>)</div><br>`;
+                    logHTML += `<div>Started at vertex <span style="color: #ff8a65">${step.id}</span> (Distance: <span style="color: #ff5722">0</span>)</div><br>`;
                 } else {
-                    logHTML += `<div>Finalized vertex <span style="color: #ffc66d">${step.id}</span> via edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> [w: ${step.fromEdge.weight}] - Total Dist: <span style="color: #ff5722">${step.dist}</span></div><br>`;
+                    logHTML += `<div>Finalized vertex <span style="color: #ff8a65">${step.id}</span> via edge <span style="color: #a3bf60">(${step.fromEdge.u},${step.fromEdge.v})</span> [w: ${step.fromEdge.weight}] - Total Dist: <span style="color: #ff5722">${step.dist}</span></div><br>`;
                 }
             }
         }
@@ -701,17 +701,17 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
     const renderGraphState = (targetStep, animate = false) => {
         let currentActiveNodes = new Set();
 
-        let logHTML = `<h3 style="color: #ffc66d;">Floyd-Warshall (All-Pairs) on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Floyd-Warshall (All-Pairs) on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
 
             // Build logging history
             if (step.type === 'pivot') {
-                logHTML += `<div style="margin-top: 10px;"><strong>Phase:</strong> Evaluating intermediate node <span style="color: #ffc66d">${step.k}</span></div>`;
+                logHTML += `<div style="margin-top: 10px;"><strong>Phase:</strong> Evaluating intermediate node <span style="color: #ff8a65">${step.k}</span></div>`;
             } else if (step.type === 'relax') {
                 const oldStr = step.oldDist === Infinity ? '∞' : step.oldDist;
-                logHTML += `<div>Relaxed <span style="color: #a3bf60">${step.i} &rarr; ${step.j}</span> via <span style="color: #ffc66d">${step.k}</span> (Dist: ${oldStr} &rarr; <span style="color: #ff5722">${step.newDist}</span>)</div><br>`;
+                logHTML += `<div>Relaxed <span style="color: #a3bf60">${step.i} &rarr; ${step.j}</span> via <span style="color: #ff8a65">${step.k}</span> (Dist: ${oldStr} &rarr; <span style="color: #ff5722">${step.newDist}</span>)</div><br>`;
             }
 
             // Highlight the nodes involved in the exact CURRENT step.
@@ -913,7 +913,7 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
         let currentActiveEdges = new Set();
         let isRelaxing = false;
 
-        let logHTML = `<h3 style="color: #ffc66d;">Bellman-Ford on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Bellman-Ford on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
@@ -1131,7 +1131,7 @@ function visualizeKruskal(graphName, container, nodes, edges, svg, arrowId) {
         let evaluatingEdge = null;
         let rejectEdge = null;
         
-        let logHTML = `<h3 style="color: #ffc66d;">Kruskal's MST on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Kruskal's MST on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
         logHTML += `<div style="margin-bottom: 10px;"><em>Edges sorted by weight. Evaluating...</em></div>`;
 
         let totalWeight = 0;
@@ -1155,7 +1155,7 @@ function visualizeKruskal(graphName, container, nodes, edges, svg, arrowId) {
                 rejectEdge = `${step.u}-${step.v}`;
                 evaluatingEdge = null;
             } else if (step.type === 'complete') {
-                logHTML += `<div style="color: #ffc66d; margin-top: 10px; font-weight: bold;">MST Complete! Total Weight: ${totalWeight}</div>`;
+                logHTML += `<div style="color: #ff8a65; margin-top: 10px; font-weight: bold;">MST Complete! Total Weight: ${totalWeight}</div>`;
             }
 
             if (idx !== targetStep - 1) {
@@ -1339,14 +1339,14 @@ function visualizePrim(graphName, container, nodes, edges, svg, arrowId) {
         let evaluatingEdge = null;
         let rejectEdge = null;
         
-        let logHTML = `<h3 style="color: #ffc66d;">Prim's MST on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Prim's MST on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
         let totalWeight = 0;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
             
             if (step.type === 'start') {
-                logHTML += `<div>Started growing tree from node <span style="color: #ffc66d">${step.node}</span></div><br>`;
+                logHTML += `<div>Started growing tree from node <span style="color: #ff8a65">${step.node}</span></div><br>`;
                 mstNodes.add(step.node);
             } else if (step.type === 'eval') {
                 logHTML += `<div>Evaluating frontier edge <span style="color: #a3bf60">${step.u} - ${step.v}</span> (w: ${step.w})...</div>`;
@@ -1364,7 +1364,7 @@ function visualizePrim(graphName, container, nodes, edges, svg, arrowId) {
                 rejectEdge = `${step.u}-${step.v}`;
                 evaluatingEdge = null;
             } else if (step.type === 'complete') {
-                logHTML += `<div style="color: #ffc66d; margin-top: 10px; font-weight: bold;">MST Complete! Total Weight: ${totalWeight}</div>`;
+                logHTML += `<div style="color: #ff8a65; margin-top: 10px; font-weight: bold;">MST Complete! Total Weight: ${totalWeight}</div>`;
             }
 
             if (idx !== targetStep - 1) {
@@ -1549,7 +1549,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
         let evaluatingEdge = null;
         let enqueueNode = null;
         
-        let logHTML = `<h3 style="color: #ffc66d;">Topological Sort (Kahn's) on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Topological Sort (Kahn's) on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
         let currentTopoOrder = [];
 
         for (let idx = 0; idx < targetStep; idx++) {
@@ -1558,7 +1558,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
             if (step.type === 'init') {
                 logHTML += `<div><strong>Initialization:</strong> Nodes with 0 in-degree: [ <span style="color: #a3bf60">${step.initialQueue.join(', ')}</span> ]</div><br>`;
             } else if (step.type === 'process_node') {
-                logHTML += `<div>Processing node <span style="color: #ffc66d">${step.u}</span>...</div>`;
+                logHTML += `<div>Processing node <span style="color: #ff8a65">${step.u}</span>...</div>`;
                 evaluatingNode = step.u;
                 completedNodes.add(step.u);
                 currentTopoOrder = step.currentOrder;
@@ -1571,7 +1571,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
             } else if (step.type === 'cycle_error') {
                 logHTML += `<br><div style="color: #e74c3c; font-weight: bold;">Error: Cycle detected! A valid topological ordering is impossible.</div>`;
             } else if (step.type === 'complete') {
-                logHTML += `<br><div style="color: #ffc66d; font-weight: bold;">Sort Complete!</div>`;
+                logHTML += `<br><div style="color: #ff8a65; font-weight: bold;">Sort Complete!</div>`;
             }
 
             // Reset ephemeral visual states if we aren't on the exact frame
@@ -1801,13 +1801,13 @@ function visualizeSCC(graphName, container, nodes, edges, svg, arrowId, directed
         let evaluatingEdge = null;
         let activeNode = null;
         
-        let logHTML = `<h3 style="color: #ffc66d;">Tarjan's SCC on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Tarjan's SCC on <span style="color: #ff5722;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
             
             if (step.type === 'visit') {
-                logHTML += `<div>Discovered node <span style="color: #ffc66d">${step.u}</span> [id: ${step.id}, low: ${step.low}]. Added to Stack.</div>`;
+                logHTML += `<div>Discovered node <span style="color: #ff8a65">${step.u}</span> [id: ${step.id}, low: ${step.low}]. Added to Stack.</div>`;
                 currentStack = new Set(step.stackState);
                 activeNode = step.u;
             } else if (step.type === 'eval_edge') {
@@ -1852,36 +1852,19 @@ function visualizeSCC(graphName, container, nodes, edges, svg, arrowId, directed
             const isActive = activeNode === d.id;
 
             let targetColor = nodeColor;
-            let targetStroke = null;
-            let targetStrokeWidth = 0;
 
             if (isResolved) {
                 // Node belongs to a completed SCC
                 targetColor = resolvedSCCs[d.id];
             } else if (isOnStack) {
                 // Node is on the recursion stack (visiting phase)
-                targetColor = '#3498db'; // Distinct blue for stack memory
-                
-                if (isActive) {
-                    targetStroke = edgeEvalColor;
-                    targetStrokeWidth = 3;
-                }
+                targetColor = '#ff8a65'; // Distinct green for stack memory
             }
 
             if (animate) {
                 const trans = el.transition().duration(300).attr('fill', targetColor);
-                if (targetStroke) {
-                    trans.attr('stroke', targetStroke).attr('stroke-width', targetStrokeWidth);
-                } else {
-                    trans.attr('stroke', null).attr('stroke-width', 0);
-                }
             } else {
                 el.interrupt().attr('fill', targetColor);
-                if (targetStroke) {
-                    el.attr('stroke', targetStroke).attr('stroke-width', targetStrokeWidth);
-                } else {
-                    el.attr('stroke', null).attr('stroke-width', 0);
-                }
             }
         });
 
@@ -2087,7 +2070,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId) {
         let activeNode = null;
         
         let logHTML = `
-            <h3 style="color: #ffc66d;">Biconnected Components on <span style="color: #ff5722;">${graphName}</span></h3>
+            <h3 style="color: #ff8a65;">Biconnected Components on <span style="color: #ff5722;">${graphName}</span></h3>
             <div style="font-size: 0.9em; margin-bottom: 10px; display: flex; gap: 15px;">
                 <span><span style="color: #9b59b6;">●</span> DFS Root</span>
                 <span><span style="color: #e67e22;">●</span> Articulation Point</span>
@@ -2103,7 +2086,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId) {
                 logHTML += `<div style="color: #9b59b6; font-weight: bold;">Starting new DFS component. Root: ${step.u}</div>`;
                 dfsRoots.add(step.u);
             } else if (step.type === 'visit') {
-                logHTML += `<div>Discovered node <span style="color: #ffc66d">${step.u}</span> [id: ${step.id}].</div>`;
+                logHTML += `<div>Discovered node <span style="color: #ff8a65">${step.u}</span> [id: ${step.id}].</div>`;
                 visitedNodes.add(step.u);
                 activeNode = step.u;
             } else if (step.type === 'eval_edge') {
@@ -2160,25 +2143,22 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId) {
 
             // Determine stroke (border)
             let targetStroke = null;
-            let targetStrokeWidth = 0;
 
             if (isActive) {
                 targetStroke = edgeEvalColor; // Active yellow halo takes precedence
-                targetStrokeWidth = 3;
             } else if (isRoot && isAP) {
                 // If a root is ALSO an AP, outline it heavily in orange so both identities are visible
                 targetStroke = '#ffa454';
-                targetStrokeWidth = 4;
             }
 
             if (animate) {
                 const trans = el.transition().duration(300).attr('fill', targetColor);
-                if (targetStroke) trans.attr('stroke', targetStroke).attr('stroke-width', targetStrokeWidth);
-                else trans.attr('stroke', null).attr('stroke-width', 0);
+                if (targetStroke) trans.attr('stroke', targetStroke);
+                else trans.attr('stroke', nodeBorderColor);
             } else {
                 el.interrupt().attr('fill', targetColor);
-                if (targetStroke) el.attr('stroke', targetStroke).attr('stroke-width', targetStrokeWidth);
-                else el.attr('stroke', null).attr('stroke-width', 0);
+                if (targetStroke) el.attr('stroke', targetStroke);
+                else el.attr('stroke', nodeBorderColor);
             }
         });
 

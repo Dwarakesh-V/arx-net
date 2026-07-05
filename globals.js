@@ -35,9 +35,11 @@ const clearAll = document.getElementById('clearAll'); // Clear All graphs button
 
 const resultLog = document.getElementById('resultLog'); // Explanations are displayed here
 
+var primaryBG = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim();
 var edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
 var edgeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-hover-color').trim();
 var nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
+var nodeBorderColor = getComputedStyle(document.documentElement).getPropertyValue('--node-border-color').trim();
 var nodeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--node-hover-color').trim();
 var nodeLabelColor = getComputedStyle(document.documentElement).getPropertyValue('--node-label-color').trim();
 var edgeWeightColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-weight-color').trim();
@@ -49,7 +51,7 @@ var errorColor = getComputedStyle(document.documentElement).getPropertyValue('--
 
 const disColors = [
         '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
-        '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+        '#aa24d3', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
         '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
         '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
     ]; // Colors will start repeating after 20 SCCs

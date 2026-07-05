@@ -40,7 +40,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     const av = document.createElement("a");
     av.href = "javascript:void(0)";
     av.textContent = "[Visualize]";
-    av.style.color = "#ffc66d";
+    av.style.color = "#ff8a65";
     av.style.textDecoration = "underline";
     av.style.cursor = "pointer";
 
@@ -121,7 +121,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             // prims = document.createElement("a");
             // prims.href = "javascript:void(0)";
             // prims.textContent = "[Prims]";
-            // prims.style.color = "#ffc66d";
+            // prims.style.color = "#ff8a65";
             // prims.style.textDecoration = "underline";
             // prims.style.cursor = "pointer";
 
@@ -167,7 +167,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     }
 
     if (result !== null) {
-        resultContainer.innerHTML = `<span style="color: #ffc66d;">${label}</span> ${result} `;
+        resultContainer.innerHTML = `<span style="color: #ff8a65;">${label}</span> ${result} `;
         resultContainer.appendChild(av);
         // if (isPrims) {
         //     const tn = document.createTextNode(" ");

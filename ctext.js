@@ -2,7 +2,7 @@ const genBtn = document.getElementById('genExplain');
 
 const genTheory = `
 <div style="text-align: left; margin-bottom: 40px;">
-    <h3 style="color: #ffc66d; margin-bottom: 10px; text-transform: uppercase;">
+    <h3 style="color: #999; margin-bottom: 10px; text-transform: uppercase;">
         Graph Theory and Algorithmic Analysis
     </h3>
     <div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>
@@ -13,14 +13,14 @@ const genTheory = `
 </div>
 
 <h2
-    style="color: #ffc66d; margin-top: 40px; font-size: 1.25em; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+    style="color: #999; margin-top: 40px; font-size: 1.25em; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;">
     1. Graph Topologies
 </h2>
 
 <p style="color: #ccc;">A graph is a mathematical structure modeling pairwise relations between objects,
     formally defined as a set of Vertices (V) and Edges (E).</p>
 
-<h3 style="margin-top: 0; color: #5bc0de; font-size: 1.1em;">Classifications and Properties</h3>
+<h3 style="margin-top: 0; color: #ff8a65; font-size: 1.1em;">Classifications and Properties</h3>
 <ul style="margin-bottom: 0; color: #ccc;">
     <li style="margin-bottom: 8px;"><strong>Directed vs. Undirected:</strong> Undirected graphs feature
         bidirectional edges (symmetric relationships). Directed graphs (Digraphs) possess unidirectional
@@ -35,7 +35,7 @@ const genTheory = `
 </ul>
 
 <h2
-    style="color: #ffc66d; margin-top: 40px; font-size: 1.25em; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+    style="color: #999; margin-top: 40px; font-size: 1.25em; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;">
     2. Tree Structures
 </h2>
 
@@ -44,7 +44,7 @@ const genTheory = `
     unique path between any two disjoint nodes.</p>
 
 
-<h3 style="margin-top: 0; color: #5cb85c; font-size: 1.1em;">Variants and Implementations</h3>
+<h3 style="margin-top: 0; color: #ff8a65; font-size: 1.1em;">Variants and Implementations</h3>
 <ul style="margin-bottom: 0; color: #ccc;">
     <li style="margin-bottom: 8px;"><strong>Binary Search Tree (BST):</strong> A hierarchical structure
         where each node possesses at most two children. It enforces a strict ordering property: the left
@@ -61,7 +61,7 @@ const genTheory = `
 </ul>
 
 <h2
-    style="color: #ffc66d; margin-top: 50px; font-size: 1.25em; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+    style="color: #999; margin-top: 50px; font-size: 1.25em; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;">
     3. Algorithmic Methodologies & Complexity Analysis
 </h2>
 <p style="margin-bottom: 30px; color: #ccc;">The following algorithms execute traversal, pathfinding, and
@@ -70,7 +70,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Breadth-First Search (BFS)</h4>
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Breadth-First Search (BFS)</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Traverses the graph
         symmetrically layer-by-layer. It utilizes a First-In-First-Out (FIFO) queue to ensure all immediate
         neighbors of a given vertex are processed prior to progressing to subsequent depths.</p>
@@ -90,7 +90,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Depth-First Search (DFS)</h4>
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Depth-First Search (DFS)</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Plunges linearly into the graph
         topology until a terminal node is reached, utilizing a Last-In-First-Out (LIFO) stack (or recursion)
         to backtrack and explore parallel branches.</p>
@@ -110,7 +110,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Dijkstra's Algorithm</h4>
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Dijkstra's Algorithm</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> A greedy paradigm utilizing a
         Min-Priority Queue. It resolves the Single-Source Shortest Path problem by iteratively relaxing the
         edges of the absolute closest known unvisited vertex. Fails deterministically in the presence of
@@ -131,7 +131,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Bellman-Ford Algorithm</h4>
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Bellman-Ford Algorithm</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Computes shortest paths by
         comprehensively relaxing every edge in the graph precisely <em>V - 1</em> times. A subsequent
         <em>V-th</em> pass validates the presence of negative weight cycles (which render shortest paths
@@ -153,7 +153,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Floyd-Warshall Algorithm</h4>
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Floyd-Warshall Algorithm</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> A dynamic programming approach
         resolving the All-Pairs Shortest Path problem. It systematically assesses whether routing a path
         through an intermediate node <em>K</em> provides a more optimal weight than the direct scalar path
@@ -174,7 +174,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Prim's Algorithm (Minimum Spanning Tree)
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Prim's Algorithm (Minimum Spanning Tree)
     </h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Isolates a sub-graph that
         connects all vertices using the minimal aggregate edge weight. It operates greedily by enqueuing
@@ -196,7 +196,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Kahn's Algorithm (Topological Sort)</h4>
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Kahn's Algorithm (Topological Sort)</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Establishes a linear dependency
         ordering for Directed Acyclic Graphs. It computes the indegree (incoming edges) of all vertices,
         enqueues those with zero dependencies, and iteratively decrements the indegrees of adjacent nodes as
@@ -217,7 +217,7 @@ const genTheory = `
 
 <div
     style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Kosaraju's Algorithm (Strongly Connected
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Kosaraju's Algorithm (Strongly Connected
         Components)</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Identifies maximal subsets of
         mutually reachable vertices within directed graphs. Executes a preliminary DFS to record vertex
@@ -239,7 +239,7 @@ const genTheory = `
 </div>
 
 <div style="background: #1d1d1d; border: 1px solid #333; border-radius: 6px; padding: 20px; margin-bottom: 0;">
-    <h4 style="margin-top: 0; color: #ffc66d; font-size: 1.15em;">Hopcroft-Tarjan Algorithm (Biconnected
+    <h4 style="margin-top: 0; color: #999; font-size: 1.15em;">Hopcroft-Tarjan Algorithm (Biconnected
         Components)</h4>
     <p style="color: #ccc; font-size: 0.95em;"><strong>Methodology:</strong> Operates on undirected networks
         to locate Articulation Points (cut vertices). It conducts a comprehensive DFS tracking "discovery
