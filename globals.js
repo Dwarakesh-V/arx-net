@@ -71,7 +71,7 @@ const gridSize = 40; // Defines the distance between lines
 
 // Graph management variables
 let graphCount = 0;
-let availableGraphs = [];
+let availableGraphs = new Set();
 
 class PriorityQueue {
     constructor() {

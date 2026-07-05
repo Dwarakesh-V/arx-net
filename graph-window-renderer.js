@@ -369,11 +369,11 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     let baseName = displayName;
 
     let counter = 1;
-    while (availableGraphs.includes(displayName)) {
+    while (availableGraphs.has(displayName)) {
         displayName = `${baseName}.${String(counter).padStart(3, '0')}`;
         counter++;
     }
-    availableGraphs.push(displayName); // Add the graph to the list of available graphs
+    availableGraphs.add(displayName); // Add the graph to the list of available graphs
     const titleName = displayName.length > 10 ? displayName.substring(0, 7) + '...' : displayName;
 
     // Graph value details
@@ -953,6 +953,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     nameInput.type = 'text';
     nameInput.value = displayName;
     nameInput.title = displayName;
+    nameInput.id = displayName;
     nameInput.autocomplete = 'off';
     nameInput.spellcheck = false;
     // Initially disable input
@@ -960,7 +961,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     // Enable editing on double-click and apply styling
     nameInput.addEventListener('dblclick', () => {
-        enableGraphNameEditing(nameInput, displayName);
+        enableGraphNameEditing(nameInput);
     });
 
     // Disable editing on blur and enter key press
@@ -978,7 +979,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         graphNameSpan.title = nameInput.value;
     });
 
-    showHideDeleteDiv.id = nameInput.value;
     /* End of graph name functionality */
 
     /* Outliner graph functionalities */

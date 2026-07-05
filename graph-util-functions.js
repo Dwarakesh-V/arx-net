@@ -734,36 +734,49 @@ function isTree(edgesInput, directed = true) {
     }
 }
 
+function enableGraphNameEditing(nameInput) {
+    nameInput.removeAttribute('readonly');
+    nameInput.classList.add('editable');
+    nameInput.focus();
+
+    availableGraphs.delete(nameInput.value);
+}
+
 function handleGraphNameInput(event, nameInput) {
     if (event.key !== 'Enter') return;
 
     nameInput.setAttribute('readonly', true);
     nameInput.classList.remove('editable');
 
-    const originalName = nameInput.value;
+    const requestedName = nameInput.value;
 
-    if (availableGraphs.includes(originalName)) {
-        let counter = 1;
-        let newName = originalName;
+    if (availableGraphs.has(requestedName)) {
+        const existingInput = document.getElementById(requestedName);
 
-        while (availableGraphs.includes(newName)) {
-            newName = `${originalName}.${String(counter).padStart(3, '0')}`;
-            counter++;
+        // Only rename another graph, not the one currently being edited
+        if (existingInput && existingInput !== nameInput) {
+            availableGraphs.delete(requestedName);
+
+            let counter = 1;
+            let renamed = `${requestedName}.${String(counter).padStart(3, '0')}`;
+
+            while (availableGraphs.has(renamed)) {
+                counter++;
+                renamed = `${requestedName}.${String(counter).padStart(3, '0')}`;
+            }
+
+            existingInput.value = renamed;
+            existingInput.id = renamed;
+            existingInput.title = renamed;
+
+            availableGraphs.add(renamed);
         }
-
-        const graphDiv = document.getElementById(originalName);
-        if (graphDiv) {
-            const input = graphDiv.querySelector('input');
-            const labelSpan = document.getElementById(`${originalName}span`);
-
-            if (input) input.value = newName;
-            if (labelSpan) labelSpan.textContent = newName;
-
-            availableGraphs.push(newName);
-        }
-    } else {
-        availableGraphs.push(originalName);
     }
+
+    nameInput.value = requestedName;
+    nameInput.id = requestedName;
+    nameInput.title = requestedName;
+    availableGraphs.add(requestedName);
 }
 
 // Supporting function that will be used to rotate arrows based on edge direction
@@ -774,22 +787,13 @@ function smoothFunction(x, k = 0.02, c = 275) {
     return result;
 }
 
-function enableGraphNameEditing(nameInput, displayName) {
-    nameInput.removeAttribute('readonly');
-    nameInput.classList.add('editable');
-    nameInput.focus();
-
-    // Remove the graph name from the global list
-    availableGraphs = availableGraphs.filter(graph => graph !== displayName);
-}
-
 function deleteGraph(container, displayName, dupDelMenuObj) {
     dupDelMenuObj.style.display = 'none';
     // Remove the container from the DOM
     container.remove();
 
     // Remove from global list of graph names
-    availableGraphs = availableGraphs.filter(graph => graph !== displayName);
+    availableGraphs.delete(displayName);
 
     // Remove from the methods list UI
     const methodsEntry = document.getElementById(displayName);
