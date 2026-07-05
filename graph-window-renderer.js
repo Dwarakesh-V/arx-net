@@ -382,8 +382,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     directed = directed ?? document.getElementById('directed').checked;
     weighted = weighted ?? document.getElementById('weighted').checked;
 
-    const graphData = [edgesInput,directed,weighted];
-    graphMap.set(displayName,graphData);
+    const graphData = [edgesInput, directed, weighted];
+    graphMap.set(displayName, graphData);
 
     // container is the graph window, and it contains the graph and svg functionalities.
     const container = document.createElement('div');
@@ -607,10 +607,22 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         };
     });
 
-    // Focus (center and bring to front)
-    addMenuItem(menuElement, menu, 'Focus', 'Bring this window to the center of the screen', () => {
-        focusAndCenterContainer(container);
-    });
+    if (!isMobile) {
+        // Maximize
+        addMenuItem(menuElement, menu, 'Maximize', 'Maximize window', () => {
+            maximizeContainer(container);
+        });
+
+        // Focus (center and bring to front)
+        addMenuItem(menuElement, menu, 'Center', 'Resize and bring this window to the center of the screen', () => {
+            focusAndCenterContainer(container);
+        });
+
+        addMenuItem(menuElement, menu, 'Dock left', 'Position this window to the far left and set width to 50%', () => {
+            dockLeft(container);
+        });
+
+    }
 
     // Hide container
     addMenuItem(menuElement, menu, 'Hide', 'Hide this graph', () => {

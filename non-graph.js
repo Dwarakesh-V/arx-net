@@ -252,3 +252,29 @@ uploadButton.addEventListener("click", () => {
 });
 
 /* End of uploading and downloading functionality */
+
+
+/* Result log resize for better visibility */
+const resultLogResizeBuffer = 8;
+let resultLogResizing = false;
+
+resultLog.addEventListener("mousedown", (e) => {
+    const rect = resultLog.getBoundingClientRect();
+    if (e.clientX - rect.left <= resultLogResizeBuffer) {
+        resultLogResizing = true;
+        e.preventDefault();
+    }
+});
+
+document.addEventListener("mousemove", (e) => {
+    if (!resultLogResizing) return;
+    const minWidth = window.innerWidth * 0.25;
+    const maxWidth = window.innerWidth * 0.75;
+    let newWidth = window.innerWidth - e.clientX;
+    newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+    resultLog.style.width = `${Math.max(250, newWidth)}px`;
+});
+
+document.addEventListener("mouseup", () => {
+    resultLogResizing = false;
+});

@@ -591,6 +591,16 @@ svg {
     padding: 0.33rem 1.25rem;
 }
 
+.resultLog::before {
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    cursor: ew-resize;
+}
+
 /* Graph playback */
 .playback-controls {
     position: absolute;

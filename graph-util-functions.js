@@ -27,7 +27,7 @@ function filterAlgorithms(algorithms, directed, weighted) {
 
 function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edges, arrowId, edgesRaw, directed, weighted, displayName, methodsElement) {
     const resultContainer = document.createElement('p');
-    resultContainer.style.width = "100%";
+    resultContainer.style.width = "calc(100%-30px)";
     resultContainer.style.margin = "0px 15px";
     let result = null;
     let label = '';
