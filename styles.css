@@ -4,8 +4,10 @@
     --accent: #999;
     /* --accent-inverted: #003992; */
     /* Buttons that contain images are inverted in color for visibility, this color will match accent when inverted */
-    --bg-primary: #1d1d1d;
-    --bg-secondary: #141414;
+    /* --bg-primary: #252627;
+    --bg-secondary: #2d2e2f; */
+    --bg-primary: #2d2e2f;
+    --bg-secondary: #252627;
     --text-primary: #eee;
     --inverted-text: #000;
     --checkmark-color: #000;
@@ -41,8 +43,18 @@
     --default-font-size: clamp(12px, 1.2vw, 16px);
 }
 
+.edge-label {
+    font-size: 24px !important;
+    font-weight: bold;
+    stroke: #141414;
+    stroke-width: 4;
+    paint-order: stroke;
+    pointer-events: none;
+    fill: var(--edge-weight-color);
+}
+
 .light-mode {
-    filter: invert(1) contrast(0.8);
+    filter: invert(1);
     --node-hover-color: #28d128;
     --drag-node-color: #28d128;
 }
@@ -283,7 +295,7 @@ img {
 }
 
 .methodsSelect {
-    width: 45%;
+    width: 55%;
     display: inline-block;
     margin-left: 0.675rem;
 }

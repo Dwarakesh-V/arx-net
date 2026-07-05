@@ -118,24 +118,8 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
 }
 /* End of align edges */
 
-// Function to enable force
-function enableForceSimulation(simulation, edges, width, height) {
-    simulation.force('charge', d3.forceManyBody().strength(-300)); // Charge force makes nodes repel each other
-    simulation.force('link', d3.forceLink(edges).id(d => d.id).distance(300)); // Link force makes nodes connected by edges stay within a distance
-    simulation.force('center', d3.forceCenter(width / 2, height / 2)); // Center force makes nodes gravitate towards the center
-}
-
-// Function to disable force
-function disableForceSimulation(simulation) {
-    // Setting forces to null will disable them
-    simulation.force('charge', null);
-    simulation.force('link', null);
-    simulation.force('center', null);
-}
-
 // Function to even spaces nodes in a circle
 function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
-    disableForceSimulation(simulation);
     simulation.alphaDecay(1);
     simulation.alphaTarget(0);
 
@@ -241,14 +225,10 @@ function dragged(event, d, thisNode) {
     d.fy = event.y;
 }
 
-function dragEnded(event, d, simulation, useForce, thisNode) {
+function dragEnded(event, d, simulation, thisNode) {
     d3.select(thisNode).attr('fill', nodeColor);
     document.body.style.cursor = 'default';
-    if (!useForce) {
-        simulation.alphaDecay(1);
-    } else {
-        simulation.alphaDecay(0.0228); // 0.0228 is the default alphaDecay value used in D3.
-    }
+    simulation.alphaDecay(1);
     if (!event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
@@ -405,12 +385,12 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     });
 
     /* Content of container */
-    // Create the graphHeader div - contains the graph name, use force checkbox, show grid checkbox, auto-rearrange radius input, and auto-rearrange button, and close button (The entire window functionality)
+    // Create the graphHeader div - contains the graph name, show grid checkbox, auto-rearrange radius input, and auto-rearrange button, and close button (The entire window functionality)
     const graphHeader = document.createElement('div');
     graphHeader.className = 'graphHeader';
 
     /* Graph Header content */
-    // Create the span element - contains the graph name, use force checkbox, show grid checkbox, and Rearrange button
+    // Create the span element - contains the graph name, show grid checkbox, and Rearrange button
     const headerSpan = document.createElement('span');
 
     /* Header span content */
@@ -422,14 +402,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     graphNameSpan.title = displayName; // Add title attribute to display full name on hover
     graphNameSpan.id = `${displayName}span`;
     headerSpan.appendChild(graphNameSpan);
-
-    // Create the "Use Force" checkbox
-    const useForceCheckbox = document.createElement('input');
-    useForceCheckbox.type = 'checkbox';
-    useForceCheckbox.title = 'Apply a force when dragging a node to affect other nodes';
-    useForceCheckbox.checked = false;
-    headerSpan.appendChild(useForceCheckbox);
-    headerSpan.appendChild(document.createTextNode('Force'));
 
     // Create the "Show grid" checkbox
     const gridCheckbox = document.createElement('input');
@@ -599,12 +571,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         adjustViewBox(svg, nodes, grid);
         drawGrid(svg, grid);
 
-        // autoLayoutNodes sets the simulation forces to null, enabling it based on use force checkbox
         simulation.alphaDecay(1);
         simulation.alphaTarget(0);
-        if (useForceCheckbox.checked) {
-            enableForceSimulation(simulation, edges, width, height);
-        };
     });
 
     if (!isMobile) {
@@ -677,7 +645,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                 dragged(event, d, this);
                             })
                             .on('end', function (event, d) {
-                                dragEnded(event, d, simulation, useForceCheckbox.checked, this);
+                                dragEnded(event, d, simulation, this);
                             })
                     )
                     .on('contextmenu', function (event, d) {
@@ -814,10 +782,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                     .join(
                                         enter => enter.append('text')
                                             .attr('class', 'edge-label')
-                                            .attr('font-size', 18)
-                                            .attr('fill', edgeWeightColor)
-                                            .text(d => d.weight)
-                                            .style('pointer-events', 'none'),
+                                            .text(d => d.weight),
                                         update => update.text(d => d.weight),
                                         exit => exit.remove()
                                     );
@@ -1211,23 +1176,19 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     /* End of graph elements creation */
 
-    /* Force simulation values */
-    // D3 force simulation
-    const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(edges).id(d => d.id).distance(300))
-        .force('charge', d3.forceManyBody().strength(-300))
-        .force('center', d3.forceCenter(width / 2, height / 2));
-
-    /* End of Force simulation values */
-
-    // Control simulation forces with the use force checkbox
-    useForceCheckbox.addEventListener('change', function () {
-        if (this.checked) {
-            enableForceSimulation(simulation, edges, width, height);
-        } else {
-            disableForceSimulation(simulation);
-        }
+    // Resolve edge source/target ids to actual node object references.
+    // d3.forceLink used to do this automatically; since link force is removed, do it manually.
+    const nodeById = new Map(nodes.map(n => [n.id, n]));
+    edges.forEach(edge => {
+        if (typeof edge.source !== 'object') edge.source = nodeById.get(edge.source);
+        if (typeof edge.target !== 'object') edge.target = nodeById.get(edge.target);
     });
+
+    /* Simulation values */
+    // D3 simulation used only to drive tick updates for dragging; no forces are applied
+    const simulation = d3.forceSimulation(nodes);
+
+    /* End of simulation values */
 
     const edgeLayer = svg.append('g').attr('id', 'edge-layer');
     const edgeBufferLayer = svg.append('g').attr('id', 'edge-buffer-layer');
@@ -1304,7 +1265,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             d3.drag()
                 .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
                 .on('drag', function (event, d) { dragged(event, d, this); })
-                .on('end', function (event, d) { dragEnded(event, d, simulation, useForceCheckbox.checked, this); })
+                .on('end', function (event, d) { dragEnded(event, d, simulation, this); })
         )
         .on('contextmenu', function (event, d) {
             event.preventDefault();
@@ -1440,10 +1401,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                         .join(
                             enter => enter.append('text')
                                 .attr('class', 'edge-label')
-                                .attr('font-size', 18)
-                                .attr('fill', edgeWeightColor)
-                                .text(d => d.weight)
-                                .style('pointer-events', 'none'),
+                                .text(d => d.weight),
                             update => update.text(d => d.weight),
                             exit => exit.remove()
                         );
@@ -1478,8 +1436,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             .enter()
             .append('text')
             .attr('class', 'edge-label')
-            .attr('font-size', 18)
-            .attr('fill', edgeWeightColor)
             .text(d => d.weight)
             .style('pointer-events', 'none')
     }
