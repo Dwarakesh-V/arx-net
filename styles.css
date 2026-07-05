@@ -1,12 +1,12 @@
 /* Global Styles */
 :root {
     /* Global colors, can be changed for light mode */
-    --accent: #ffc66d;
-    --accent-inverted: #003992;
+    --accent: #999;
+    /* --accent-inverted: #003992; */
     /* Buttons that contain images are inverted in color for visibility, this color will match accent when inverted */
     --bg-primary: #1d1d1d;
     --bg-secondary: #141414;
-    --text-primary: #fff;
+    --text-primary: #eee;
     --inverted-text: #000;
     --checkmark-color: #000;
     --highlight-button-color: #424242;
@@ -18,6 +18,9 @@
     --edge-hover-color: #9e7bb0;
     /* Color of the links when hovered on */
     --node-color: #ffc66d;
+    /* --node-color: #999; */
+    /* Color of node border */
+    --node-border-color: #ccc;
     /* Color of the nodes */
     --node-hover-color: #7a9ec2;
     /* Color of nodes when hovered on */
@@ -129,7 +132,7 @@ input[type="text"] {
     display: block;
     width: calc(100% - 20px);
     background: none;
-    border: 1.5px solid var(--accent);
+    border: 0.5px solid #999;
     padding: 10px;
 }
 
@@ -205,7 +208,7 @@ input[type="radio"]:checked::before {
 /* Images */
 img {
     height: 1.5rem;
-    filter: invert(1);
+    filter: invert(0.8);
 }
 
 /* General window styles */
@@ -244,6 +247,7 @@ img {
 #generateRandomButton {
     width: calc(100% - 20px);
     color: var(--inverted-text);
+    font-weight: bold;
     background-color: var(--accent);
     border: 1.5px solid transparent;
     border-radius: 3px;
@@ -536,7 +540,7 @@ svg {
 #playIcon,
 #pauseIcon {
     transform: scale(1.5);
-    fill: white;
+    fill: var(--text-primary);
     cursor: pointer;
     transition: color 0.2s;
 }
@@ -581,8 +585,7 @@ svg {
 
 .resultLog {
     background-color: var(--bg-secondary);
-    border-right: 2px solid var(--accent);
-    border-left: 2px solid var(--accent);
+    border-left: 1px solid #999;
     width: 25%;
     position: absolute;
     right: 0;
