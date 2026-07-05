@@ -1,6 +1,9 @@
 const aboutBtn = document.getElementById('about');
 const aboutDiv = document.getElementById('aboutDiv');
 const fullScreenBtn = document.getElementById('toggleFullScreen');
+const toggleModeButton = document.getElementById('toggleLightMode');
+const uploadButton = document.getElementById('uploadGraphs');
+const downloadButton = document.getElementById('downloadGraphs');
 
 const cgb = document.getElementById('createGraphButton'); // Create graph button
 const graphGenMenu = document.getElementById('sourceInput')

@@ -1,7 +1,3 @@
-/* html {
-  filter: invert(1) brightness(1) contrast(0.8) saturate(1);
-} */
-
 /* Global Styles */
 :root {
     /* Global colors, can be changed for light mode */
@@ -40,6 +36,30 @@
     --error-color: #e74c3c;
 
     --default-font-size: clamp(12px, 1.2vw, 16px);
+}
+
+.light-mode {
+    filter: invert(1) contrast(0.8);
+    --node-hover-color: #28d128;
+    --drag-node-color: #28d128;
+}
+
+.light-mode #treeTypeSelect option,
+.light-mode .methodsSelect option {
+    background-color: #d5d5d5;
+    border: 1.5px solid var(--accent);
+    color: #000;
+}
+
+.light-mode .floating-menu button:hover {
+    filter: invert(1)
+}
+
+#treeTypeSelect option,
+.methodsSelect option {
+    background-color: var(--bg-secondary);
+    border: 1.5px solid var(--accent);
+    color: #fff;
 }
 
 * {

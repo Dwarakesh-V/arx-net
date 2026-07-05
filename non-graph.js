@@ -173,3 +173,16 @@ function handleTypeChange(type) {
         edgeLabel.style.display = 'flex';
     }
 }
+
+/* Light and dark mode toggle */
+let mode = "dark";
+toggleModeButton.addEventListener("click", () => {
+    mode = mode === "dark" ? "light" : "dark";
+
+    document.documentElement.classList.toggle("light-mode");
+    nodeHoverColor = getComputedStyle(document.documentElement).getPropertyValue('--node-hover-color').trim();
+    dragNodeColor = getComputedStyle(document.documentElement).getPropertyValue('--drag-node-color').trim();
+
+    const buttonImage = toggleModeButton.querySelector("img");
+    buttonImage.src = mode === "light" ? "images/dark.png" : "images/light.png";
+});
