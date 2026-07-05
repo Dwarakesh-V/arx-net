@@ -9,7 +9,9 @@
 
     .aboutDiv {
         position: fixed;
-        top: 5%;
+        top: 15%;
+        left: 30%;
+        height: 70%;
         left: 5%;
         width: 90%;
     }
@@ -19,7 +21,7 @@
         top: 0;
         left: 0;
         border-radius: 0;
-        border-bottom: 2px solid #ffc66d;
+        border-bottom: 2px solid #ff8a65;
     }
 
     .container {
