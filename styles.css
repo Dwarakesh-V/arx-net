@@ -55,6 +55,10 @@
     filter: invert(1)
 }
 
+.light-mode input[type="range"] {
+    filter: invert(1);
+}
+
 #treeTypeSelect option,
 .methodsSelect option {
     background-color: var(--bg-secondary);
