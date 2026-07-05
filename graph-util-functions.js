@@ -795,6 +795,7 @@ function deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv) {
 
     // Remove from global list of graph names
     availableGraphs.delete(displayName);
+    graphMap.delete(displayName);
 
     // Remove from the methods list UI
     const methodsEntry = document.getElementById(displayName);

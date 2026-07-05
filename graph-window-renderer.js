@@ -365,7 +365,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     if (inputName === null) {
         inputName = document.getElementById('graphName').value;
     }
-    let displayName = inputName ? inputName : `Graph`; // Give a default name if the name field is empty
+    let displayName = inputName.trim() ? inputName.trim() : `Graph`; // Give a default name if the name field is empty
     let baseName = displayName;
 
     let counter = 1;
@@ -381,6 +381,9 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     edgesInput = edgesInput === null ? edgesInputValue.toUpperCase() : edgesInput; // Use the provided edgesInput or the value from the input field
     directed = directed ?? document.getElementById('directed').checked;
     weighted = weighted ?? document.getElementById('weighted').checked;
+
+    const graphData = [edgesInput,directed,weighted];
+    graphMap.set(displayName,graphData);
 
     // container is the graph window, and it contains the graph and svg functionalities.
     const container = document.createElement('div');

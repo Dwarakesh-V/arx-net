@@ -159,7 +159,7 @@ function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false,
 
 
 function handleTypeChange(type) {
-    if (type=='Tree') {
+    if (type == 'Tree') {
         treeTypeSelect.style.display = 'flex';
         graphOptions.style.display = 'none';
         minMaxRec.style.display = 'none';
@@ -186,3 +186,71 @@ toggleModeButton.addEventListener("click", () => {
     const buttonImage = toggleModeButton.querySelector("img");
     buttonImage.src = mode === "light" ? "images/dark.png" : "images/light.png";
 });
+/* End of light and dark mode toggle */
+
+/* Downloading and uploading functionality */
+downloadButton.addEventListener('click', () => {
+    const jsonData = Object.fromEntries(graphMap);
+
+    const blob = new Blob(
+        [JSON.stringify(jsonData, null, 2)],
+        { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "graphs.json";
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
+
+uploadButton.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+
+    input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+
+        try {
+            const data = JSON.parse(await file.text());
+
+            if (typeof data !== "object" || data === null || Array.isArray(data)) {
+                alert("Invalid JSON format.");
+                return;
+            }
+
+            for (const [key, arr] of Object.entries(data)) {
+                if (
+                    !Array.isArray(arr) ||
+                    arr.length !== 3 ||
+                    typeof arr[0] !== "string" ||
+                    typeof arr[1] !== "boolean" ||
+                    typeof arr[2] !== "boolean"
+                ) {
+                    console.error(`Skipping invalid entry "${key}"`, arr);
+                    continue;
+                }
+
+                addGraph(
+                    arr[0], // edges
+                    null,
+                    key,
+                    arr[1], // directed
+                    arr[2]  // weighted
+                );
+            }
+        } catch (err) {
+            alert("Invalid JSON file.");
+            console.error(err);
+        }
+    };
+
+    input.click();
+});
+
+/* End of uploading and downloading functionality */
