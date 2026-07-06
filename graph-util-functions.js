@@ -4,7 +4,7 @@ function filterAlgorithms(algorithms, directed, weighted) {
     const applicableAlgorithms = algorithms.filter(algorithm => {
         if (!directed) {
             // If the graph is undirected, exclude algorithms that only work on directed graphs
-            if (algorithm.name === 'topologicalSort' || algorithm.name === 'scc') {
+            if (algorithm.name === 'topologicalSort' || algorithm.name === 'scc' || algorithm.name === 'fordFulkerson' || algorithm.name === 'edmondsKarp' || algorithm.name === 'dinic' || algorithm.name === 'pushRelabel') {
                 return false;
             }
         }
@@ -44,8 +44,10 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     av.style.textDecoration = "underline";
     av.style.cursor = "pointer";
 
-    // let isPrims = false;
-    // let prims; // For extra visualization for Prim's and Kruskal's
+    let isMST = false;
+    let kruskals; // For extra visualization for Prim's and Kruskal's
+    let isSCC = false;
+    let kosaraju; // For extra visualization of Kosaraju's and Tarjan's
 
     switch (algorithm.name) {
         case 'bfs': {
@@ -69,7 +71,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeDFS(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `DFS with ${source} as source node}`;
+            label = `DFS with ${source} as source node:`;
             break;
         }
         case 'dijkstra': {
@@ -84,7 +86,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             label = `Dijkstra's through ${displayName} with ${source} as source node: <br> <br>`;
             break;
         }
-        case 'floydWarshall':
+        case 'floydWarshall': {
             result = floydWarshall(edgesRaw, directed);
 
             av.onclick = () => {
@@ -93,7 +95,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
 
             label = `Floyd Warshall through ${displayName}: `;
             break;
-
+        }
         case 'bellmanFord': {
             const source = getSource("Enter source vertex");
             if (!source) break;
@@ -106,32 +108,30 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             label = `Bellman Ford through ${displayName} with ${source} as source node: <br> <br>`;
             break;
         }
-        case 'mst':
+        case 'mst': {
             result = mst(edgesRaw, weighted, displayName);
             label = `Generated MST through ${displayName}. `;
 
-            // av.textContent = "[Kruskals]"
+            isMST = true;
+            kruskals = document.createElement("a");
+            kruskals.href = "javascript:void(0)";
+            kruskals.textContent = "[Visualize Kruskal]";
+            kruskals.style.color = "#ff8a65";
+            kruskals.style.textDecoration = "underline";
+            kruskals.style.cursor = "pointer";
 
-            av.onclick = () => {
-                // visualizeKruskal(displayName, container, nodes, edges, svg, arrowId);
-                visualizePrim(displayName, container, nodes, edges, svg, arrowId);
+            kruskals.onclick = () => {
+                visualizeMSTKruskal(displayName, container, nodes, edges, svg, arrowId);
             };
 
-            // isPrims = true;
-            // prims = document.createElement("a");
-            // prims.href = "javascript:void(0)";
-            // prims.textContent = "[Prims]";
-            // prims.style.color = "#ff8a65";
-            // prims.style.textDecoration = "underline";
-            // prims.style.cursor = "pointer";
-
-            // prims.onclick = () => {
-            //     visualizePrim(displayName, container, nodes, edges, svg, arrowId);
-            // };
+            av.textContent = "[Visualize Prim]"
+            av.onclick = () => {
+                visualizeMSTPrim(displayName, container, nodes, edges, svg, arrowId);
+            };
 
             break;
-
-        case 'topologicalSort':
+        }
+        case 'topologicalSort': {
             result = topologicalSort(edgesRaw);
 
             av.onclick = () => {
@@ -140,27 +140,53 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
 
             label = `Topological Sort through ${displayName}: `;
             break;
-
-        case 'scc':
+        }
+        case 'scc': {
             result = StronglyConnectedComponents(edgesRaw);
 
+            isSCC = true;
+            kosaraju = document.createElement("a");
+            kosaraju.href = "javascript:void(0)";
+            kosaraju.textContent = "[Visualize Kosaraju]";
+            kosaraju.style.color = "#ff8a65";
+            kosaraju.style.textDecoration = "underline";
+            kosaraju.style.cursor = "pointer";
+
+            kosaraju.onclick = () => {
+                visualizeSCCKosaraju(displayName, container, nodes, edges, svg, arrowId, directed);
+            };
+            
+            av.textContent = '[Visualize Tarjan]'
             av.onclick = () => {
-                visualizeSCC(displayName, container, nodes, edges, svg, arrowId, directed);
+                visualizeSCCTarjan(displayName, container, nodes, edges, svg, arrowId, directed);
             };
 
             label = `SCC through ${displayName}: `;
             break;
-
-        case 'bcc':
+        }
+        case 'bcc': {
             result = BiconnectedComponents(edgesRaw);
 
+            av.textContent = "[Visualize Hopcroft-Tarjan]";
             av.onclick = () => {
-                visualizeBCC(displayName, container, nodes, edges, svg, arrowId);
+                visualizeBCC(displayName, container, nodes, edges, svg, arrowId, directed);
             };
 
             label = `BCC through ${displayName}: `;
             break;
+        }
+        case 'fordFulkerson': {
+            const source = getSource("Enter source vertex");
+            const sink = getSource("Enter sink vertex");
+            result = fordFulkerson(edgesRaw, source, sink, weighted);
 
+            av.onclick = () => {
+                visualizeFordFulkerson(displayName, source, sink, container, nodes, edges, svg, arrowId, directed);
+            };
+
+            label = `Ford Fulkerson algorithm on ${displayName}`;
+            break;
+        }
         default:
             alert("Algorithm not implemented.");
             return;
@@ -169,12 +195,19 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     if (result !== null) {
         resultContainer.innerHTML = `<span style="color: #ff8a65;">${label}</span> ${result} `;
         resultContainer.appendChild(av);
-        // if (isPrims) {
-        //     const tn = document.createTextNode(" ");
-        //     resultContainer.append(tn);
-        //     resultContainer.append(prims);
-        // }
+        if (isMST) {
+            const tn = document.createTextNode(" ");
+            resultContainer.append(tn);
+            resultContainer.append(kruskals);
+        } else if (isSCC) {
+            const tn = document.createTextNode(" ");
+            resultContainer.append(tn);
+            resultContainer.append(kosaraju);
+        }
+        const brtag = document.createElement("br");
         methodsElement.appendChild(resultContainer);
+        methodsElement.appendChild(brtag);
+        methodsElement.appendChild(brtag);
         methodsElement.style.display = 'block';
         const meHeight = methodsElement.offsetHeight;
         svgElement.style.height = `calc(100% - ${meHeight}px)`;

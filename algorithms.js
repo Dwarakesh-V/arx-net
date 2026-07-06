@@ -1057,3 +1057,116 @@ function BiconnectedComponents(edges) {
         <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }
+
+function fordFulkerson(edges, source = prompt("Enter source vertex"), sink = prompt("Enter sink vertex"), weighted = true) {
+    // Validate source and sink existence
+    const vertices = new Set();
+    edges.forEach(e => { vertices.add(e.source); vertices.add(e.target); });
+    
+    if (!vertices.has(source)) {
+        alert("Source vertex '" + source + "' not found.");
+        return null;
+    }
+    if (!vertices.has(sink)) {
+        alert("Sink vertex '" + sink + "' not found.");
+        return null;
+    }
+
+    // Build the Residual Graph
+    const residual = {};
+    for (const { source: u, target: v, weight } of edges) {
+        // Determine capacity based on the 'weighted' flag
+        const capacity = (weighted && weight !== undefined) ? weight : 1;
+
+        if (!residual[u]) residual[u] = {};
+        if (!residual[v]) residual[v] = {};
+        
+        // Add capacity to the directed forward edge
+        residual[u][v] = (residual[u][v] || 0) + capacity;
+        
+        // Initialize the reverse edge to 0 (crucial for Ford-Fulkerson backtracking)
+        if (residual[v][u] === undefined) {
+            residual[v][u] = 0;
+        }
+    }
+
+    const steps = [];
+    let maxFlow = 0;
+    let pathNum = 1;
+
+    // Helper to find an augmenting path using DFS
+    function findAugmentingPath(s, t, visited = new Set()) {
+        if (s === t) return [s];
+        visited.add(s);
+        
+        for (const neighbor in residual[s]) {
+            // Traverse if the neighbor is unvisited AND has available capacity > 0
+            if (!visited.has(neighbor) && residual[s][neighbor] > 0) {
+                const path = findAugmentingPath(neighbor, t, visited);
+                if (path) return [s, ...path]; // Prepend current node to build the path array
+            }
+        }
+        return null;
+    }
+
+    // Core Algorithm Loop
+    let path = findAugmentingPath(source, sink);
+    
+    while (path) {
+        // 1. Find the bottleneck (minimum available capacity) along this path
+        let bottleneck = Infinity;
+        let edgeStrings = [];
+        
+        for (let i = 0; i < path.length - 1; i++) {
+            const u = path[i];
+            const v = path[i + 1];
+            const cap = residual[u][v];
+            bottleneck = Math.min(bottleneck, cap);
+            edgeStrings.push(`'${u}' &rarr; '${v}' (Cap: ${cap})`);
+        }
+
+        maxFlow += bottleneck;
+
+        // 2. Log the step for the UI explanation
+        let stepDesc = `<strong>Path ${pathNum}:</strong> [${path.join(', ')}]<br>`;
+        stepDesc += `<span style="color: gray; font-size: 0.9em;">Edges examined: ${edgeStrings.join(' | ')}</span><br>`;
+        stepDesc += `<span style="color: #4caf50; font-size: 0.9em;">&rarr; Bottleneck found: <strong>${bottleneck}</strong>. Max flow increased to <strong>${maxFlow}</strong>.</span>`;
+        steps.push(`<li style="margin-bottom: 10px;">${stepDesc}</li>`);
+
+        // 3. Update capacities in the residual graph
+        for (let i = 0; i < path.length - 1; i++) {
+            const u = path[i];
+            const v = path[i + 1];
+            residual[u][v] -= bottleneck; // Decrease forward capacity
+            residual[v][u] += bottleneck; // Increase reverse capacity (allows undoing flow)
+        }
+
+        pathNum++;
+        path = findAugmentingPath(source, sink); // Search for the next path
+    }
+
+    if (steps.length === 0) {
+         steps.push(`<li style="list-style-type: none;"><span style="color: #e53935; font-size: 0.9em;">No valid augmenting paths found from '${source}' to '${sink}'. Max flow is 0.</span></li>`);
+    }
+
+    // Build the Explanation HTML
+    let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
+    
+    let modeText = weighted ? "Weighted (Using edge weights as capacities)" : "Unweighted (All edge capacities assumed as 1)";
+    explanation += `<h3 style="margin-bottom: 5px;">Graph Mode: ${modeText}</h3>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
+    explanation += `<p style="margin-top: 0;">The <strong>Ford-Fulkerson Algorithm</strong> computes the maximum flow in a network. It searches for an <em>augmenting path</em> from the source to the sink in a Residual Graph. Once a path is found, it determines the "bottleneck" (minimum available capacity), adds this to the total flow, and updates the graph. It subtracts capacity from forward edges and adds it to reverse edges, which allows the algorithm to dynamically "reroute" flow in later steps if a better configuration exists.</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Step-by-Step Augmentation</h3>`;
+    explanation += `<ul style="margin-top: 0;">${steps.join('')}</ul>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Final Result</h3>`;
+    explanation += `<p style="margin-top: 0;"><strong>&rarr; Maximum Flow</strong> from '${source}' to '${sink}': <strong>${maxFlow}</strong>.</p>`;
+    explanation += `</div>`;
+
+    // Safely encode to prevent string breaking in the onclick handler
+    const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
+    
+    return `Max Flow: ${maxFlow} <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
+}

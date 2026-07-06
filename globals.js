@@ -50,11 +50,11 @@ var edgeEvalColor = getComputedStyle(document.documentElement).getPropertyValue(
 var errorColor = getComputedStyle(document.documentElement).getPropertyValue('--error-color').trim();
 
 const disColors = [
-        '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
-        '#aa24d3', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
-        '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
-        '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
-    ]; // Colors will start repeating after 20 SCCs
+    '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+    '#aa24d3', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+    '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
+    '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+]; // Colors will start repeating after 20 SCCs
 
 // Available methods
 const algorithms = [
@@ -66,7 +66,10 @@ const algorithms = [
     { name: 'mst', text: 'MST', title: 'Minimum Spanning Tree' },
     { name: 'topologicalSort', text: 'Topological Sort', title: 'Topological Sorting' },
     { name: 'scc', text: 'SCC', title: 'Strongly Connected Components' },
-    { name: 'bcc', text: 'BCC', title: 'Biconnected Components' }
+    { name: 'fordFulkerson', text: 'Ford-Fulkerson', title: 'Maximum Flow (Ford-Fulkerson)' },
+    { name: 'edmondsKarp', text: 'Edmonds-Karp', title: 'Maximum Flow (Edmonds-Karp)' },
+    { name: 'dinic', text: "Dinic's", title: "Maximum Flow (Dinic's Algorithm)" },
+    { name: 'pushRelabel', text: 'Push-Relabel', title: 'Maximum Flow (Push-Relabel)' },
 ];
 
 const algoGraphs = new Set();
