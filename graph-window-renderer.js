@@ -212,6 +212,7 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
 
 /* Drag Functions - Move nodes */
 function dragStarted(event, d, simulation, thisNode) {
+    d.previousFill = d3.select(thisNode).attr("fill");
     d3.select(thisNode).attr('fill', dragNodeColor);
     if (!event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
@@ -226,7 +227,7 @@ function dragged(event, d, thisNode) {
 }
 
 function dragEnded(event, d, simulation, thisNode) {
-    d3.select(thisNode).attr('fill', nodeColor);
+    d3.select(thisNode).attr("fill", d.previousFill);
     document.body.style.cursor = 'default';
     simulation.alphaDecay(1);
     if (!event.active) simulation.alphaTarget(0);
@@ -1270,6 +1271,10 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             menuElement.className = 'floating-menu';
             document.body.appendChild(menuElement);
             const menu = new FloatingMenu(menuElement);
+
+            addMenuItem(menuElement, menu, 'Color this vertex', null, () => {
+                d3.select(this).attr('fill','#ff0000')
+            });
 
             // Delete node option
             addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
