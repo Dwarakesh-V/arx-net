@@ -807,9 +807,9 @@ function topologicalSort(edges) {
     if (hasCycle) {
         alert("Graph has at least one cycle.");
         return `
-            <div style="color: red; font-weight: bold; margin-bottom: 10px;">
+            <span style="color: red; font-weight: bold;">
                 Algorithm Failed: Graph contains a dependency cycle. Topological sort is mathematically impossible.
-            </div>
+            </span>
             <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
         `;
     }
@@ -820,7 +820,7 @@ function topologicalSort(edges) {
     `;
 }
 
-function StronglyConnectedComponents(edges) {
+function kosarajuSCC(edges) {
     const graph = {};
     const reverseGraph = {};
     const allNodes = new Set();
@@ -926,7 +926,107 @@ function StronglyConnectedComponents(edges) {
 
     return `
         <strong>SCC Result:</strong> ${sccResult || "None"} 
-        <br>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
+    `;
+}
+
+function tarjanSCC(edges) {
+    const graph = {};
+    const allNodes = new Set();
+    const steps = [];
+
+    // Build the adjacency list
+    for (const { source, target } of edges) {
+        if (!graph[source]) graph[source] = [];
+        if (!graph[target]) graph[target] = []; // Ensure targets exist as keys
+
+        graph[source].push(target);
+
+        allNodes.add(source);
+        allNodes.add(target);
+    }
+
+    let index = 0;
+    const stack = [];
+    const indices = {};
+    const lowlinks = {};
+    const onStack = {};
+    const sccs = [];
+
+    steps.push(`<li><strong>Phase 1 (Single DFS):</strong> Traversing the graph tracking discovery <em>indices</em> and <em>lowlink</em> values (the lowest index reachable).</li>`);
+
+    function strongconnect(node) {
+        // Set the depth index for node to the smallest unused index
+        indices[node] = index;
+        lowlinks[node] = index;
+        index++;
+        stack.push(node);
+        onStack[node] = true;
+
+        steps.push(`<li style="list-style-type: none;"><span style="color: gray; font-size: 0.9em;">&rarr; Visited '${node}'. Assigned Index: ${indices[node]}, Lowlink: ${lowlinks[node]}. Pushed to Stack.</span></li>`);
+
+        for (const neighbor of graph[node] || []) {
+            if (indices[neighbor] === undefined) {
+                // Successor neighbor has not yet been visited; recurse on it
+                strongconnect(neighbor);
+                lowlinks[node] = Math.min(lowlinks[node], lowlinks[neighbor]);
+                steps.push(`<li style="list-style-type: none;"><span style="color: #f0ad4e; font-size: 0.9em;">&larr; Backtracked to '${node}'. Updated Lowlink to ${lowlinks[node]} (via tree edge to '${neighbor}').</span></li>`);
+            } else if (onStack[neighbor]) {
+                // Successor neighbor is in stack and hence in the current SCC
+                lowlinks[node] = Math.min(lowlinks[node], indices[neighbor]);
+                steps.push(`<li style="list-style-type: none;"><span style="color: #f0ad4e; font-size: 0.9em;">&larr; Back-edge found from '${node}' to '${neighbor}'. Updated Lowlink to ${lowlinks[node]}.</span></li>`);
+            }
+        }
+
+        // If node is a root node, pop the stack and generate an SCC
+        if (lowlinks[node] === indices[node]) {
+            steps.push(`<li>Root node '${node}' found (Lowlink == Index). Popping stack to extract SCC.</li>`);
+            const component = [];
+            let w;
+            do {
+                w = stack.pop();
+                onStack[w] = false;
+                component.push(w);
+                steps.push(`<li style="list-style-type: none;"><span style="color: gray; font-size: 0.9em;">&rarr; Popped '${w}' into current component.</span></li>`);
+            } while (w !== node);
+            
+            sccs.push(component);
+            steps.push(`<li><strong style="color: #5cb85c;">Found strongly connected component:</strong> {${component.join(', ')}}</li>`);
+        }
+    }
+
+    for (const node of allNodes) {
+        if (indices[node] === undefined) {
+            steps.push(`<li>Starting new DFS tree from unvisited node '${node}'.</li>`);
+            strongconnect(node);
+        }
+    }
+
+    let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
+    explanation += `<p style="margin-top: 0;">This uses <strong>Tarjan's Algorithm</strong> to find Strongly Connected Components (SCCs). Unlike Kosaraju's two-pass approach, Tarjan's algorithm requires only a <strong>single Depth-First Search (DFS)</strong>. It achieves this by assigning each node a unique <em>index</em> when first discovered, and a <em>lowlink</em> value representing the lowest node index reachable from that node. As the DFS explores and backtracks, nodes update their lowlink values if they encounter a back-edge to a node already on the current traversal stack. When the DFS returns to a node whose lowlink still matches its original index, it confirms that node is the "root" of an SCC, and pops everything off the stack up to itself to form the isolated cluster.</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Time Complexity</h3>`;
+    explanation += `<p style="margin-top: 0;"><strong>O(V + E)</strong>, where V = number of Vertices and E = number of Edges. Because it operates in a single pass without needing to reverse the graph, Tarjan's is often slightly faster in practice than Kosaraju's, despite having the same Big-O time complexity.</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Step-by-Step Traversal</h3>`;
+    explanation += `<ul style="margin-top: 0;">${steps.join('')}</ul>`;
+
+    explanation += `</div>`;
+
+    let sccResult = '';
+    for (const component of sccs) {
+        sccResult += `{${component.reverse().join(', ')}}, `; // Reverse to match natural output order
+    }
+    if (sccResult.length > 0) {
+        sccResult = sccResult.slice(0, -2);
+    }
+
+    const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
+
+    return `
+        <strong>SCC Result:</strong> ${sccResult || "None"} 
         <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">[Explanation]</a>
     `;
 }
@@ -1157,6 +1257,139 @@ function fordFulkerson(edges, source = prompt("Enter source vertex"), sink = pro
 
     explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
     explanation += `<p style="margin-top: 0;">The <strong>Ford-Fulkerson Algorithm</strong> computes the maximum flow in a network. It searches for an <em>augmenting path</em> from the source to the sink in a Residual Graph. Once a path is found, it determines the "bottleneck" (minimum available capacity), adds this to the total flow, and updates the graph. It subtracts capacity from forward edges and adds it to reverse edges, which allows the algorithm to dynamically "reroute" flow in later steps if a better configuration exists.</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Step-by-Step Augmentation</h3>`;
+    explanation += `<ul style="margin-top: 0;">${steps.join('')}</ul>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Final Result</h3>`;
+    explanation += `<p style="margin-top: 0;"><strong>&rarr; Maximum Flow</strong> from '${source}' to '${sink}': <strong>${maxFlow}</strong>.</p>`;
+    explanation += `</div>`;
+
+    // Safely encode to prevent string breaking in the onclick handler
+    const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
+    
+    return `Max Flow: ${maxFlow} <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>`;
+}
+
+function edmondsKarp(edges, source = prompt("Enter source vertex"), sink = prompt("Enter sink vertex"), weighted = true) {
+    // Validate source and sink existence
+    const vertices = new Set();
+    edges.forEach(e => { vertices.add(e.source); vertices.add(e.target); });
+    
+    if (!vertices.has(source)) {
+        alert("Source vertex '" + source + "' not found.");
+        return null;
+    }
+    if (!vertices.has(sink)) {
+        alert("Sink vertex '" + sink + "' not found.");
+        return null;
+    }
+
+    // Build the Residual Graph
+    const residual = {};
+    for (const { source: u, target: v, weight } of edges) {
+        const capacity = (weighted && weight !== undefined) ? weight : 1;
+
+        if (!residual[u]) residual[u] = {};
+        if (!residual[v]) residual[v] = {};
+        
+        // Add capacity to the directed forward edge
+        residual[u][v] = (residual[u][v] || 0) + capacity;
+        
+        // Initialize the reverse edge to 0 
+        if (residual[v][u] === undefined) {
+            residual[v][u] = 0;
+        }
+    }
+
+    const steps = [];
+    let maxFlow = 0;
+    let pathNum = 1;
+
+    // Helper to find the SHORTEST augmenting path using BFS (The Edmonds-Karp difference)
+    function bfsFindAugmentingPath(s, t) {
+        const queue = [s];
+        const parent = { [s]: null }; // Maps node to the node it was reached from
+        
+        while (queue.length > 0) {
+            const u = queue.shift();
+            
+            // If we reached the sink, we can stop searching
+            if (u === t) break;
+            
+            for (const v in residual[u]) {
+                // If unvisited and has available capacity > 0
+                if (parent[v] === undefined && residual[u][v] > 0) {
+                    parent[v] = u;
+                    queue.push(v);
+                }
+            }
+        }
+
+        // If sink was never reached, no path exists
+        if (parent[t] === undefined) return null;
+
+        // Reconstruct the path backwards from sink to source
+        const path = [];
+        let curr = t;
+        while (curr !== null) {
+            path.unshift(curr); // Add to beginning of array
+            curr = parent[curr];
+        }
+        return path;
+    }
+
+    // Core Algorithm Loop
+    let path = bfsFindAugmentingPath(source, sink);
+    
+    while (path) {
+        // Find the bottleneck along this path
+        let bottleneck = Infinity;
+        let edgeStrings = [];
+        
+        for (let i = 0; i < path.length - 1; i++) {
+            const u = path[i];
+            const v = path[i + 1];
+            const cap = residual[u][v];
+            bottleneck = Math.min(bottleneck, cap);
+            edgeStrings.push(`'${u}' &rarr; '${v}' (Cap: ${cap})`);
+        }
+
+        maxFlow += bottleneck;
+
+        // Log the step for the UI explanation
+        let stepDesc = `<strong>Path ${pathNum} (Shortest via BFS):</strong> [${path.join(', ')}]<br>`;
+        stepDesc += `<span style="color: gray; font-size: 0.9em;">Edges examined: ${edgeStrings.join(' | ')}</span><br>`;
+        stepDesc += `<span style="color: #4caf50; font-size: 0.9em;">&rarr; Bottleneck found: <strong>${bottleneck}</strong>. Max flow increased to <strong>${maxFlow}</strong>.</span>`;
+        steps.push(`<li style="margin-bottom: 10px;">${stepDesc}</li>`);
+
+        // Update capacities in the residual graph
+        for (let i = 0; i < path.length - 1; i++) {
+            const u = path[i];
+            const v = path[i + 1];
+            residual[u][v] -= bottleneck; // Decrease forward capacity
+            residual[v][u] += bottleneck; // Increase reverse capacity (allows undoing flow)
+        }
+
+        pathNum++;
+        path = bfsFindAugmentingPath(source, sink); // Search for the next path
+    }
+
+    if (steps.length === 0) {
+         steps.push(`<li style="list-style-type: none;"><span style="color: #e53935; font-size: 0.9em;">No valid augmenting paths found from '${source}' to '${sink}'. Max flow is 0.</span></li>`);
+    }
+
+    // Build the Explanation HTML
+    let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
+    
+    let modeText = weighted ? "Weighted (Using edge weights as capacities)" : "Unweighted (All edge capacities assumed as 1)";
+    explanation += `<h3 style="margin-bottom: 5px;">Graph Mode: ${modeText}</h3>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
+    explanation += `<p style="margin-top: 0;">The <strong>Edmonds-Karp Algorithm</strong> is an implementation of the Ford-Fulkerson method that specifically uses a <strong>Breadth-First Search (BFS)</strong> to find augmenting paths. Because BFS always discovers the shortest path (fewest number of edges) from the source to the sink, this approach guarantees that the algorithm will not get trapped in inefficient, high-capacity but incredibly long loops (a known vulnerability of DFS-based Ford-Fulkerson).</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Time Complexity</h3>`;
+    explanation += `<p style="margin-top: 0;"><strong>O(V &times; E&sup2;)</strong>, where V = number of Vertices and E = number of Edges. Because the length of the augmenting path increases monotonically, there are at most O(V &times; E) augmentations. Each BFS takes O(E) time, resulting in a strictly polynomial bound regardless of edge capacities.</p>`;
 
     explanation += `<h3 style="margin-bottom: 5px;">Step-by-Step Augmentation</h3>`;
     explanation += `<ul style="margin-top: 0;">${steps.join('')}</ul>`;

@@ -27,7 +27,7 @@ function filterAlgorithms(algorithms, directed, weighted) {
 
 function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edges, arrowId, edgesRaw, directed, weighted, displayName, methodsElement) {
     const resultContainer = document.createElement('p');
-    resultContainer.style.width = "calc(100%-30px)";
+    resultContainer.style.width = "calc(100% - 30px)";
     resultContainer.style.margin = "0px 15px";
     let result = null;
     let label = '';
@@ -48,6 +48,8 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
     let kruskals; // For extra visualization for Prim's and Kruskal's
     let isSCC = false;
     let kosaraju; // For extra visualization of Kosaraju's and Tarjan's
+    let isMaxFlow = false;
+    let edmonds; // For extra visualization of Ford Fulkerson's and Edmond Karp's
 
     switch (algorithm.name) {
         case 'bfs': {
@@ -60,7 +62,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeBFS(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `BFS with ${source} as source node: `;
+            label = `BFS on ${displayName} with ${source} as source node: `;
             break;
         }
         case 'dfs': {
@@ -71,7 +73,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeDFS(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `DFS with ${source} as source node:`;
+            label = `DFS on ${displayName} with ${source} as source node:`;
             break;
         }
         case 'dijkstra': {
@@ -83,7 +85,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeDijkstra(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `Dijkstra's through ${displayName} with ${source} as source node: <br> <br>`;
+            label = `Dijkstra's on ${displayName} with ${source} as source node: <br> <br>`;
             break;
         }
         case 'floydWarshall': {
@@ -93,7 +95,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeFloydWarshall(displayName, "", container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `Floyd Warshall through ${displayName}: `;
+            label = `Floyd Warshall on ${displayName}: `;
             break;
         }
         case 'bellmanFord': {
@@ -105,12 +107,12 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeBellmanFord(displayName, source, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `Bellman Ford through ${displayName} with ${source} as source node: <br> <br>`;
+            label = `Bellman Ford on ${displayName} with ${source} as source node: <br> <br>`;
             break;
         }
         case 'mst': {
             result = mst(edgesRaw, weighted, displayName);
-            label = `Generated MST through ${displayName}. `;
+            label = `Generated MST for ${displayName}. `;
 
             isMST = true;
             kruskals = document.createElement("a");
@@ -138,16 +140,19 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeTopologicalSort(displayName, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `Topological Sort through ${displayName}: `;
+            label = `Topological Sort for ${displayName}: `;
             break;
         }
         case 'scc': {
-            result = StronglyConnectedComponents(edgesRaw);
+            let kosarajures = fordFulkerson(edgesRaw, source, sink, weighted)
+            if (kosarajures != null) {
+                result = "Kosaraju<hr>" + kosarajures + "<br><br>Tarjan<hr>" + tarjanSCC(edgesRaw) + "<br>";
+            }
 
             isSCC = true;
             kosaraju = document.createElement("a");
             kosaraju.href = "javascript:void(0)";
-            kosaraju.textContent = "[Visualize Kosaraju]";
+            kosaraju.textContent = "[Visualize Kosaraju's]";
             kosaraju.style.color = "#ff8a65";
             kosaraju.style.textDecoration = "underline";
             kosaraju.style.cursor = "pointer";
@@ -155,13 +160,13 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             kosaraju.onclick = () => {
                 visualizeSCCKosaraju(displayName, container, nodes, edges, svg, arrowId, directed);
             };
-            
-            av.textContent = '[Visualize Tarjan]'
+
+            av.textContent = "[Visualize Tarjan's]"
             av.onclick = () => {
                 visualizeSCCTarjan(displayName, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `SCC through ${displayName}: `;
+            label = `SCCs' of ${displayName} <br>`;
             break;
         }
         case 'bcc': {
@@ -172,19 +177,31 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
                 visualizeBCC(displayName, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `BCC through ${displayName}: `;
+            label = `BCCs' through ${displayName}: `;
             break;
         }
-        case 'fordFulkerson': {
+        case 'maxFlow': {
             const source = getSource("Enter source vertex");
             const sink = getSource("Enter sink vertex");
-            result = fordFulkerson(edgesRaw, source, sink, weighted);
+            let ffres = fordFulkerson(edgesRaw, source, sink, weighted)
+            if (ffres != null) {
+                result = "Ford fulkerson<hr>" + ffres + "<br><br>Edmonds Karp<hr>" + edmondsKarp(edgesRaw, source, sink, weighted) + "<br>";
+            }
 
+            isMaxFlow = true;
+            edmonds = document.createElement("a");
+            edmonds.href = "javascript:void(0)";
+            edmonds.textContent = "[Visualize Edmond Karp]";
+            edmonds.style.color = "#ff8a65";
+            edmonds.style.textDecoration = "underline";
+            edmonds.style.cursor = "pointer";
+
+            av.textContent = "[Visualize Ford Fulkerson]";
             av.onclick = () => {
                 visualizeFordFulkerson(displayName, source, sink, container, nodes, edges, svg, arrowId, directed);
             };
 
-            label = `Ford Fulkerson algorithm on ${displayName}`;
+            label = `Max flow algorithms on ${displayName} <br>`;
             break;
         }
         default:
@@ -203,6 +220,10 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             const tn = document.createTextNode(" ");
             resultContainer.append(tn);
             resultContainer.append(kosaraju);
+        } else if (isMaxFlow) {
+            const tn = document.createTextNode(" ");
+            resultContainer.append(tn);
+            resultContainer.append(edmonds);
         }
         const brtag = document.createElement("br");
         methodsElement.appendChild(resultContainer);

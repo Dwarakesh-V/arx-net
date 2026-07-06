@@ -66,10 +66,7 @@ const algorithms = [
     { name: 'mst', text: 'MST', title: 'Minimum Spanning Tree' },
     { name: 'topologicalSort', text: 'Topological Sort', title: 'Topological Sorting' },
     { name: 'scc', text: 'SCC', title: 'Strongly Connected Components' },
-    { name: 'fordFulkerson', text: 'Ford-Fulkerson', title: 'Maximum Flow (Ford-Fulkerson)' },
-    { name: 'edmondsKarp', text: 'Edmonds-Karp', title: 'Maximum Flow (Edmonds-Karp)' },
-    { name: 'dinic', text: "Dinic's", title: "Maximum Flow (Dinic's Algorithm)" },
-    { name: 'pushRelabel', text: 'Push-Relabel', title: 'Maximum Flow (Push-Relabel)' },
+    { name: 'maxFlow', text: 'Max flow', title: 'Maximum Flow (Ford-Fulkerson/Edmonds Karp)' }
 ];
 
 const algoGraphs = new Set();

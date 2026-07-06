@@ -2804,18 +2804,20 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
     
     animationSteps.push({ type: 'start', source, sink });
 
-    // Edmonds-Karp Implementation of Ford-Fulkerson
+    // Classic Ford-Fulkerson Method (using DFS for pathfinding)
     while (true) {
-        // BFS to find an augmenting path
         const parent = {};
         nodeIds.forEach(id => parent[id] = null);
-        const q = [source];
+        
+        // STACK implementation for Depth-First Search
+        const stack = [source];
         parent[source] = source; 
 
         let pathFound = false;
 
-        while (q.length > 0 && !pathFound) {
-            const u = q.shift();
+        while (stack.length > 0 && !pathFound) {
+            // LIFO behavior - diving deep into the graph
+            const u = stack.pop(); 
 
             for (const v of adj[u]) {
                 const residual = capacity[u][v] - flow[u][v];
@@ -2826,11 +2828,12 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
                         pathFound = true;
                         break;
                     }
-                    q.push(v);
+                    stack.push(v);
                 }
             }
         }
 
+        // If no augmenting path can be found, max flow is reached
         if (!pathFound) break;
 
         // Reconstruct path to find bottleneck (minimum residual capacity)
@@ -2893,7 +2896,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         let currentFlowState = null;
         let pathNodes = new Set();
         
-        let logHTML = `<h3 style="color: #ff8a65;">Ford-Fulkerson Max Flow on <span style="color: #ff8a65;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+        let logHTML = `<h3 style="color: #ff8a65;">Ford-Fulkerson (DFS) Max Flow on <span style="color: #ff8a65;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
@@ -2902,7 +2905,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
                 logHTML += `<div>Initialized Flow Network. Source: <span style="color: #ff8a65">${step.source}</span>, Sink: <span style="color: #ff8a65">${step.sink}</span></div><br>`;
             } else if (step.type === 'path_found') {
                 const pathStr = step.path.map(e => e.u).join(' &rarr; ') + ` &rarr; ${step.path[step.path.length-1].v}`;
-                logHTML += `<div>Found augmenting path: <span style="color: #a3bf60">${pathStr}</span></div>`;
+                logHTML += `<div>DFS found augmenting path: <span style="color: #a3bf60">${pathStr}</span></div>`;
                 logHTML += `<div style="padding-left: 10px;">Bottleneck Capacity (min residual): <strong>${step.bottleneck}</strong></div>`;
                 
                 step.path.forEach(e => {
@@ -2940,7 +2943,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
             let targetColor = nodeColor;
             if (isSource || isSink) {
-                targetColor = '#5c6bc0'; // Distinct color for Source/Sink
+                targetColor = '#5c6bc0'; 
             } else if (isActive) {
                 targetColor = '#ff8a65';
             }
@@ -2970,9 +2973,9 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             if (isPath) {
                 targetColor = edgeEvalColor; 
             } else if (isSaturated) {
-                targetColor = errorColor; // Red for saturated edges
+                targetColor = errorColor; 
             } else if (flowCarried) {
-                targetColor = nodeVisitColor; // Green for edges carrying positive flow
+                targetColor = nodeVisitColor; 
             }
 
             if (animate) {
@@ -2982,6 +2985,298 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             }
 
             // Update associated arrow head
+            if (directed) {
+                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const markerPath = svg.select(`#${uniqueMarkerId} path`);
+                if (!markerPath.empty()) {
+                    if (animate) {
+                        markerPath.transition().duration(300).attr('fill', targetColor);
+                    } else {
+                        markerPath.interrupt().attr('fill', targetColor);
+                    }
+                }
+            }
+        });
+    };
+    
+    const startLoop = () => {
+        if (currentStep >= totalSteps) {
+            currentStep = 0;
+            playback.updateTimeline(0);
+        }
+        if (currentStep === 0) renderGraphState(0, false);
+
+        playInterval = setInterval(() => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                playback.updateTimeline(currentStep);
+                renderGraphState(currentStep, true);
+            } else {
+                stopLoop();
+                playback.togglePlayState(false);
+            }
+        }, BASE_DELAY / playback.speed);
+    };
+
+    const stopLoop = () => {
+        if (playInterval) {
+            clearInterval(playInterval);
+            playInterval = null;
+        }
+    };
+
+    const playback = new GraphPlaybackController(svg, totalSteps, container, {
+        onPlay: startLoop,
+        onPause: stopLoop,
+        onSeek: (step) => {
+            currentStep = step;
+            renderGraphState(currentStep, false);
+        },
+        onSpeedChange: () => {
+            if (playInterval) { stopLoop(); startLoop(); }
+        },
+        onEnd: () => {
+            stopLoop(); renderGraphState(0, false);
+        }
+    });
+    
+    startLoop();
+    renderGraphState(0, false);
+}
+
+function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nodes, edges, svg, arrowId, directed) {
+    if (algoGraphs.has(container)) {
+        return;
+    } else {
+        algoGraphs.add(container);
+    }
+    
+    // Block user interactions with the graph during visualization
+    svg.select('#interaction-blocker').remove();
+    svg.append('style')
+        .attr('id', 'interaction-blocker')
+        .text('circle, .link, .link2 { pointer-events: none !important; }');
+
+    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const V = nodeIds.length;
+    if (V < 2) return; 
+
+    // Use explicitly passed source and sink nodes
+    const source = startNodeId;
+    const sink = sinkNodeId;
+
+    // Build Capacity Matrix, Flow Matrix, and undirected adjacency list for residual graph
+    const capacity = {};
+    const flow = {};
+    const adj = {};
+
+    nodeIds.forEach(id => {
+        capacity[id] = {};
+        flow[id] = {};
+        adj[id] = [];
+        nodeIds.forEach(id2 => {
+            capacity[id][id2] = 0;
+            flow[id][id2] = 0;
+        });
+    });
+
+    edges.forEach(edge => {
+        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
+        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        // Treat edge weight as capacity. Default to 10 if missing.
+        const w = edge.weight !== undefined ? edge.weight : (edge.capacity !== undefined ? edge.capacity : 10);
+        
+        capacity[u][v] += w; 
+        
+        // Add residual connections to the adjacency list
+        if (!adj[u].includes(v)) adj[u].push(v);
+        if (!adj[v].includes(u)) adj[v].push(u); 
+    });
+
+    const animationSteps = [];
+    let maxFlow = 0;
+    
+    animationSteps.push({ type: 'start', source, sink });
+
+    // Edmonds-Karp Loop (Ford-Fulkerson method via BFS)
+    while (true) {
+        // BFS to find the shortest augmenting path in terms of number of edges
+        const parent = {};
+        nodeIds.forEach(id => parent[id] = null);
+        const q = [source];
+        parent[source] = source; 
+
+        let pathFound = false;
+
+        while (q.length > 0 && !pathFound) {
+            const u = q.shift();
+
+            for (const v of adj[u]) {
+                const residual = capacity[u][v] - flow[u][v];
+                // If unvisited and has residual capacity
+                if (parent[v] === null && residual > 0) {
+                    parent[v] = u;
+                    if (v === sink) {
+                        pathFound = true;
+                        break;
+                    }
+                    q.push(v);
+                }
+            }
+        }
+
+        // If no augmenting path can be found from source to sink, max flow is reached
+        if (!pathFound) break;
+
+        // Reconstruct path to find bottleneck (minimum residual capacity along path)
+        let bottleneck = Infinity;
+        let curr = sink;
+        const pathEdges = [];
+        
+        while (curr !== source) {
+            const p = parent[curr];
+            bottleneck = Math.min(bottleneck, capacity[p][curr] - flow[p][curr]);
+            pathEdges.push({ u: p, v: curr });
+            curr = p;
+        }
+        
+        pathEdges.reverse();
+        
+        animationSteps.push({ 
+            type: 'path_found', 
+            path: pathEdges, 
+            bottleneck 
+        });
+
+        // Augment flow along the discovered path
+        for (const edge of pathEdges) {
+            flow[edge.u][edge.v] += bottleneck;
+            flow[edge.v][edge.u] -= bottleneck; // Symmetric residual back-edge update
+        }
+        
+        maxFlow += bottleneck;
+
+        // Snapshot current flow matrix state for timeline seeking accuracy
+        const stateFlow = {};
+        nodeIds.forEach(u => {
+            stateFlow[u] = {};
+            nodeIds.forEach(v => {
+                stateFlow[u][v] = flow[u][v];
+            });
+        });
+
+        animationSteps.push({ 
+            type: 'augment', 
+            path: pathEdges, 
+            bottleneck, 
+            currentMax: maxFlow,
+            stateFlow 
+        });
+    }
+
+    animationSteps.push({ type: 'complete', maxFlow });
+
+    // Playback State Variables
+    const totalSteps = animationSteps.length;
+    const BASE_DELAY = 1000; 
+    let currentStep = 0;
+    let playInterval = null;
+
+    // Core Render Function
+    const renderGraphState = (targetStep, animate = false) => {
+        let activePathEdges = new Set();
+        let currentFlowState = null;
+        let pathNodes = new Set();
+        
+        let logHTML = `<h3 style="color: #ff8a65;">Edmonds-Karp Max Flow on <span style="color: #ff8a65;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
+
+        for (let idx = 0; idx < targetStep; idx++) {
+            const step = animationSteps[idx];
+            
+            if (step.type === 'start') {
+                logHTML += `<div>Initialized Flow Network. Source: <span style="color: #ff8a65">${step.source}</span>, Sink: <span style="color: #ff8a65">${step.sink}</span></div><br>`;
+            } else if (step.type === 'path_found') {
+                const pathStr = step.path.map(e => e.u).join(' &rarr; ') + ` &rarr; ${step.path[step.path.length-1].v}`;
+                logHTML += `<div>BFS found shortest augmenting path: <span style="color: #a3bf60">${pathStr}</span></div>`;
+                logHTML += `<div style="padding-left: 10px;">Bottleneck Capacity (min residual): <strong>${step.bottleneck}</strong></div>`;
+                
+                step.path.forEach(e => {
+                    activePathEdges.add(`${e.u}-${e.v}`);
+                    pathNodes.add(e.u);
+                    pathNodes.add(e.v);
+                });
+            } else if (step.type === 'augment') {
+                logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Augmented flow by ${step.bottleneck}. Current Max Flow: ${step.currentMax}</div><br>`;
+                currentFlowState = step.stateFlow;
+                activePathEdges.clear();
+                pathNodes.clear();
+            } else if (step.type === 'complete') {
+                logHTML += `<div style="color: #ff8a65; margin-top: 10px; padding: 10px; border: 2px solid #ff8a65; display: inline-block;"><strong>Algorithm Complete! Max Flow: ${step.maxFlow}</strong></div>`;
+            }
+
+            // Reset ephemeral visualization properties if skipping past a step
+            if (idx !== targetStep - 1 && step.type === 'path_found') {
+                activePathEdges.clear();
+                pathNodes.clear();
+            }
+        }
+
+        if (typeof resultLog !== 'undefined') {
+            resultLog.innerHTML = logHTML;
+            resultLog.scrollTop = resultLog.scrollHeight; 
+        }
+
+        // Apply Node Colors
+        svg.selectAll('circle').each(function (d) {
+            const el = d3.select(this);
+            const isSource = d.id === source;
+            const isSink = d.id === sink;
+            const isActive = pathNodes.has(d.id);
+
+            let targetColor = nodeColor;
+            if (isSource || isSink) {
+                targetColor = '#5c6bc0'; // Distinct color highlighting terminal source/sink nodes
+            } else if (isActive) {
+                targetColor = '#ff8a65'; // Highlight path computation nodes
+            }
+
+            if (animate) {
+                el.transition().duration(300).attr('fill', targetColor);
+            } else {
+                el.interrupt().attr('fill', targetColor);
+            }
+        });
+
+        // Apply Edge Colors and Weights
+        svg.selectAll('.link').each(function () {
+            const el = d3.select(this);
+            const sId = el.attr('source-id').replace(arrowId, '');
+            const tId = el.attr('target-id').replace(arrowId, '');
+            const edgeKey = `${sId}-${tId}`;
+            
+            const isPath = activePathEdges.has(edgeKey);
+            
+            // Analyze physical usage status
+            const flowCarried = currentFlowState && currentFlowState[sId][tId] > 0;
+            const isSaturated = currentFlowState && currentFlowState[sId][tId] === capacity[sId][tId] && capacity[sId][tId] > 0;
+
+            let targetColor = edgeColor;
+
+            if (isPath) {
+                targetColor = edgeEvalColor; 
+            } else if (isSaturated) {
+                targetColor = errorColor; // Red indicates zero remaining residual capacity
+            } else if (flowCarried) {
+                targetColor = nodeVisitColor; // Green tracks active distribution routes
+            }
+
+            if (animate) {
+                el.transition().duration(300).attr('stroke', targetColor);
+            } else {
+                el.interrupt().attr('stroke', targetColor);
+            }
+
+            // Update associated directed arrowheads
             if (directed) {
                 const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
