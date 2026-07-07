@@ -8,7 +8,10 @@
     }
 
     .customizeRandom {
-        width: 80%;
+        top: 5%;
+        width: 95%;
+        height: 40%;
+        overflow: auto;
     }
 
     .aboutDiv {
@@ -32,7 +35,7 @@
         position: absolute;
         top: 55%;
         left: 5%;
-        height: 125%;
+        height: 70%;
         width: 90%;
         border: 1px solid #999;
         border-radius: 10px;
@@ -40,7 +43,7 @@
 
     .resultLog {
         position: absolute;
-        top: 180%;
+        top: 125%;
         left: 5%;
         height: fit-content;
         width: 90%;
