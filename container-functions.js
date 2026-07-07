@@ -16,7 +16,7 @@ function focusAndCenterContainer(container) {
         container.style.left = '25%';
         container.style.top = '10%';
     } else {
-        container.style.height = '50%';
+        container.style.height = '64%';
         container.style.width = '100%';
         container.style.left = '0';
         container.style.top = '0';

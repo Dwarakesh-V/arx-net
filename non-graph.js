@@ -178,7 +178,9 @@ customizeButton.addEventListener('click', () => {
     function closeMenu(e) {
         if (
             customizeButton.contains(e.target) ||
-            customizeRandom.contains(e.target)
+            customizeRandom.contains(e.target) ||
+            e.target == isDirected ||
+            e.target == isWeighted
         ) {
             return;
         }

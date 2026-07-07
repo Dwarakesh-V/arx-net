@@ -360,8 +360,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     // Graph value details
     let edgesInputValue = document.getElementById('edges').value;
     edgesInput = edgesInput === null ? edgesInputValue.toUpperCase() : edgesInput; // Use the provided edgesInput or the value from the input field
-    directed = directed ?? document.getElementById('directed').checked;
-    weighted = weighted ?? document.getElementById('weighted').checked;
+    directed = directed ?? isDirected.checked;
+    weighted = weighted ?? isWeighted.checked;
 
     const graphData = [edgesInput, directed, weighted];
     graphMap.set(displayName, graphData);

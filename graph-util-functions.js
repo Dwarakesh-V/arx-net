@@ -705,6 +705,26 @@ generateRandomButton.addEventListener('click', () => {
     }
 });
 
+generateSimpleButton.addEventListener('click', () => {
+    vertexInput.value = `${Math.floor(Math.random() * 3) + 4}`;
+    if (directed.checked) {
+        edgeInput.value = `${Math.floor(Math.random() * 7) + 6}`;
+    } else {
+        edgeInput.value = "6";
+    }
+    minWeight.value = "1";
+    maxWeight.value = "10";
+    generateRandomButton.click();
+});
+
+generateComplexButton.addEventListener('click', () => {
+    vertexInput.value = `${Math.floor(Math.random() * 4) + 7}`
+    edgeInput.value = `${Math.floor(Math.random() * 13) + 12}`;
+    minWeight.value = "5";
+    maxWeight.value = "15";
+    generateRandomButton.click();
+});
+
 function isTree(edgesInput, directed = true) {
     const edges = parseEdges(edgesInput, directed);
     if (!edges) return false;

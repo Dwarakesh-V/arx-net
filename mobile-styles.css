@@ -8,17 +8,18 @@
     }
 
     .customizeRandom {
-        top: 5%;
+        top: 3%;
         width: 95%;
-        height: 40%;
+        height: 60%;
+        transform: translateX(-50%);
         overflow: auto;
     }
 
     .aboutDiv {
         position: fixed;
-        top: 15%;
+        top: 10%;
         left: 30%;
-        height: 70%;
+        height: 80%;
         left: 5%;
         width: 90%;
     }
@@ -33,20 +34,20 @@
 
     .container {
         position: absolute;
-        top: 55%;
-        left: 5%;
+        top: 66%;
+        left: 2.5%;
         height: 70%;
-        width: 90%;
+        width: 95%;
         border: 1px solid #999;
         border-radius: 10px;
     }
 
     .resultLog {
         position: absolute;
-        top: 125%;
-        left: 5%;
+        top: 136%;
+        left: 2.5%;
         height: fit-content;
-        width: 90%;
+        width: 95%;
         border: none;
         margin-top: 2rem;
         border: 1px solid #999;

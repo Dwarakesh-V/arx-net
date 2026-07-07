@@ -18,8 +18,10 @@ const maxWeight = document.getElementById('maxWeight'); // Maximum weight input
 const vertexInput = document.getElementById('numNodes'); // Number of vertices input
 const edgeInput = document.getElementById('numEdges'); // Number of edges input
 const edgeLabel = document.getElementById('edgeCountLabel');
-const generateRandomGraphButton = document.getElementById('generateRandomGraph'); // Generate random graph button
-const generateRandomTreeButton = document.getElementById('generateRandomTree');
+const generateRandomButton = document.getElementById('generateRandomButton');
+const generateSimpleButton = document.getElementById('generateSimpleButton');
+const generateComplexButton = document.getElementById('generateComplexButton');
+
 const treeTypeSelect = document.getElementById('treeTypeSelect')
 const graphOptions = document.getElementById('goptions')
 const minMaxRec = document.getElementById('minMaxRec')
@@ -27,6 +29,7 @@ const minMaxRec = document.getElementById('minMaxRec')
 const selfLoops = document.getElementById('selfLoops');
 const duplicateEdges = document.getElementById('duplicateEdges');
 const isDirected = document.getElementById('directed');
+const isWeighted = document.getElementById('weighted');
 
 const outliner = document.querySelector('.outliner'); // Outliner - Contains created graphs
 
