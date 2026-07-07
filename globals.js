@@ -4,6 +4,8 @@ const fullScreenBtn = document.getElementById('toggleFullScreen');
 const toggleModeButton = document.getElementById('toggleLightMode');
 const uploadButton = document.getElementById('uploadGraphs');
 const downloadButton = document.getElementById('downloadGraphs');
+const customizeButton = document.getElementById('customizeButton');
+const customizeRandom = document.getElementById('customizeRandom');
 
 const cgb = document.getElementById('createGraphButton'); // Create graph button
 const graphGenMenu = document.getElementById('sourceInput')

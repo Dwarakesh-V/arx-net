@@ -7,6 +7,10 @@
         overflow: auto;
     }
 
+    .customizeRandom {
+        width: 80%;
+    }
+
     .aboutDiv {
         position: fixed;
         top: 15%;

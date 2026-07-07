@@ -3,7 +3,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap');
 :root {
     /* Global colors, can be changed for light mode */
-    --accent: #999;
+    --accent: #42baff;
     /* --accent-inverted: #003992; */
     /* Buttons that contain images are inverted in color for visibility, this color will match accent when inverted */
     /* --bg-primary: #252627;
@@ -163,9 +163,9 @@ body {
 /* Inputs */
 input[type="text"] {
     display: block;
-    width: calc(100% - 20px);
+    width: 100%;
     background: none;
-    border: 0.5px solid #999;
+    border: 0.5px solid var(--accent);
     padding: 10px;
 }
 
@@ -275,10 +275,25 @@ img {
     margin: 0.625rem;
 }
 
+.customizeRandom {
+    display: none;
+    position: absolute;
+    top:50%;
+    left:50%;
+    width:30%;
+    border-radius: 1rem;
+    transform: translate(-50%, -50%);
+    box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.5);
+    padding:30px;
+}
+
 /* Buttons to generate graphs */
 #generateGraph,
-#generateRandomButton {
-    width: calc(100% - 20px);
+#generateRandomButton,
+#generateSimpleButton,
+#generateComplexButton,
+#customizeButton {
+    width: 100%;
     color: var(--inverted-text);
     font-weight: bold;
     background-color: var(--accent);
@@ -289,12 +304,18 @@ img {
     transition: background-color 0.3s, color 0.3s, border 0.3s;
 }
 
-#generateRandomButton {
-    margin-top: 0.33rem;
+#generateRandomButton,
+#generateSimpleButton,
+#generateComplexButton,
+#customizeButton {
+    margin-top: 0.1rem;
 }
 
 #generateGraph:hover,
-#generateRandomButton:hover {
+#generateRandomButton:hover,
+#generateSimpleButton:hover,
+#generateComplexButton:hover,
+#customizeButton:hover {
     cursor: pointer;
     background-color: transparent;
     color: var(--accent);
@@ -349,13 +370,13 @@ img {
 }
 
 .input-row input[type="text"] {
-    width: 15%;
+    width: 16%;
     margin-right: 0.675rem;
 }
 
 .input-row label {
     margin-right: 5px;
-    width: 30%;
+    width: 34%;
 }
 
 /* Contains the list of graphs */

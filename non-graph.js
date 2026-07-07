@@ -172,6 +172,22 @@ function handleTypeChange(type) {
     }
 }
 
+customizeButton.addEventListener('click', () => {
+    customizeRandom.style.display = 'block';
+
+    function closeMenu(e) {
+        if (
+            customizeButton.contains(e.target) ||
+            customizeRandom.contains(e.target)
+        ) {
+            return;
+        }
+        customizeRandom.style.display = 'none';
+        document.removeEventListener('click', closeMenu);
+    }
+    document.addEventListener('click', closeMenu);
+});
+
 /* Light and dark mode toggle */
 let mode = "dark";
 toggleModeButton.addEventListener("click", () => {
