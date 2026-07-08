@@ -282,6 +282,7 @@ img {
     top:50%;
     left:50%;
     width:30%;
+    background-color: var(--bg-secondary);
     border-radius: 1rem;
     transform: translate(-50%, -50%);
     box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.5);
@@ -710,4 +711,90 @@ svg {
     border-radius: 0.25rem;
     padding: 0.125rem 0.3125rem;
     cursor: pointer;
+}
+
+/* Popup */
+.color-picker-popup {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: none;
+    border-radius: 3px;
+    padding: 14px;
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.18),
+        0 2px 8px rgba(0,0,0,.08);
+    z-index: 100000;
+    font-family: system-ui, sans-serif;
+    min-width: 180px;
+}
+
+/* Color input */
+.color-picker-popup input[type="color"] {
+    width: 100%;
+    height: 48px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 12px;
+}
+
+/* Chrome, Edge, Safari */
+.color-picker-popup input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker-popup input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+/* Firefox */
+.color-picker-popup input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+/* Buttons */
+.color-picker-popup button {
+    appearance: none;
+    border: 1.5px solid transparent;
+    border-radius: 3px;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+}
+
+/* Select button */
+.color-picker-popup button:first-of-type {
+    background: var(--accent);
+    color: var(--inverted-text);
+    margin-right: 8px;
+}
+
+.color-picker-popup button:first-of-type:hover {
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+}
+
+/* Cancel button */
+.color-picker-popup button:last-of-type {
+    background: var(--accent-orange);
+    color: var(--inverted-text);
+}
+
+.color-picker-popup button:last-of-type:hover {
+    border: 1.5px solid var(--accent-orange);
+    background: var(--bg-secondary);
+    color: var(--accent-orange);
+}
+
+/* Focus styles */
+.color-picker-popup button:focus-visible,
+.color-picker-popup input[type="color"]:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
 }

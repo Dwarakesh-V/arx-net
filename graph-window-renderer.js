@@ -271,8 +271,8 @@ function addMenuItem(menuElement, menu, label, title, onClick) {
     const item = document.createElement('button');
     item.textContent = label;
     if (title) item.title = title;
-    item.addEventListener('click', () => {
-        onClick();
+    item.addEventListener('click', (event) => {
+        onClick(event);
         menu.hide();
     });
     menuElement.appendChild(item);
@@ -1272,8 +1272,15 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             document.body.appendChild(menuElement);
             const menu = new FloatingMenu(menuElement);
 
-            addMenuItem(menuElement, menu, 'Color this vertex', null, () => {
-                d3.select(this).attr('fill','#ff0000')
+            addMenuItem(menuElement, menu, 'Color this vertex', null, (event) => {
+                const vertex = d3.select(this);
+
+                showColorPicker(
+                    event.clientX,
+                    event.clientY,
+                    d3.color(vertex.attr("fill") || "#000000").formatHex(),
+                    color => vertex.attr("fill", color)
+                );
             });
 
             // Delete node option

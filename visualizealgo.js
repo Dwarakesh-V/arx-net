@@ -34,7 +34,7 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
             if (sId === currentId && !visited.has(tId)) {
                 isTraversable = true;
                 nextNodeId = tId;
-            } else if ((!directed || edge.bidirectional) && tId === currentId && !visited.has(sId)) {
+            } else if (!directed && tId === currentId && !visited.has(sId)) {
                 isTraversable = true;
                 nextNodeId = sId;
             }
@@ -246,7 +246,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
                 if (sId === currentId && !visited.has(tId)) {
                     isTraversable = true;
                     nextNodeId = tId;
-                } else if ((!directed || edge.bidirectional) && tId === currentId && !visited.has(sId)) {
+                } else if (!directed && tId === currentId && !visited.has(sId)) {
                     isTraversable = true;
                     nextNodeId = sId;
                 }
@@ -475,7 +475,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
                 isTraversable = true;
                 v = tId;
                 edgeU = sId; edgeV = tId;
-            } else if ((!directed || edges.bidirectional) && tId === u) {
+            } else if ((!directed) && tId === u) {
                 isTraversable = true;
                 v = sId;
                 edgeU = tId; edgeV = sId;
@@ -657,7 +657,7 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
         const weight = edge.weight !== undefined ? edge.weight : 1;
 
         dist[u][v] = Math.min(dist[u][v], weight);
-        if (!directed || edge.bidirectional) {
+        if (!directed) {
             dist[v][u] = Math.min(dist[v][u], weight);
         }
     });
@@ -867,8 +867,8 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
             const relaxed = evaluateEdge(u, v, weight);
             if (relaxed) relaxedInThisPhase = true;
 
-            // Handle bidirectional/undirected edges
-            if (!directed || edge.bidirectional) {
+            // Handle undirected edges
+            if (!directed) {
                 const relaxedReverse = evaluateEdge(v, u, weight);
                 if (relaxedReverse) relaxedInThisPhase = true;
             }
@@ -894,7 +894,7 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
                 animationSteps.push({ type: 'cycle_found', u: u, v: v });
                 break;
             }
-            if ((!directed || edge.bidirectional) && distances[v] !== Infinity && distances[v] + weight < distances[u]) {
+            if ((!directed) && distances[v] !== Infinity && distances[v] + weight < distances[u]) {
                 animationSteps.push({ type: 'cycle_found', u: v, v: u });
                 break;
             }
@@ -1932,7 +1932,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
     } else {
         algoGraphs.add(container);
     }
-    
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
     svg.append('style')
@@ -1940,7 +1940,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         .text('circle, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
-    
+
     // Build standard AND transposed adjacency lists
     const adj = {};
     const revAdj = {};
@@ -1948,7 +1948,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         adj[id] = [];
         revAdj[id] = [];
     });
-    
+
     edges.forEach(edge => {
         const u = edge.source.id !== undefined ? edge.source.id : edge.source;
         const v = edge.target.id !== undefined ? edge.target.id : edge.target;
@@ -1972,7 +1972,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
                 dfs1(to);
             }
         }
-        
+
         stack.push(at);
         animationSteps.push({ type: 'p1_finish', u: at });
     }
@@ -2004,17 +2004,17 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
 
     // Process nodes using the stack built in Phase 1
     // We duplicate the stack so our visualizer log doesn't destroy the original
-    const workingStack = [...stack]; 
+    const workingStack = [...stack];
     while (workingStack.length > 0) {
         const node = workingStack.pop();
         if (!visited.has(node)) {
             const sccNodes = [];
             dfs2(node, sccNodes);
-            
-            animationSteps.push({ 
-                type: 'scc_found', 
-                root: node, 
-                nodes: sccNodes, 
+
+            animationSteps.push({
+                type: 'scc_found',
+                root: node,
+                nodes: sccNodes,
                 sccIndex: sccCount
             });
             sccCount++;
@@ -2023,7 +2023,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
 
     // Playback State Variables
     const totalSteps = animationSteps.length;
-    const BASE_DELAY = 600; 
+    const BASE_DELAY = 600;
     let currentStep = 0;
     let playInterval = null;
 
@@ -2031,15 +2031,15 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
     const renderGraphState = (targetStep, animate = false) => {
         let currentPhase = 1;
         let finishedNodesP1 = new Set();
-        let resolvedSCCs = {}; 
+        let resolvedSCCs = {};
         let evaluatingEdge = null;
         let activeNode = null;
-        
+
         let logHTML = `<h3 style="color: #ff8a65;">Kosaraju's SCC on <span style="color: #00759a;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
-            
+
             if (step.type === 'p1_visit') {
                 logHTML += `<div>Phase 1: Discovered node <span style="color: #ff8a65">${step.u}</span>.</div>`;
                 activeNode = step.u;
@@ -2071,7 +2071,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
                 logHTML += `<div style="margin-top: 10px; padding: 5px; background: rgba(0,0,0,0.2); border-left: 3px solid ${color};">
                     <strong>SCC Found!</strong> Root: ${step.root}. Nodes: [ <span style="color: #a3bf60">${step.nodes.join(', ')}</span> ]
                 </div><br>`;
-                
+
                 step.nodes.forEach(n => resolvedSCCs[n] = color);
                 activeNode = null;
             }
@@ -2084,7 +2084,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
 
         if (typeof resultLog !== 'undefined') {
             resultLog.innerHTML = logHTML;
-            resultLog.scrollTop = resultLog.scrollHeight; 
+            resultLog.scrollTop = resultLog.scrollHeight;
         }
 
         // Apply Node Colors
@@ -2120,13 +2120,13 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
             const sId = el.attr('source-id').replace(arrowId, '');
             const tId = el.attr('target-id').replace(arrowId, '');
             const edgeKey = `${sId}-${tId}`;
-            
+
             const isEval = evaluatingEdge === edgeKey;
-            
+
             let targetColor = edgeColor;
 
             if (isEval) {
-                targetColor = edgeEvalColor; 
+                targetColor = edgeEvalColor;
             } else if (sId in resolvedSCCs && tId in resolvedSCCs && resolvedSCCs[sId] === resolvedSCCs[tId]) {
                 targetColor = resolvedSCCs[sId];
             } else if (sId in resolvedSCCs || tId in resolvedSCCs) {
@@ -2153,7 +2153,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
             }
         });
     };
-    
+
     const startLoop = () => {
         if (currentStep >= totalSteps) {
             currentStep = 0;
@@ -2194,7 +2194,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
             stopLoop(); renderGraphState(0, false);
         }
     });
-    
+
     startLoop();
     renderGraphState(0, false);
 }
@@ -2756,7 +2756,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
     } else {
         algoGraphs.add(container);
     }
-    
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
     svg.append('style')
@@ -2765,7 +2765,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
-    if (V < 2) return; 
+    if (V < 2) return;
 
     // Use explicitly passed source and sink nodes
     const source = startNodeId;
@@ -2791,33 +2791,33 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         const v = edge.target.id !== undefined ? edge.target.id : edge.target;
         // Treat edge weight as capacity. Default to 10 if missing.
         const w = edge.weight !== undefined ? edge.weight : (edge.capacity !== undefined ? edge.capacity : 10);
-        
-        capacity[u][v] += w; 
-        
+
+        capacity[u][v] += w;
+
         // Add residual connections to the adjacency list
         if (!adj[u].includes(v)) adj[u].push(v);
-        if (!adj[v].includes(u)) adj[v].push(u); 
+        if (!adj[v].includes(u)) adj[v].push(u);
     });
 
     const animationSteps = [];
     let maxFlow = 0;
-    
+
     animationSteps.push({ type: 'start', source, sink });
 
     // Classic Ford-Fulkerson Method (using DFS for pathfinding)
     while (true) {
         const parent = {};
         nodeIds.forEach(id => parent[id] = null);
-        
+
         // STACK implementation for Depth-First Search
         const stack = [source];
-        parent[source] = source; 
+        parent[source] = source;
 
         let pathFound = false;
 
         while (stack.length > 0 && !pathFound) {
             // LIFO behavior - diving deep into the graph
-            const u = stack.pop(); 
+            const u = stack.pop();
 
             for (const v of adj[u]) {
                 const residual = capacity[u][v] - flow[u][v];
@@ -2840,20 +2840,20 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         let bottleneck = Infinity;
         let curr = sink;
         const pathEdges = [];
-        
+
         while (curr !== source) {
             const p = parent[curr];
             bottleneck = Math.min(bottleneck, capacity[p][curr] - flow[p][curr]);
             pathEdges.push({ u: p, v: curr });
             curr = p;
         }
-        
+
         pathEdges.reverse();
-        
-        animationSteps.push({ 
-            type: 'path_found', 
-            path: pathEdges, 
-            bottleneck 
+
+        animationSteps.push({
+            type: 'path_found',
+            path: pathEdges,
+            bottleneck
         });
 
         // Augment flow along the path
@@ -2861,7 +2861,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             flow[edge.u][edge.v] += bottleneck;
             flow[edge.v][edge.u] -= bottleneck; // Residual back-edge
         }
-        
+
         maxFlow += bottleneck;
 
         // Deep copy the current flow matrix for the timeline state
@@ -2873,12 +2873,12 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             });
         });
 
-        animationSteps.push({ 
-            type: 'augment', 
-            path: pathEdges, 
-            bottleneck, 
+        animationSteps.push({
+            type: 'augment',
+            path: pathEdges,
+            bottleneck,
             currentMax: maxFlow,
-            stateFlow 
+            stateFlow
         });
     }
 
@@ -2886,7 +2886,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
     // Playback State Variables
     const totalSteps = animationSteps.length;
-    const BASE_DELAY = 1000; 
+    const BASE_DELAY = 1000;
     let currentStep = 0;
     let playInterval = null;
 
@@ -2895,19 +2895,19 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         let activePathEdges = new Set();
         let currentFlowState = null;
         let pathNodes = new Set();
-        
+
         let logHTML = `<h3 style="color: #ff8a65;">Ford-Fulkerson (DFS) Max Flow on <span style="color: #ff8a65;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
-            
+
             if (step.type === 'start') {
                 logHTML += `<div>Initialized Flow Network. Source: <span style="color: #ff8a65">${step.source}</span>, Sink: <span style="color: #ff8a65">${step.sink}</span></div><br>`;
             } else if (step.type === 'path_found') {
-                const pathStr = step.path.map(e => e.u).join(' &rarr; ') + ` &rarr; ${step.path[step.path.length-1].v}`;
+                const pathStr = step.path.map(e => e.u).join(' &rarr; ') + ` &rarr; ${step.path[step.path.length - 1].v}`;
                 logHTML += `<div>DFS found augmenting path: <span style="color: #a3bf60">${pathStr}</span></div>`;
                 logHTML += `<div style="padding-left: 10px;">Bottleneck Capacity (min residual): <strong>${step.bottleneck}</strong></div>`;
-                
+
                 step.path.forEach(e => {
                     activePathEdges.add(`${e.u}-${e.v}`);
                     pathNodes.add(e.u);
@@ -2931,7 +2931,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
         if (typeof resultLog !== 'undefined') {
             resultLog.innerHTML = logHTML;
-            resultLog.scrollTop = resultLog.scrollHeight; 
+            resultLog.scrollTop = resultLog.scrollHeight;
         }
 
         // Apply Node Colors
@@ -2943,7 +2943,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
             let targetColor = nodeColor;
             if (isSource || isSink) {
-                targetColor = '#5c6bc0'; 
+                targetColor = '#5c6bc0';
             } else if (isActive) {
                 targetColor = '#ff8a65';
             }
@@ -2961,9 +2961,9 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             const sId = el.attr('source-id').replace(arrowId, '');
             const tId = el.attr('target-id').replace(arrowId, '');
             const edgeKey = `${sId}-${tId}`;
-            
+
             const isPath = activePathEdges.has(edgeKey);
-            
+
             // Check if this physical edge is carrying flow in the current state
             const flowCarried = currentFlowState && currentFlowState[sId][tId] > 0;
             const isSaturated = currentFlowState && currentFlowState[sId][tId] === capacity[sId][tId] && capacity[sId][tId] > 0;
@@ -2971,11 +2971,11 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             let targetColor = edgeColor;
 
             if (isPath) {
-                targetColor = edgeEvalColor; 
+                targetColor = edgeEvalColor;
             } else if (isSaturated) {
-                targetColor = errorColor; 
+                targetColor = errorColor;
             } else if (flowCarried) {
-                targetColor = nodeVisitColor; 
+                targetColor = nodeVisitColor;
             }
 
             if (animate) {
@@ -2998,7 +2998,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             }
         });
     };
-    
+
     const startLoop = () => {
         if (currentStep >= totalSteps) {
             currentStep = 0;
@@ -3039,7 +3039,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             stopLoop(); renderGraphState(0, false);
         }
     });
-    
+
     startLoop();
     renderGraphState(0, false);
 }
@@ -3050,7 +3050,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
     } else {
         algoGraphs.add(container);
     }
-    
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
     svg.append('style')
@@ -3059,7 +3059,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
-    if (V < 2) return; 
+    if (V < 2) return;
 
     // Use explicitly passed source and sink nodes
     const source = startNodeId;
@@ -3085,17 +3085,17 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         const v = edge.target.id !== undefined ? edge.target.id : edge.target;
         // Treat edge weight as capacity. Default to 10 if missing.
         const w = edge.weight !== undefined ? edge.weight : (edge.capacity !== undefined ? edge.capacity : 10);
-        
-        capacity[u][v] += w; 
-        
+
+        capacity[u][v] += w;
+
         // Add residual connections to the adjacency list
         if (!adj[u].includes(v)) adj[u].push(v);
-        if (!adj[v].includes(u)) adj[v].push(u); 
+        if (!adj[v].includes(u)) adj[v].push(u);
     });
 
     const animationSteps = [];
     let maxFlow = 0;
-    
+
     animationSteps.push({ type: 'start', source, sink });
 
     // Edmonds-Karp Loop (Ford-Fulkerson method via BFS)
@@ -3104,7 +3104,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         const parent = {};
         nodeIds.forEach(id => parent[id] = null);
         const q = [source];
-        parent[source] = source; 
+        parent[source] = source;
 
         let pathFound = false;
 
@@ -3132,20 +3132,20 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         let bottleneck = Infinity;
         let curr = sink;
         const pathEdges = [];
-        
+
         while (curr !== source) {
             const p = parent[curr];
             bottleneck = Math.min(bottleneck, capacity[p][curr] - flow[p][curr]);
             pathEdges.push({ u: p, v: curr });
             curr = p;
         }
-        
+
         pathEdges.reverse();
-        
-        animationSteps.push({ 
-            type: 'path_found', 
-            path: pathEdges, 
-            bottleneck 
+
+        animationSteps.push({
+            type: 'path_found',
+            path: pathEdges,
+            bottleneck
         });
 
         // Augment flow along the discovered path
@@ -3153,7 +3153,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             flow[edge.u][edge.v] += bottleneck;
             flow[edge.v][edge.u] -= bottleneck; // Symmetric residual back-edge update
         }
-        
+
         maxFlow += bottleneck;
 
         // Snapshot current flow matrix state for timeline seeking accuracy
@@ -3165,12 +3165,12 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             });
         });
 
-        animationSteps.push({ 
-            type: 'augment', 
-            path: pathEdges, 
-            bottleneck, 
+        animationSteps.push({
+            type: 'augment',
+            path: pathEdges,
+            bottleneck,
             currentMax: maxFlow,
-            stateFlow 
+            stateFlow
         });
     }
 
@@ -3178,7 +3178,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
 
     // Playback State Variables
     const totalSteps = animationSteps.length;
-    const BASE_DELAY = 1000; 
+    const BASE_DELAY = 1000;
     let currentStep = 0;
     let playInterval = null;
 
@@ -3187,19 +3187,19 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         let activePathEdges = new Set();
         let currentFlowState = null;
         let pathNodes = new Set();
-        
+
         let logHTML = `<h3 style="color: #ff8a65;">Edmonds-Karp Max Flow on <span style="color: #ff8a65;">${graphName}</span></h3><div style="width: 100%; height: 1px; background-color: #333; margin: 0 0 20px 0;"></div>`;
 
         for (let idx = 0; idx < targetStep; idx++) {
             const step = animationSteps[idx];
-            
+
             if (step.type === 'start') {
                 logHTML += `<div>Initialized Flow Network. Source: <span style="color: #ff8a65">${step.source}</span>, Sink: <span style="color: #ff8a65">${step.sink}</span></div><br>`;
             } else if (step.type === 'path_found') {
-                const pathStr = step.path.map(e => e.u).join(' &rarr; ') + ` &rarr; ${step.path[step.path.length-1].v}`;
+                const pathStr = step.path.map(e => e.u).join(' &rarr; ') + ` &rarr; ${step.path[step.path.length - 1].v}`;
                 logHTML += `<div>BFS found shortest augmenting path: <span style="color: #a3bf60">${pathStr}</span></div>`;
                 logHTML += `<div style="padding-left: 10px;">Bottleneck Capacity (min residual): <strong>${step.bottleneck}</strong></div>`;
-                
+
                 step.path.forEach(e => {
                     activePathEdges.add(`${e.u}-${e.v}`);
                     pathNodes.add(e.u);
@@ -3223,7 +3223,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
 
         if (typeof resultLog !== 'undefined') {
             resultLog.innerHTML = logHTML;
-            resultLog.scrollTop = resultLog.scrollHeight; 
+            resultLog.scrollTop = resultLog.scrollHeight;
         }
 
         // Apply Node Colors
@@ -3253,9 +3253,9 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             const sId = el.attr('source-id').replace(arrowId, '');
             const tId = el.attr('target-id').replace(arrowId, '');
             const edgeKey = `${sId}-${tId}`;
-            
+
             const isPath = activePathEdges.has(edgeKey);
-            
+
             // Analyze physical usage status
             const flowCarried = currentFlowState && currentFlowState[sId][tId] > 0;
             const isSaturated = currentFlowState && currentFlowState[sId][tId] === capacity[sId][tId] && capacity[sId][tId] > 0;
@@ -3263,7 +3263,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             let targetColor = edgeColor;
 
             if (isPath) {
-                targetColor = edgeEvalColor; 
+                targetColor = edgeEvalColor;
             } else if (isSaturated) {
                 targetColor = errorColor; // Red indicates zero remaining residual capacity
             } else if (flowCarried) {
@@ -3290,7 +3290,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             }
         });
     };
-    
+
     const startLoop = () => {
         if (currentStep >= totalSteps) {
             currentStep = 0;
@@ -3331,7 +3331,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             stopLoop(); renderGraphState(0, false);
         }
     });
-    
+
     startLoop();
     renderGraphState(0, false);
 }

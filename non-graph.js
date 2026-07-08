@@ -296,3 +296,54 @@ document.addEventListener("mousemove", (e) => {
 document.addEventListener("mouseup", () => {
     resultLogResizing = false;
 });
+
+function showColorPicker(x, y, initialColor, callback) {
+    const popup = document.createElement("div");
+    popup.className = "color-picker-popup";
+
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = initialColor;
+
+    const ok = document.createElement("button");
+    ok.textContent = "Select";
+
+    const cancel = document.createElement("button");
+    cancel.textContent = "Cancel";
+
+    popup.append(input, document.createElement("br"), ok, cancel);
+    document.body.appendChild(popup);
+
+    // Keep within viewport
+    const rect = popup.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth)
+        x = window.innerWidth - rect.width - 8;
+    if (y + rect.height > window.innerHeight)
+        y = window.innerHeight - rect.height - 8;
+
+    popup.style.left = `${Math.max(8, x)}px`;
+    popup.style.top = `${Math.max(8, y)}px`;
+
+    function close() {
+        document.removeEventListener("mousedown", outsideClick);
+        popup.remove();
+    }
+
+    function outsideClick(e) {
+        if (!popup.contains(e.target)) {
+            close();
+        }
+    }
+
+    // Delay attaching so the click that opened the popup doesn't immediately close it.
+    setTimeout(() => {
+        document.addEventListener("mousedown", outsideClick);
+    }, 0);
+
+    ok.onclick = () => {
+        callback(input.value);
+        close();
+    };
+
+    cancel.onclick = close;
+}
