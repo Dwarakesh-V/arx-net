@@ -38,9 +38,9 @@
                     <input type='checkbox' id='weighted' checked onchange='dispMinMax()'>Weighted <br>
                 </div><br>
 
-                <button id='generateSimpleButton'>Generate simple random graph/tree</button>
-                <button id='generateComplexButton'>Generate complex random graph/tree</button>
-                <button id='customizeButton'>Customize random graph/tree parameters</button>
+                <button id='generateSimpleButton'>Generate simple random graph</button>
+                <button id='generateComplexButton'>Generate complex random graph</button>
+                <button id='customizeButton'>Customize graph parameters</button>
             </div>
 
             <div class='outliner'>
@@ -65,7 +65,7 @@
             spellcheck='false'
             value='AB7, AA6, BA9, AC5, AD3, BC4, BE6, CD2, CF8, DE5, DG7, EE2, EF3, EH4, FG6, FI7, GH2, HI5, HJ9, IJ4'
             style='text-transform: uppercase;'>
-        <button id='generateGraph' onclick='addGraph()'>Generate graph/tree</button>
+        <button id='generateGraph' onclick='addGraph()'>Generate graph</button>
 
         <div class='input-row'>
             <label for='numNodes'>Vertex count:</label>
@@ -100,7 +100,7 @@
         <p id='minMaxRec'>
             Max/Min edge count for current settings: <b id='maxRec' style='color: var(--accent);'> 90/0 </b>
         </p>
-        <button id='generateRandomButton'>Generate random graph/tree</button><br><br>
+        <button id='generateRandomButton'>Generate random graph</button><br><br>
         <center><em>Click anywhere outside this menu to close it</em></center>
     </div>
 
