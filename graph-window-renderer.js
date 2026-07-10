@@ -279,6 +279,17 @@ function addMenuItem(menuElement, menu, label, title, onClick) {
     return item;
 }
 
+function removeMenuItem(menuElement, label) {
+    const items = menuElement.querySelectorAll('button');
+    for (const item of items) {
+        if (item.textContent === label) {
+            item.remove();
+            return true; // Item found and removed
+        }
+    }
+    return false; // No matching item found
+}
+
 function showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2) {
     event.preventDefault();
     event.stopPropagation();
