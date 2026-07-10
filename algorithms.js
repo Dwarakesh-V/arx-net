@@ -589,7 +589,133 @@ function bellmanFord(edges, start = prompt("Enter start vertex"), nodes, isDirec
     `;
 }
 
-function mst(edges, weighted, graphName) {
+function kruskalMST(edges, weighted, graphName) {
+    const steps = [];
+
+    // Validation for unweighted graphs
+    if (!weighted) {
+        alert("Minimum Spanning Tree requires weighted edges, assuming all weights are 1.");
+    }
+
+    const nodes = new Set();
+    const processedEdges = [];
+
+    // Collect all unique nodes and normalize edges
+    for (const { source, target, weight } of edges) {
+        nodes.add(source);
+        nodes.add(target);
+        
+        const w = weight !== undefined ? weight : 1;
+        processedEdges.push({ source, target, weight: w });
+    }
+
+    if (nodes.size === 0) {
+        return null;
+    }
+
+    // Kruskal's operates by looking at the cheapest global edges first
+    processedEdges.sort((a, b) => a.weight - b.weight);
+
+    const parent = {};
+    const rank = {};
+
+    for (const node of nodes) {
+        parent[node] = node;
+        rank[node] = 0;
+    }
+
+    // Find with path compression
+    function find(i) {
+        if (parent[i] === i) return i;
+        return parent[i] = find(parent[i]);
+    }
+
+    // Union by rank
+    function union(i, j) {
+        const rootI = find(i);
+        const rootJ = find(j);
+        
+        if (rootI !== rootJ) {
+            if (rank[rootI] < rank[rootJ]) {
+                parent[rootI] = rootJ;
+            } else if (rank[rootI] > rank[rootJ]) {
+                parent[rootJ] = rootI;
+            } else {
+                parent[rootJ] = rootI;
+                rank[rootI]++;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    const mstEdges = [];
+    let totalCost = 0;
+
+    // Initialization
+    steps.push(`<li><strong>Initialization:</strong> Sorted all ${processedEdges.length} global edges by weight. Initialized disjoint sets for ${nodes.size} nodes.</li>`);
+
+    // Main Kruskal's Algorithm Loop
+    for (const edge of processedEdges) {
+        const { source, target, weight } = edge;
+
+        // Cycle Detection using Union-Find
+        if (find(source) !== find(target)) {
+            union(source, target);
+            mstEdges.push({ source, target, weight });
+            totalCost += weight;
+            
+            steps.push(`<li><strong>Added edge '${source}' &rarr; '${target}' (Cost: ${weight})</strong> to the Minimum Spanning Tree. Nodes are now in the same set.</li>`);
+            
+            // Early exit optimization: A spanning tree connects V nodes with V-1 edges
+            if (mstEdges.length === nodes.size - 1) {
+                steps.push(`<li><span style="color: gray; font-size: 0.9em;">&rarr; Spanning tree is complete (${nodes.size - 1} edges). Terminating early.</span></li>`);
+                break;
+            }
+        } else {
+            steps.push(`<li><span style="color: #d9534f;"><strong>Discarded edge</strong> '${source}' &rarr; '${target}' (Cost: ${weight}): Nodes '${source}' and '${target}' are already connected. Including it would create a cycle.</span></li>`);
+        }
+    }
+
+    steps.push(`<li><strong>Completion:</strong> Minimum Spanning Tree constructed with a total weight of <strong>${totalCost}</strong>.</li>`);
+
+    // Generate the Edge String
+    let mstResult = '';
+    for (const edge of mstEdges) {
+        mstResult += `(${edge.source},${edge.target},${edge.weight}),`
+    }
+    if (mstResult.length > 0) {
+        mstResult = mstResult.slice(0, -1); // Remove trailing comma
+    }
+
+    let explanation = `<div style="font-family: system-ui, sans-serif; line-height: 1.5;">`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Methodology</h3>`;
+    explanation += `<p style="margin-top: 0;">This uses <strong>Kruskal's Algorithm</strong> to find the Minimum Spanning Tree (MST). Unlike Prim's, which grows a single localized tree, Kruskal's looks at the entire graph globally. It sorts all edges from lightest to heaviest and continually adds the cheapest available edge to the tree, regardless of where it is in the graph, as long as it doesn't form a closed loop (a cycle). It tracks cycles using a <em>Disjoint Set (Union-Find)</em> data structure.</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Time Complexity</h3>`;
+    explanation += `<p style="margin-top: 0;"><strong>O(E log E)</strong> or <strong>O(E log V)</strong>. The dominating factor in Kruskal's is the time it takes to sort all the edges globally at the beginning. The subsequent Union-Find operations take nearly constant time—specifically O(&alpha;(V)), where &alpha; is the inverse Ackermann function.</p>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Step-by-Step Traversal</h3>`;
+    explanation += `<ul style="margin-top: 0;">${steps.join('')}</ul>`;
+
+    explanation += `<h3 style="margin-bottom: 5px;">Multiple Valid Trees (Tie-Breaking)</h3>`;
+    explanation += `<p style="margin-top: 0;">If two available edges share the exact same minimum weight, the initial sorting mechanism breaks the tie. Choosing one edge over the other can drastically alter the shape of the final tree. However, mathematically, all valid resulting tree shapes are guaranteed to share the exact same minimal total cost.</p>`;
+
+    explanation += `</div>`;
+
+    const safeExplanation = encodeURIComponent(explanation).replace(/'/g, "%27");
+
+    // Return the formatted result with the embedded link
+    return `
+        <strong>MST edges:</strong> ${mstResult || "None"} <br>
+        <strong>Total Cost:</strong> ${totalCost} 
+        <br>
+        <a href="javascript:void(0);" onclick="resultLog.innerHTML = decodeURIComponent('${safeExplanation}');" style="color: #ff8a65; text-decoration: underline; cursor: pointer;">[Explanation]</a>
+    `;
+}
+
+function primMST(edges, weighted, graphName) {
     const graph = {};
     const steps = [];
 

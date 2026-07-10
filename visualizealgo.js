@@ -4,6 +4,12 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
     } else {
         algoGraphs.add(container);
     }
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove(); // Clear any old ones
     svg.append('style')
@@ -88,21 +94,12 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = activeNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             // Check if this specific node is the one that was JUST added in the current step
             const lastStepIndex = targetStep - 1;
@@ -211,6 +208,12 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
         algoGraphs.add(container);
     }
 
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove(); // Clear any old ones
     svg.append('style')
@@ -309,21 +312,12 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = activeNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             // Check if this specific node is the one that was JUST added in the current step
             const lastStepIndex = targetStep - 1;
@@ -432,6 +426,12 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -542,21 +542,12 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = activeNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             const lastStepIndex = targetStep - 1;
             const isLatestNode = lastStepIndex >= 0 &&
@@ -661,6 +652,12 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
         algoGraphs.add(container);
     }
 
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
     svg.append('style')
@@ -757,21 +754,12 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors based on CURRENT frame isolated state
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = currentActiveNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             if (animate && isActive) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -848,6 +836,12 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -992,21 +986,12 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
         const highlightColor = isRelaxing ? nodeVisitColor : edgeEvalColor;
         const baseEdgeColor = edgeColor;
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = currentActiveNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             if (animate && isActive) {
                 el.transition().duration(200).attr('fill', targetColor);
@@ -1102,6 +1087,12 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -1232,21 +1223,12 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = mstNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             // Animate node only if it was newly accepted in this exact step
             const justAccepted = animate && isActive && targetStep > 0
@@ -1341,6 +1323,12 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     svg.select('#interaction-blocker').remove();
     svg.append('style')
@@ -1458,21 +1446,12 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply node colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
             const isActive = mstNodes.has(d.id);
-            const originalColor = el.attr("data-original-fill");
-            const targetColor = isActive ? nodeVisitColor : originalColor;
+
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
 
             if (animate && isActive && targetStep > 0 && animationSteps[targetStep - 1].type === 'accept' && animationSteps[targetStep - 1].newNode === d.id) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -1561,6 +1540,13 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
+
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -1685,15 +1671,6 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
@@ -1701,8 +1678,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
             const isEvaluating = evaluatingNode === d.id;
             const isEnqueueing = enqueueNode === d.id;
 
-            const originalColor = el.attr("data-original-fill");
-            let targetColor = originalColor;
+            let targetColor = originalNodeColors.get(d.id);
             if (isEvaluating) targetColor = edgeEvalColor;
             else if (isEnqueueing) targetColor = '#a3bf60';
             else if (isCompleted) targetColor = nodeVisitColor;
@@ -1805,6 +1781,12 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         algoGraphs.add(container);
     }
 
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
+
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
     svg.append('style')
@@ -1874,8 +1856,6 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         }
     }
 
-    // Process nodes using the stack built in Phase 1
-    // We duplicate the stack so our visualizer log doesn't destroy the original
     const workingStack = [...stack];
     while (workingStack.length > 0) {
         const node = workingStack.pop();
@@ -1959,15 +1939,6 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
@@ -1975,8 +1946,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
             const isActive = activeNode === d.id;
             const isFinishedP1 = currentPhase === 1 && finishedNodesP1.has(d.id);
 
-            const originalColor = el.attr("data-original-fill");
-            let targetColor = originalColor;
+            let targetColor = originalNodeColors.get(d.id);
 
             if (isResolved) {
                 // Resolved SCC node
@@ -2087,6 +2057,12 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -2228,15 +2204,6 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
@@ -2244,8 +2211,7 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
             const isOnStack = currentStack.has(d.id);
             const isActive = activeNode === d.id;
 
-            const originalColor = el.attr("data-original-fill");
-            let targetColor = originalColor;
+            let targetColor = originalNodeColors.get(d.id);
 
             if (isResolved) {
                 // Node belongs to a completed SCC
@@ -2355,6 +2321,12 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -2522,15 +2494,6 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
@@ -2540,8 +2503,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
             const isActive = activeNode === d.id;
 
             // Determine base fill color
-            const originalColor = el.attr("data-original-fill");
-            let targetColor = isActive ? nodeVisitColor : originalColor;
+            let targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
             if (isRoot) targetColor = '#b375ee'; // Purple for roots
             else if (isAP) targetColor = '#ffa454'; // Orange for Articulation points
 
@@ -2658,6 +2620,13 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
+
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -2836,15 +2805,6 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
@@ -2852,12 +2812,15 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
             const isSink = d.id === sink;
             const isActive = pathNodes.has(d.id);
 
-            const originalColor = el.attr("data-original-fill");
-            let targetColor = originalColor;
-            if (isSource || isSink) {
-                targetColor = '#5c6bc0';
-            } else if (isActive) {
-                targetColor = '#ff8a65';
+
+            const algorithmRunning = targetStep > 0 && targetStep < totalSteps;
+            let targetColor = originalNodeColors.get(d.id);
+
+            if (algorithmRunning) {
+                if (isSource || isSink)
+                    targetColor = '#5c6bc0';
+                else if (isActive)
+                    targetColor = '#ff8a65';
             }
 
             if (animate) {
@@ -2962,6 +2925,12 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
     } else {
         algoGraphs.add(container);
     }
+
+    const originalNodeColors = new Map();
+
+    svg.selectAll("circle").each(function (d) {
+        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+    });
 
     // Block user interactions with the graph during visualization
     svg.select('#interaction-blocker').remove();
@@ -3138,15 +3107,6 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             resultLog.scrollTop = resultLog.scrollHeight;
         }
 
-        // Preserve original colors
-        svg.selectAll("circle").each(function () {
-            const el = d3.select(this);
-
-            if (!el.attr("data-original-fill")) {
-                el.attr("data-original-fill", el.attr("fill"));
-            }
-        });
-
         // Apply Node Colors
         svg.selectAll('circle').each(function (d) {
             const el = d3.select(this);
@@ -3154,12 +3114,16 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
             const isSink = d.id === sink;
             const isActive = pathNodes.has(d.id);
 
-            const originalColor = el.attr("data-original-fill");
-            let targetColor = originalColor;
-            if (isSource || isSink) {
-                targetColor = '#5c6bc0'; // Distinct color highlighting terminal source/sink nodes
-            } else if (isActive) {
-                targetColor = '#ff8a65'; // Highlight path computation nodes
+
+            let targetColor = originalNodeColors.get(d.id);
+            const algorithmRunning = targetStep > 0 && targetStep < totalSteps;
+
+            if (algorithmRunning) {
+                if (isSource || isSink) {
+                    targetColor = "#5c6bc0";
+                } else if (isActive) {
+                    targetColor = "#ff8a65";
+                }
             }
 
             if (animate) {

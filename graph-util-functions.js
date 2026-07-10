@@ -111,7 +111,7 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             break;
         }
         case 'mst': {
-            result = mst(edgesRaw, weighted, displayName);
+            result = "Kruskal<hr>" + kruskalMST(edgesRaw,weighted,displayName) + "<br><br>Prim<hr>" + primMST(edgesRaw,weighted,displayName) + "<br>";
             label = `Generated MST for ${displayName}. `;
 
             isMST = true;
@@ -144,9 +144,9 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             break;
         }
         case 'scc': {
-            let kosarajures = fordFulkerson(edgesRaw, source, sink, weighted)
-            if (kosarajures != null) {
-                result = "Kosaraju<hr>" + kosarajures + "<br><br>Tarjan<hr>" + tarjanSCC(edgesRaw) + "<br>";
+            let tarjanRes = tarjanSCC(edgesRaw)
+            if (tarjanRes != null) {
+                result = "Kosaraju<hr>" + kosarajuSCC(edgesRaw) + "<br><br>Tarjan<hr>" + tarjanRes + "<br>";
             }
 
             isSCC = true;
@@ -195,6 +195,9 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
             edmonds.style.color = "#ff8a65";
             edmonds.style.textDecoration = "underline";
             edmonds.style.cursor = "pointer";
+            edmonds.onclick = () => {
+                visualizeEdmondsKarp(displayName, source, sink, container, nodes, edges, svg, arrowId, directed);
+            }
 
             av.textContent = "[Visualize Ford Fulkerson]";
             av.onclick = () => {
