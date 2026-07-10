@@ -348,6 +348,16 @@ function showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, la
     menu.show(event);
 }
 
+function removeSelectElement(methodsSelect, name) {
+    for (const option of methodsSelect.options) {
+        if (option.text === name || option.value === name) {
+            option.remove();
+            return true;
+        }
+    }
+    return false;
+}
+
 function addGraph(edgesInput = null, nodes = null, inputName = null, directed = null, weighted = null) { // Core function will all functionalities
     // Common arrow head ID for this graph
     const arrowId = `arrowHead${graphCount}`; // Creating separate arrow heads for each graph, while also grouping the similar ones
@@ -448,9 +458,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     placeholder.disabled = true;
     placeholder.selected = true;
     methodsSelect.appendChild(placeholder);
-
-    // Algorithm playback and speed
-
 
     // Add algorithm options
     applicableAlgorithms.forEach(algorithm => {
