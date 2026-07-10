@@ -30,6 +30,8 @@ const selfLoops = document.getElementById('selfLoops');
 const duplicateEdges = document.getElementById('duplicateEdges');
 const isDirected = document.getElementById('directed');
 const isWeighted = document.getElementById('weighted');
+const isTypeGraph = document.getElementById('genTypeGraph')
+const isTypeTree = document.getElementById('genTypeTree')
 
 const outliner = document.querySelector('.outliner'); // Outliner - Contains created graphs
 

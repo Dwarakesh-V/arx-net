@@ -697,7 +697,7 @@ function generateRandomTree(vertexCount, options = {}) {
 
 generateRandomButton.addEventListener('click', () => {
     const vertexCount = vertexInput.value;
-    if (document.getElementById('genTypeGraph').checked) {
+    if (isTypeGraph.checked) {
         const edgeCount = edgeInput.value;
         generateRandomGraph(vertexCount, edgeCount);
     } else {
@@ -807,6 +807,115 @@ function isTree(edgesInput, directed = true) {
         return visited.size === vertices.size;
     }
 }
+
+function isBinaryTree(edgesInput, directed = true) {
+    const edges = parseEdges(edgesInput, directed); // Assumes parseEdges is defined
+    if (!edges) return false;
+
+    const vertices = new Set();
+    edges.forEach(edge => {
+        if (edge.source) vertices.add(edge.source);
+        if (edge.target) vertices.add(edge.target);
+    });
+
+    if (vertices.size <= 1) return edges.length === 0;
+
+    // A tree must have exactly V - 1 edges
+    if (edges.length !== vertices.size - 1) {
+        return false;
+    }
+
+    const adjList = new Map();
+    vertices.forEach(v => adjList.set(v, []));
+
+    if (directed) {
+        const inDegrees = new Map();
+        const outDegrees = new Map(); // Added to track children count
+        
+        vertices.forEach(v => {
+            inDegrees.set(v, 0);
+            outDegrees.set(v, 0);
+        });
+
+        edges.forEach(edge => {
+            adjList.get(edge.source).push(edge.target);
+            inDegrees.set(edge.target, inDegrees.get(edge.target) + 1);
+            outDegrees.set(edge.source, outDegrees.get(edge.source) + 1);
+        });
+
+        // 1. Binary Tree Check: No node can have more than 2 children
+        for (const outDeg of outDegrees.values()) {
+            if (outDeg > 2) return false; 
+        }
+
+        let root = null;
+        let rootCount = 0;
+
+        for (const [v, deg] of inDegrees.entries()) {
+            if (deg === 0) {
+                root = v;
+                rootCount++;
+            } else if (deg > 1) {
+                return false; // A node in a tree can only have one parent
+            }
+        }
+
+        if (rootCount !== 1) return false;
+
+        const visited = new Set([root]);
+        const queue = [root];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            for (const neighbor of adjList.get(current)) {
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    queue.push(neighbor);
+                }
+            }
+        }
+
+        return visited.size === vertices.size;
+
+    } else {
+        const degrees = new Map();
+        vertices.forEach(v => degrees.set(v, 0));
+
+        // Undirected graph population
+        edges.forEach(edge => {
+            adjList.get(edge.source).push(edge.target);
+            adjList.get(edge.target).push(edge.source);
+            
+            // Track total degree for undirected binary tree check
+            degrees.set(edge.source, degrees.get(edge.source) + 1);
+            degrees.set(edge.target, degrees.get(edge.target) + 1);
+        });
+
+        // 2. Undirected Binary Tree Check: Max degree is 3
+        // An internal node has 1 parent + up to 2 children = 3 edges max.
+        for (const deg of degrees.values()) {
+            if (deg > 3) return false; 
+        }
+
+        const startNode = vertices.values().next().value;
+        const visited = new Set([startNode]);
+        const queue = [startNode];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            for (const neighbor of adjList.get(current)) {
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    queue.push(neighbor);
+                }
+            }
+        }
+
+        return visited.size === vertices.size;
+    }
+}
+
+
 
 function enableGraphNameEditing(nameInput) {
     nameInput.removeAttribute('readonly');

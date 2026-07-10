@@ -180,7 +180,9 @@ customizeButton.addEventListener('click', () => {
             customizeButton.contains(e.target) ||
             customizeRandom.contains(e.target) ||
             e.target == isDirected ||
-            e.target == isWeighted
+            e.target == isWeighted ||
+            e.target == isTypeGraph ||
+            e.target == isTypeTree
         ) {
             return;
         }
