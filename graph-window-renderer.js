@@ -126,7 +126,6 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
 
     // A simple graph is a tree if E = V - 1.
     // (Assuming the graph is fully connected based on the generator functions).
-    console.log("treecheck",edges);
     const isTreeInput = isTree(edges);
 
     if (isTreeInput) {
@@ -361,6 +360,21 @@ function removeSelectElement(methodsSelect, name) {
 }
 
 function addGraph(edgesInput = null, nodes = null, inputName = null, directed = null, weighted = null) { // Core function will all functionalities
+    // Graph value details
+    let edgesInputValue = document.getElementById('edges').value;
+    edgesInput = edgesInput === null ? edgesInputValue.toUpperCase() : edgesInput; // Use the provided edgesInput or the value from the input field
+    directed = directed ?? isDirected.checked;
+    weighted = weighted ?? isWeighted.checked;
+
+    let isTreeType = false;
+    
+    if (isTypeTree.checked) {
+        isTreeType = true;
+        if (!isTree(edgesInput)) {
+            alert("Invalid edges for a tree");
+            return;
+        }
+    }
     // Common arrow head ID for this graph
     const arrowId = `arrowHead${graphCount}`; // Creating separate arrow heads for each graph, while also grouping the similar ones
     graphCount++;
@@ -379,12 +393,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     }
     availableGraphs.add(displayName); // Add the graph to the list of available graphs
     const titleName = displayName.length > 10 ? displayName.substring(0, 7) + '...' : displayName;
-
-    // Graph value details
-    let edgesInputValue = document.getElementById('edges').value;
-    edgesInput = edgesInput === null ? edgesInputValue.toUpperCase() : edgesInput; // Use the provided edgesInput or the value from the input field
-    directed = directed ?? isDirected.checked;
-    weighted = weighted ?? isWeighted.checked;
 
     const graphData = [edgesInput, directed, weighted];
     graphMap.set(displayName, graphData);
@@ -581,8 +589,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     const menu = new FloatingMenu(menuElement);
 
-    addMenuItem(menuElement, menu, 'Rearrange nodes', 'Rearrange nodes for better visibility', () => {
-        autoLayoutNodes(nodes, simulation, width, height, edgesInput);
+    addMenuItem(menuElement, menu, 'Rearrange nodes', 'Rearrange nodes as they first appeared in the generation', () => {
+        autoLayoutNodes(nodes, simulation, width, height, stringifyEdges(edgesRaw));
         // Apply positions to nodes
         node.attr('cx', d => d.x).attr('cy', d => d.y);
 
@@ -598,9 +606,9 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     addMenuItem(menuElement,menu,'Check BST','Check for BST', () => {
         if (isTree(edgesInput,directed)) {
-            const treej = convertToTreeJSON(edgesInput,svg,directed);
-            console.log(treej);
-            console.log(isBSTJSON(treej));
+            const treej = convertToTreeJSON(stringifyEdges(edgesRaw),svg,directed);
+
+            console.log(isBSTJSON(treej).valid);
         }
     })
 

@@ -291,7 +291,7 @@ img {
 }
 
 /* Buttons to generate graphs */
-#generateGraph,
+#generateStruct,
 #generateRandomButton,
 #generateSimpleButton,
 #generateComplexButton,
@@ -314,7 +314,7 @@ img {
     margin-top: 0.1rem;
 }
 
-#generateGraph:hover,
+#generateStruct:hover,
 #generateRandomButton:hover,
 #generateSimpleButton:hover,
 #generateComplexButton:hover,
@@ -328,7 +328,7 @@ img {
 #treeTypeSelect,
 .methodsSelect {
     display: none;
-    width: 50%;
+    width: calc(55% - 5px);
     color: var(--inverted-text);
     background-color: var(--accent);
     border: 1.5px solid transparent;

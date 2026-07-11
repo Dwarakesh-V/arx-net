@@ -18,6 +18,7 @@ const maxWeight = document.getElementById('maxWeight'); // Maximum weight input
 const vertexInput = document.getElementById('numNodes'); // Number of vertices input
 const edgeInput = document.getElementById('numEdges'); // Number of edges input
 const edgeLabel = document.getElementById('edgeCountLabel');
+const generateButton = document.getElementById('generateStruct');
 const generateRandomButton = document.getElementById('generateRandomButton');
 const generateSimpleButton = document.getElementById('generateSimpleButton');
 const generateComplexButton = document.getElementById('generateComplexButton');

@@ -468,7 +468,8 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
         allowSelfLoops = selfLoops.checked,
         minWeightValue = parseInt(minWeight.value),
         maxWeightValue = parseInt(maxWeight.value),
-        isDirectedValue = isDirected.checked
+        isDirectedValue = isDirected.checked,
+        alphabet = false // New parameter: false = numbers, true = letters
     } = options;
 
     if (vertexCount <= 0) {
@@ -507,7 +508,21 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
         edgeCount = maxEdgesWithoutDuplicates;
     }
 
-    const vertices = Array.from({ length: vertexCount }, (_, i) => indexToLabel(i));
+    // Helper to generate sequential labels (Numbers: 1, 2, 3... or Letters: A, B, C... Z, AA...)
+    const getLabel = (index, useAlphabet) => {
+        if (!useAlphabet) return (index + 1).toString();
+        
+        let label = '';
+        let temp = index;
+        while (temp >= 0) {
+            label = String.fromCharCode((temp % 26) + 65) + label;
+            temp = Math.floor(temp / 26) - 1;
+        }
+        return label;
+    };
+
+    // Use getLabel instead of indexToLabel
+    const vertices = Array.from({ length: vertexCount }, (_, i) => getLabel(i, alphabet));
     const edges = new Set();
     const edgeList = [];
 
@@ -572,130 +587,346 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
 
 function generateRandomTree(vertexCount, options = {}) {
     const {
-        minWeightValue = parseInt(minWeight.value),
-        maxWeightValue = parseInt(maxWeight.value),
-        isDirectedValue = isDirected.checked,
-        // Pick the selected option directly from the select element
-        treeTypeValue = treeTypeSelect ? treeTypeSelect.value : 'regular'
+        minWeightValue = parseInt(minWeight?.value || 1),
+        maxWeightValue = parseInt(maxWeight?.value || 10),
+        isDirectedValue = isDirected?.checked || false,
+        treeTypeValue = typeof treeTypeSelect !== 'undefined' ? treeTypeSelect.value : 'regular',
+        alphabet = false // false = numbers (1, 2, 3), true = letters (A, B, C)
     } = options;
 
     if (vertexCount <= 0) {
         alert("Vertex count must be greater than 0.");
-        graphInputField.value = "";
+        if (typeof graphInputField !== 'undefined') graphInputField.value = "";
         return;
     }
 
     const edgeList = [];
     const treeType = treeTypeValue;
 
-    // Initialize vertices. Index 0 is explicitly "root".
-    const vertices = vertexCount > 0 ? ['rt'] : [];
-    for (let i = 1; i < vertexCount; i++) {
-        vertices.push(indexToLabel(i));
+    // Helper to generate sequential labels (Numbers: 1, 2, 3... or Letters: A, B, C... Z, AA...)
+    const getLabel = (index, useAlphabet) => {
+        if (!useAlphabet) return (index + 1).toString();
+
+        let label = '';
+        let temp = index;
+        while (temp >= 0) {
+            label = String.fromCharCode((temp % 26) + 65) + label;
+            temp = Math.floor(temp / 26) - 1;
+        }
+        return label;
+    };
+
+    // Initialize sequentially ordered vertices
+    const vertices = [];
+    for (let i = 0; i < vertexCount; i++) {
+        vertices.push(getLabel(i, alphabet));
     }
 
-    if (vertexCount > 1) {
-        const remaining = [...vertices.slice(1)];
+    const getRandomWeight = () => Math.floor(Math.random() * (maxWeightValue - minWeightValue + 1)) + minWeightValue;
 
-        // Shuffle the remaining vertices to randomize attachment order
-        for (let i = remaining.length - 1; i > 0; i--) {
+    const shuffle = (arr) => {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    };
+
+    const isOrderedTree = treeType === 'binarySearch' || treeType === 'avl' || treeType === 'redBlack';
+
+    if (vertexCount > 1 && isOrderedTree) {
+        const indices = shuffle(Array.from({ length: vertexCount }, (_, i) => i));
+
+        let root;
+        if (treeType === 'binarySearch') {
+            root = buildPlainBST(indices);
+        } else if (treeType === 'avl') {
+            root = buildAVL(indices);
+        } else {
+            root = buildRedBlack(indices);
         }
 
-        const getRandomWeight = () => Math.floor(Math.random() * (maxWeightValue - minWeightValue + 1)) + minWeightValue;
+        // Emit edges: left child before right child, for every node.
+        emitOrderedEdges(root, vertices, edgeList, getRandomWeight);
 
-        if (treeType === 'regular') {
-            const treeNodes = ['rt'];
-            for (const v of remaining) {
-                let u = treeNodes[Math.floor(Math.random() * treeNodes.length)];
-                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
-                treeNodes.push(v);
+    } else if (vertexCount > 1) {
+        let branchingFactor;
+        switch (treeType) {
+            case 'binary':
+                branchingFactor = 2;
+                break;
+            case 'twoThree':
+                branchingFactor = 3;
+                break;
+            case 'twoThreeFour':
+                branchingFactor = 4;
+                break;
+            case 'b':
+            case 'bPlus':
+                branchingFactor = 5; // Simulating a B/B+ tree of order 5 (structural approximation only —
+                                     // a real B-tree node holds multiple keys, which a simple edge list
+                                     // can't represent; this just gives a matching branching shape).
+                break;
+            case 'regular':
+            default:
+                branchingFactor = Math.floor(Math.random() * 3) + 2;
+                break;
+        }
+
+        // Generate edges using strict BFS-order sequential math.
+        for (let i = 1; i < vertices.length; i++) {
+            let parentIndex = Math.floor((i - 1) / branchingFactor);
+            let u = vertices[parentIndex];
+            let v = vertices[i];
+            edgeList.push({ source: u, target: v, weight: getRandomWeight() });
+        }
+
+        // Special logic for B+ Trees: link leaf nodes sequentially
+        if (treeType === 'bPlus') {
+            const leaves = [];
+            for (let i = 0; i < vertexCount; i++) {
+                if (i * branchingFactor + 1 >= vertexCount) {
+                    leaves.push(vertices[i]);
+                }
+            }
+            for (let i = 0; i < leaves.length - 1; i++) {
+                edgeList.push({
+                    source: leaves[i],
+                    target: leaves[i + 1],
+                    weight: getRandomWeight(),
+                    isLeafLink: true
+                });
             }
         }
-        else if (treeType === 'binary') {
-            const treeNodes = ['rt'];
-            const childrenCount = { 'rt': 0 };
+    }
 
-            for (const v of remaining) {
-                // Only allow attachment to nodes that have less than 2 children
-                const availableNodes = treeNodes.filter(node => childrenCount[node] < 2);
-                let u = availableNodes[Math.floor(Math.random() * availableNodes.length)];
+    // Output to the DOM elements
+    if (typeof graphInputField !== 'undefined') {
+        graphInputField.value = typeof stringifyEdges === 'function' ? stringifyEdges(edgeList) : JSON.stringify(edgeList);
+    }
+    if (typeof graphInputVertices !== 'undefined') {
+        graphInputVertices.value = vertices.join(', ');
+    }
+    if (typeof addGraph === 'function') {
+        addGraph();
+    }
 
-                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
-                treeNodes.push(v);
+    return { vertices, edgeList };
+}
 
-                childrenCount[v] = 0;
-                childrenCount[u]++;
-            }
+// ---------------------------------------------------------------------------
+// Plain (unbalanced) BST insertion
+// ---------------------------------------------------------------------------
+function buildPlainBST(indices) {
+    let root = null;
+
+    const insert = (node, idx) => {
+        if (!node) return { idx, left: null, right: null };
+        if (idx < node.idx) node.left = insert(node.left, idx);
+        else node.right = insert(node.right, idx);
+        return node;
+    };
+
+    for (const idx of indices) {
+        root = insert(root, idx);
+    }
+    return root;
+}
+
+// ---------------------------------------------------------------------------
+// AVL insertion with standard rotations to keep the tree balanced
+// ---------------------------------------------------------------------------
+function buildAVL(indices) {
+    let root = null;
+
+    const height = (n) => (n ? n.height : 0);
+    const updateHeight = (n) => { n.height = 1 + Math.max(height(n.left), height(n.right)); };
+    const balanceFactor = (n) => (n ? height(n.left) - height(n.right) : 0);
+
+    const rotateRight = (y) => {
+        const x = y.left;
+        y.left = x.right;
+        x.right = y;
+        updateHeight(y);
+        updateHeight(x);
+        return x;
+    };
+
+    const rotateLeft = (x) => {
+        const y = x.right;
+        x.right = y.left;
+        y.left = x;
+        updateHeight(x);
+        updateHeight(y);
+        return y;
+    };
+
+    const insert = (node, idx) => {
+        if (!node) return { idx, left: null, right: null, height: 1 };
+        if (idx < node.idx) node.left = insert(node.left, idx);
+        else node.right = insert(node.right, idx);
+
+        updateHeight(node);
+        const bf = balanceFactor(node);
+
+        // Left Left
+        if (bf > 1 && idx < node.left.idx) return rotateRight(node);
+        // Right Right
+        if (bf < -1 && idx > node.right.idx) return rotateLeft(node);
+        // Left Right
+        if (bf > 1 && idx > node.left.idx) {
+            node.left = rotateLeft(node.left);
+            return rotateRight(node);
         }
-        else if (treeType === 'binarySearch') {
-            // Simulate standard BST insertion logic to get a valid BST structure
-            const rootNode = { id: 'rt', val: Math.random(), left: null, right: null };
+        // Right Left
+        if (bf < -1 && idx < node.right.idx) {
+            node.right = rotateRight(node.right);
+            return rotateLeft(node);
+        }
+        return node;
+    };
 
-            for (const v of remaining) {
-                let val = Math.random();
-                let curr = rootNode;
-                while (true) {
-                    if (val < curr.val) {
-                        if (!curr.left) {
-                            curr.left = { id: v, val: val, left: null, right: null };
-                            edgeList.push({ source: curr.id, target: v, weight: getRandomWeight() });
-                            break;
-                        }
-                        curr = curr.left;
-                    } else {
-                        if (!curr.right) {
-                            curr.right = { id: v, val: val, left: null, right: null };
-                            edgeList.push({ source: curr.id, target: v, weight: getRandomWeight() });
-                            break;
-                        }
-                        curr = curr.right;
+    for (const idx of indices) {
+        root = insert(root, idx);
+    }
+    return root;
+}
+
+// ---------------------------------------------------------------------------
+// Red-Black tree insertion with standard fixup (color tracked internally
+// only — the exported edge list doesn't carry color, but the resulting
+// shape is a genuine, structurally valid red-black tree).
+// ---------------------------------------------------------------------------
+function buildRedBlack(indices) {
+    const RED = 0, BLACK = 1;
+    const NIL = { color: BLACK, left: null, right: null, parent: null, idx: null };
+    let root = NIL;
+
+    const rotateLeft = (x) => {
+        const y = x.right;
+        x.right = y.left;
+        if (y.left !== NIL) y.left.parent = x;
+        y.parent = x.parent;
+        if (x.parent === null) root = y;
+        else if (x === x.parent.left) x.parent.left = y;
+        else x.parent.right = y;
+        y.left = x;
+        x.parent = y;
+    };
+
+    const rotateRight = (x) => {
+        const y = x.left;
+        x.left = y.right;
+        if (y.right !== NIL) y.right.parent = x;
+        y.parent = x.parent;
+        if (x.parent === null) root = y;
+        else if (x === x.parent.right) x.parent.right = y;
+        else x.parent.left = y;
+        y.right = x;
+        x.parent = y;
+    };
+
+    const insertFixup = (z) => {
+        while (z.parent && z.parent.color === RED) {
+            const gp = z.parent.parent;
+            if (z.parent === gp.left) {
+                const uncle = gp.right;
+                if (uncle.color === RED) {
+                    z.parent.color = BLACK;
+                    uncle.color = BLACK;
+                    gp.color = RED;
+                    z = gp;
+                } else {
+                    if (z === z.parent.right) {
+                        z = z.parent;
+                        rotateLeft(z);
                     }
+                    z.parent.color = BLACK;
+                    gp.color = RED;
+                    rotateRight(gp);
+                }
+            } else {
+                const uncle = gp.left;
+                if (uncle.color === RED) {
+                    z.parent.color = BLACK;
+                    uncle.color = BLACK;
+                    gp.color = RED;
+                    z = gp;
+                } else {
+                    if (z === z.parent.left) {
+                        z = z.parent;
+                        rotateRight(z);
+                    }
+                    z.parent.color = BLACK;
+                    gp.color = RED;
+                    rotateLeft(gp);
                 }
             }
         }
-        else if (treeType === 'avl' || treeType === 'redBlack') {
-            // AVL and RB are self-balancing (balanced binary tree, max 2 children)
-            const balancedNodes = ['rt', ...remaining];
+        root.color = BLACK;
+    };
 
-            for (let i = 1; i < balancedNodes.length; i++) {
-                let parentIndex = Math.floor((i - 1) / 2);
-                let u = balancedNodes[parentIndex];
-                let v = balancedNodes[i];
-
-                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
-            }
+    const insert = (idx) => {
+        const node = { idx, color: RED, left: NIL, right: NIL, parent: null };
+        let y = null;
+        let x = root;
+        while (x !== NIL) {
+            y = x;
+            x = idx < x.idx ? x.left : x.right;
         }
-        else if (treeType === 'twoThree') {
-            // 2-3 Tree simulation (balanced ternary tree, max 3 children)
-            const balancedNodes = ['rt', ...remaining];
+        node.parent = y;
+        if (y === null) root = node;
+        else if (idx < y.idx) y.left = node;
+        else y.right = node;
 
-            for (let i = 1; i < balancedNodes.length; i++) {
-                let parentIndex = Math.floor((i - 1) / 3);
-                let u = balancedNodes[parentIndex];
-                let v = balancedNodes[i];
+        insertFixup(node);
+    };
 
-                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
-            }
+    for (const idx of indices) insert(idx);
+
+    // Convert NIL sentinels to plain null so the traversal step below
+    // doesn't need to know about red-black internals.
+    const strip = (node) => {
+        if (!node || node === NIL) return null;
+        return {
+            idx: node.idx,
+            left: strip(node.left),
+            right: strip(node.right)
+        };
+    };
+
+    return strip(root);
+}
+
+// ---------------------------------------------------------------------------
+// Shared traversal: emits edges left-child-first, right-child-second for
+// every node, so (parent, left) always appears before (parent, right).
+// ---------------------------------------------------------------------------
+function emitOrderedEdges(root, vertices, edgeList, getRandomWeight) {
+    if (!root) return;
+
+    const walk = (node) => {
+        if (!node) return;
+        if (node.left) {
+            edgeList.push({
+                source: vertices[node.idx],
+                target: vertices[node.left.idx],
+                weight: getRandomWeight()
+            });
         }
-        else if (treeType === 'twoThreeFour') {
-            // 2-3-4 Tree simulation (balanced quaternary tree, max 4 children)
-            const balancedNodes = ['rt', ...remaining];
-
-            for (let i = 1; i < balancedNodes.length; i++) {
-                let parentIndex = Math.floor((i - 1) / 4);
-                let u = balancedNodes[parentIndex];
-                let v = balancedNodes[i];
-
-                edgeList.push({ source: u, target: v, weight: getRandomWeight() });
-            }
+        if (node.right) {
+            edgeList.push({
+                source: vertices[node.idx],
+                target: vertices[node.right.idx],
+                weight: getRandomWeight()
+            });
         }
-    }
+        walk(node.left);
+        walk(node.right);
+    };
 
-    graphInputField.value = stringifyEdges(edgeList);
-    graphInputVertices.value = vertices.join(', ');
-    addGraph();
+    walk(root);
 }
 
 generateRandomButton.addEventListener('click', () => {
@@ -941,59 +1172,81 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
     return root;
 }
 
-function isBSTJSON(node, min = -Infinity, max = Infinity) {
-    // 1. Base case
-    if (!node) return true;
-
-    const val = parseFloat(node.id);
-    if (isNaN(val)) return false; // Strictly require numeric IDs
-
-    // 2. Global Constraint Check (Min/Max bounds)
-    if (val <= min || val >= max) {
-        return false; 
-    }
-
-    // 3. Leaf Node Check
-    if (!node.children || node.children.length === 0) {
-        return true;
-    }
-
-    // 4. Binary Constraint Check
-    if (node.children.length > 2) {
-        return false; 
-    }
-
-    let leftChild = null;
-    let rightChild = null;
-
-    // 5. Determine Left and Right children visually using 'x'
-    if (node.children.length === 2) {
-        const c1 = node.children[0];
-        const c2 = node.children[1];
-
-        // The child drawn further to the left (smaller x) is the left child
-        if (c1.x < c2.x) {
-            leftChild = c1;
-            rightChild = c2;
-        } else if (c1.x > c2.x) {
-            leftChild = c2;
-            rightChild = c1;
-        } else {
-            return false; // Visually ambiguous (drawn directly on top of each other)
+function isBSTJSON(root) {
+    if (!root) return { valid: true, reason: "Empty tree is trivially a valid BST." };
+ 
+    // Decide which child is "left" and which is "right" for a given node.
+    function resolveChildren(node) {
+        const kids = node.children || [];
+ 
+        if (kids.length === 0) {
+            return { left: null, right: null };
         }
-    } else if (node.children.length === 1) {
-        const child = node.children[0];
-        
-        // With only one child, compare its x to the parent's x
-        if (child.x < node.x) {
-            leftChild = child;
-        } else if (child.x > node.x) {
-            rightChild = child;
-        } else {
-            return false; // Visually ambiguous (drawn directly under the parent)
+ 
+        if (kids.length === 1) {
+            // Ambiguous by position — decide by value instead.
+            const child = kids[0];
+            const parentValue = Number(node.id);
+            const childValue = Number(child.id);
+ 
+            if (childValue < parentValue) {
+                return { left: child, right: null };
+            } else if (childValue > parentValue) {
+                return { left: null, right: child };
+            } else {
+                // Equal values aren't valid in a strict BST regardless of side.
+                return { left: null, right: null, duplicate: child };
+            }
         }
+ 
+        if (kids.length === 2) {
+            const [a, b] = kids;
+            if (a.x === b.x) {
+                // Can't disambiguate by position if x values tie.
+                return { ambiguous: true };
+            }
+            return a.x < b.x ? { left: a, right: b } : { left: b, right: a };
+        }
+ 
+        // More than 2 children can't be a binary tree at all.
+        return { tooManyChildren: true };
     }
-
-    // 6. Recurse down, updating the bounds based on which branch we are traveling
-    return isBSTJSON(leftChild, min, val) && isBSTJSON(rightChild, val, max);
+ 
+    function validate(node, min, max, path) {
+        if (!node) return { valid: true };
+ 
+        const value = Number(node.id);
+        if (Number.isNaN(value)) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has a non-numeric id.` };
+        }
+ 
+        if (value <= min || value >= max) {
+            return {
+                valid: false,
+                reason: `Node "${node.id}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
+            };
+        }
+ 
+        const resolved = resolveChildren(node);
+ 
+        if (resolved.tooManyChildren) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has more than 2 children.` };
+        }
+        if (resolved.ambiguous) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has two children with identical x coordinates; left/right can't be determined.` };
+        }
+        if (resolved.duplicate) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has a child "${resolved.duplicate.id}" with an equal value.` };
+        }
+ 
+        const leftResult = validate(resolved.left, min, value, `${path} -> left`);
+        if (!leftResult.valid) return leftResult;
+ 
+        const rightResult = validate(resolved.right, value, max, `${path} -> right`);
+        if (!rightResult.valid) return rightResult;
+ 
+        return { valid: true };
+    }
+ 
+    return validate(root, -Infinity, Infinity, `root(${root.id})`);
 }
