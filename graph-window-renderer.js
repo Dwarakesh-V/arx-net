@@ -1,5 +1,6 @@
 /* Function to align edges */
 function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId) {
+    const safe = x => String(x).replace(/[^\w-]/g, "_");
     link.attr('d', d => {
         // Arc bidirectional edges
         if (d.selfLoop) {
@@ -32,7 +33,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
             const length = Math.sqrt(dx * dx + dy * dy); // Arc radius
 
             // Create a unique marker ID for each arrow
-            const uniqueArrowId = `${arrowId}-${d.source.id}-${d.target.id}`;
+            const uniqueArrowId = `${arrowId}-${safe(d.source.id)}-${safe(d.target.id)}`;
 
             if (directed) {
                 // Append a unique marker for this edge if it doesn't already exist
@@ -125,7 +126,8 @@ function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
 
     // A simple graph is a tree if E = V - 1.
     // (Assuming the graph is fully connected based on the generator functions).
-    const isTreeInput = isTree(edges)
+    console.log("treecheck",edges);
+    const isTreeInput = isTree(edges);
 
     if (isTreeInput) {
         edges = parseEdges(edges)
@@ -593,6 +595,14 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         simulation.alphaDecay(1);
         simulation.alphaTarget(0);
     });
+
+    addMenuItem(menuElement,menu,'Check BST','Check for BST', () => {
+        if (isTree(edgesInput,directed)) {
+            const treej = convertToTreeJSON(edgesInput,svg,directed);
+            console.log(treej);
+            console.log(isBSTJSON(treej));
+        }
+    })
 
     if (!isMobile) {
         // Maximize

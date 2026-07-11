@@ -168,8 +168,6 @@ function handleTypeChange(type) {
         generateRandomButton.innerText = "Generate random tree";
         generateSimpleButton.innerText = "Generate simple random tree";
         generateComplexButton.innerText = "Generate complex random tree";
-        customizeButton.innerText = "Customize tree parameters";
-        generateGraph.innerText = "Generate tree";
     } else {
         treeTypeSelect.style.display = 'none';
         graphOptions.style.display = 'flex';
@@ -181,8 +179,6 @@ function handleTypeChange(type) {
         generateRandomButton.innerText = "Generate random graph";
         generateSimpleButton.innerText = "Generate simple random graph";
         generateComplexButton.innerText = "Generate complex random graph";
-        customizeButton.innerText = "Customize graph parameters";
-        generateGraph.innerText = "Generate graph";
     }
 }
 

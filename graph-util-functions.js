@@ -728,6 +728,76 @@ generateComplexButton.addEventListener('click', () => {
     generateRandomButton.click();
 });
 
+function enableGraphNameEditing(nameInput) {
+    nameInput.removeAttribute('readonly');
+    nameInput.classList.add('editable');
+    nameInput.focus();
+
+    availableGraphs.delete(nameInput.value);
+}
+
+function handleGraphNameInput(event, nameInput) {
+    if (event.key !== 'Enter') return;
+
+    nameInput.setAttribute('readonly', true);
+    nameInput.classList.remove('editable');
+
+    const requestedName = nameInput.value;
+
+    if (availableGraphs.has(requestedName)) {
+        const existingInput = document.getElementById(requestedName);
+
+        // Only rename another graph, not the one currently being edited
+        if (existingInput && existingInput !== nameInput) {
+            availableGraphs.delete(requestedName);
+
+            let counter = 1;
+            let renamed = `${requestedName}.${String(counter).padStart(3, '0')}`;
+
+            while (availableGraphs.has(renamed)) {
+                counter++;
+                renamed = `${requestedName}.${String(counter).padStart(3, '0')}`;
+            }
+
+            existingInput.value = renamed;
+            existingInput.id = renamed;
+            existingInput.title = renamed;
+
+            availableGraphs.add(renamed);
+        }
+    }
+
+    nameInput.value = requestedName;
+    nameInput.id = requestedName;
+    nameInput.title = requestedName;
+    availableGraphs.add(requestedName);
+}
+
+// Supporting function that will be used to rotate arrows based on edge direction
+function smoothFunction(x, k = 0.02, c = 275) {
+    const exponent = -k * (x - c);
+    const denominator = 1 + Math.exp(exponent);
+    const result = 10 - (2.4 / denominator);
+    return result;
+}
+
+function deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv) {
+    dupDelMenuObj.style.display = 'none';
+    // Remove the container from the DOM
+    container.remove();
+    showHideDeleteDiv.remove();
+
+    // Remove from global list of graph names
+    availableGraphs.delete(displayName);
+    graphMap.delete(displayName);
+
+    // Remove from the methods list UI
+    const methodsEntry = document.getElementById(displayName);
+    if (methodsEntry) methodsEntry.remove();
+}
+
+/* Tree functionality - This is determined by the location of the nodes */
+/* Verify for tree */
 function isTree(edgesInput, directed = true) {
     const edges = parseEdges(edgesInput, directed);
     if (!edges) return false;
@@ -811,179 +881,119 @@ function isTree(edgesInput, directed = true) {
     }
 }
 
-function isBinaryTree(edgesInput, directed = true) {
-    const edges = parseEdges(edgesInput, directed); // Assumes parseEdges is defined
-    if (!edges) return false;
+/* Convert to JSON for tree representation */
+function convertToTreeJSON(edgesInput, svg, directed = true) {
+    const nodeMap = new Map();
 
-    const vertices = new Set();
-    edges.forEach(edge => {
-        if (edge.source) vertices.add(edge.source);
-        if (edge.target) vertices.add(edge.target);
+    // 1. Extract physical node data from the SVG
+    svg.selectAll("circle").each(function (d) {
+        const element = d3.select(this);
+        
+        // Assuming your circles have an 'id' attribute to match your edges.
+        // If the data is bound via D3, you can use d.id, d.x, d.y instead.
+        const id = element.attr("id") || (d && d.id);
+        const cx = parseFloat(element.attr("cx")) || (d && d.x) || 0;
+        const cy = parseFloat(element.attr("cy")) || (d && d.y) || 0;
+
+        if (id !== undefined && id !== null) {
+            nodeMap.set(String(id), { 
+                id: id, 
+                x: cx, 
+                y: cy, 
+                children: [] 
+            });
+        }
     });
 
-    if (vertices.size <= 1) return edges.length === 0;
+    // 2. Parse the logical edges (assuming parseEdges is defined)
+    const edges = parseEdges(edgesInput, directed);
+    if (!edges || edges.length === 0) return null;
 
-    // A tree must have exactly V - 1 edges
-    if (edges.length !== vertices.size - 1) {
-        return false;
+    const inDegrees = new Map();
+    for (const key of nodeMap.keys()) {
+        inDegrees.set(key, 0);
     }
 
-    const adjList = new Map();
-    vertices.forEach(v => adjList.set(v, []));
-
-    if (directed) {
-        const inDegrees = new Map();
-        const outDegrees = new Map(); // Added to track children count
+    // 3. Build the tree structure by connecting parents to children
+    edges.forEach(edge => {
+        const sourceId = String(edge.source);
+        const targetId = String(edge.target);
         
-        vertices.forEach(v => {
-            inDegrees.set(v, 0);
-            outDegrees.set(v, 0);
-        });
+        const parentNode = nodeMap.get(sourceId);
+        const childNode = nodeMap.get(targetId);
 
-        edges.forEach(edge => {
-            adjList.get(edge.source).push(edge.target);
-            inDegrees.set(edge.target, inDegrees.get(edge.target) + 1);
-            outDegrees.set(edge.source, outDegrees.get(edge.source) + 1);
-        });
-
-        // 1. Binary Tree Check: No node can have more than 2 children
-        for (const outDeg of outDegrees.values()) {
-            if (outDeg > 2) return false; 
+        if (parentNode && childNode) {
+            parentNode.children.push(childNode);
+            inDegrees.set(targetId, (inDegrees.get(targetId) || 0) + 1);
         }
+    });
 
-        let root = null;
-        let rootCount = 0;
-
-        for (const [v, deg] of inDegrees.entries()) {
-            if (deg === 0) {
-                root = v;
-                rootCount++;
-            } else if (deg > 1) {
-                return false; // A node in a tree can only have one parent
-            }
-        }
-
-        if (rootCount !== 1) return false;
-
-        const visited = new Set([root]);
-        const queue = [root];
-
-        while (queue.length > 0) {
-            const current = queue.shift();
-            for (const neighbor of adjList.get(current)) {
-                if (!visited.has(neighbor)) {
-                    visited.add(neighbor);
-                    queue.push(neighbor);
-                }
-            }
-        }
-
-        return visited.size === vertices.size;
-
-    } else {
-        const degrees = new Map();
-        vertices.forEach(v => degrees.set(v, 0));
-
-        // Undirected graph population
-        edges.forEach(edge => {
-            adjList.get(edge.source).push(edge.target);
-            adjList.get(edge.target).push(edge.source);
-            
-            // Track total degree for undirected binary tree check
-            degrees.set(edge.source, degrees.get(edge.source) + 1);
-            degrees.set(edge.target, degrees.get(edge.target) + 1);
-        });
-
-        // 2. Undirected Binary Tree Check: Max degree is 3
-        // An internal node has 1 parent + up to 2 children = 3 edges max.
-        for (const deg of degrees.values()) {
-            if (deg > 3) return false; 
-        }
-
-        const startNode = vertices.values().next().value;
-        const visited = new Set([startNode]);
-        const queue = [startNode];
-
-        while (queue.length > 0) {
-            const current = queue.shift();
-            for (const neighbor of adjList.get(current)) {
-                if (!visited.has(neighbor)) {
-                    visited.add(neighbor);
-                    queue.push(neighbor);
-                }
-            }
-        }
-
-        return visited.size === vertices.size;
-    }
-}
-
-
-
-function enableGraphNameEditing(nameInput) {
-    nameInput.removeAttribute('readonly');
-    nameInput.classList.add('editable');
-    nameInput.focus();
-
-    availableGraphs.delete(nameInput.value);
-}
-
-function handleGraphNameInput(event, nameInput) {
-    if (event.key !== 'Enter') return;
-
-    nameInput.setAttribute('readonly', true);
-    nameInput.classList.remove('editable');
-
-    const requestedName = nameInput.value;
-
-    if (availableGraphs.has(requestedName)) {
-        const existingInput = document.getElementById(requestedName);
-
-        // Only rename another graph, not the one currently being edited
-        if (existingInput && existingInput !== nameInput) {
-            availableGraphs.delete(requestedName);
-
-            let counter = 1;
-            let renamed = `${requestedName}.${String(counter).padStart(3, '0')}`;
-
-            while (availableGraphs.has(renamed)) {
-                counter++;
-                renamed = `${requestedName}.${String(counter).padStart(3, '0')}`;
-            }
-
-            existingInput.value = renamed;
-            existingInput.id = renamed;
-            existingInput.title = renamed;
-
-            availableGraphs.add(renamed);
+    // 4. Find the Root (The node with no incoming edges)
+    let root = null;
+    for (const [id, degree] of inDegrees.entries()) {
+        if (degree === 0) {
+            root = nodeMap.get(id);
+            break; // Found the root
         }
     }
 
-    nameInput.value = requestedName;
-    nameInput.id = requestedName;
-    nameInput.title = requestedName;
-    availableGraphs.add(requestedName);
+    // Return the deeply nested JSON object
+    return root;
 }
 
-// Supporting function that will be used to rotate arrows based on edge direction
-function smoothFunction(x, k = 0.02, c = 275) {
-    const exponent = -k * (x - c);
-    const denominator = 1 + Math.exp(exponent);
-    const result = 10 - (2.4 / denominator);
-    return result;
-}
+function isBSTJSON(node, min = -Infinity, max = Infinity) {
+    // 1. Base case
+    if (!node) return true;
 
-function deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv) {
-    dupDelMenuObj.style.display = 'none';
-    // Remove the container from the DOM
-    container.remove();
-    showHideDeleteDiv.remove();
+    const val = parseFloat(node.id);
+    if (isNaN(val)) return false; // Strictly require numeric IDs
 
-    // Remove from global list of graph names
-    availableGraphs.delete(displayName);
-    graphMap.delete(displayName);
+    // 2. Global Constraint Check (Min/Max bounds)
+    if (val <= min || val >= max) {
+        return false; 
+    }
 
-    // Remove from the methods list UI
-    const methodsEntry = document.getElementById(displayName);
-    if (methodsEntry) methodsEntry.remove();
+    // 3. Leaf Node Check
+    if (!node.children || node.children.length === 0) {
+        return true;
+    }
+
+    // 4. Binary Constraint Check
+    if (node.children.length > 2) {
+        return false; 
+    }
+
+    let leftChild = null;
+    let rightChild = null;
+
+    // 5. Determine Left and Right children visually using 'x'
+    if (node.children.length === 2) {
+        const c1 = node.children[0];
+        const c2 = node.children[1];
+
+        // The child drawn further to the left (smaller x) is the left child
+        if (c1.x < c2.x) {
+            leftChild = c1;
+            rightChild = c2;
+        } else if (c1.x > c2.x) {
+            leftChild = c2;
+            rightChild = c1;
+        } else {
+            return false; // Visually ambiguous (drawn directly on top of each other)
+        }
+    } else if (node.children.length === 1) {
+        const child = node.children[0];
+        
+        // With only one child, compare its x to the parent's x
+        if (child.x < node.x) {
+            leftChild = child;
+        } else if (child.x > node.x) {
+            rightChild = child;
+        } else {
+            return false; // Visually ambiguous (drawn directly under the parent)
+        }
+    }
+
+    // 6. Recurse down, updating the bounds based on which branch we are traveling
+    return isBSTJSON(leftChild, min, val) && isBSTJSON(rightChild, val, max);
 }
