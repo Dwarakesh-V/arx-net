@@ -85,29 +85,51 @@ function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false,
     const width = rect.width;
     const height = rect.height;
 
-    // Clone so we don't mutate the live element
     const clone = svgElement.cloneNode(true);
-
-    // ✅ Force the SVG's own dimensions to match its rendered size.
-    // Without this, the browser picks intrinsic size from attributes/viewBox
-    // when loading as <img>, causing a stretch mismatch with the canvas.
     clone.setAttribute('width', width);
     clone.setAttribute('height', height);
-
-    // Preserve the viewBox if present, so internal layout isn't distorted
     if (!clone.getAttribute('viewBox')) {
         clone.setAttribute('viewBox', `0 0 ${width} ${height}`);
     }
 
-    const computedColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim() || '#000000';
+    // Resolve every custom property NOW while we still have the live,
+    // styled document to read computed values from. Inside the detached
+    // clone these vars would fail to resolve entirely.
+    const rootStyles = getComputedStyle(document.documentElement);
+    const nodeLabelColor = rootStyles.getPropertyValue('--node-label-color').trim() || '#000';
+    const edgeWeightColor = rootStyles.getPropertyValue('--edge-weight-color').trim() || '#fff';
+    const edgeColor = rootStyles.getPropertyValue('--edge-color').trim() || '#999';
+    const nodeColor = rootStyles.getPropertyValue('--node-color').trim() || '#42baff';
+
     const style = document.createElement('style');
     style.textContent = `
         * {
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            text-decoration: none;
-            outline: none;
-            color: ${computedColor};
+            font-family: "Google Sans Flex", sans-serif;
+        }
+        .node {
+            r: 30;
+            stroke-width: 5;
+            fill: ${nodeColor};
+        }
+        .node-label {
+            font-size: 24px;
+            font-weight: bold;
+            fill: ${nodeLabelColor};
+            pointer-events: none;
+        }
+        .edge-label {
+            font-size: 24px;
+            font-family: 'Comic Relief', sans-serif;
+            font-weight: bold;
+            stroke: #141414;
+            stroke-width: 4;
+            paint-order: stroke;
+            pointer-events: none;
+            fill: ${edgeWeightColor};
+        }
+        .directed-arrow {
+            fill: ${edgeColor};
         }
     `;
     clone.prepend(style);
@@ -118,8 +140,6 @@ function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false,
     const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
     const img = new Image();
-
-    //  Give the img element explicit dimensions too, so drawImage has an unambiguous source size to map from
     img.width = width;
     img.height = height;
 
@@ -127,15 +147,11 @@ function saveSvgAsPng(svgElement, filename = 'image.png', isTransparent = false,
         const canvas = document.createElement('canvas');
         canvas.width = width * scale;
         canvas.height = height * scale;
-
         const ctx = canvas.getContext('2d');
-        ctx.filter = 'grayscale(100%)';
         ctx.fillStyle = isTransparent ? 'transparent' : '#fff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         ctx.save();
         ctx.scale(scale, scale);
-        // Explicitly pass source dimensions
         ctx.drawImage(img, 0, 0, width, height);
         ctx.restore();
 

@@ -250,7 +250,17 @@ function parseEdges(edgesInput, directed = true) {
     }
 
     if (trimmed.startsWith('[')) {
-        return parsePythonEdgeList(trimmed, directed);
+        // A leading '[' is ambiguous: it could be a python-style edge list
+        // (a list of tuples, e.g. "[('a','b')]") or a *single* standalone
+        // multi-value vertex written in bracket notation (e.g. "[10,20]"
+        // for a lone 2-3/B-tree node with no edges yet). Only route to the
+        // edge-list parser when the contents actually look like tuples.
+        const inner = stripOuter(trimmed, '[', ']');
+        const looksLikeTupleList = inner === '' || tokeniseTopLevel(inner).some(t => t.startsWith('('));
+        if (looksLikeTupleList) {
+            return parsePythonEdgeList(trimmed, directed);
+        }
+        return parseCompactEdges(trimmed, directed);
     }
 
     return parseCompactEdges(trimmed, directed);
@@ -280,12 +290,57 @@ function stripOuter(s, open, close) {
     return s;
 }
 
+/**
+ * Detects whether a token represents a *list* of values — i.e. a
+ * multi-key vertex such as the ones stored in a single node of a
+ * 2-3 tree, 2-3-4 tree, B-tree, or B+-tree. Two notations are supported:
+ *   - bracket notation:  "[10,20,30]"
+ *   - pipe notation:      "10|20|30"   (handy shorthand, mirrors the
+ *                                       way B-tree nodes are often
+ *                                       drawn as boxes of "key | key | key")
+ * Returns an array of parsed values, or null if the token is not a list
+ * (in which case the caller falls back to treating it as a single value).
+ */
+function parseValueList(token) {
+    if (token.startsWith('[') && token.endsWith(']')) {
+        const inner = stripOuter(token, '[', ']');
+        if (!inner) return [];
+        return tokeniseTopLevel(inner).map(parseValue);
+    }
+    if (token.includes('|')) {
+        return token.split('|').map(v => parseValue(v));
+    }
+    return null;
+}
+
+// Parses a single scalar element that lives *inside* a multi-value vertex
+// (e.g. each key of a B-tree node). Numeric-looking elements are converted
+// to real numbers since tree keys are almost always compared/sorted.
+function parseValue(token) {
+    token = token.trim();
+    if ((token.startsWith('"') && token.endsWith('"')) ||
+        (token.startsWith("'") && token.endsWith("'"))) {
+        return token.slice(1, -1);
+    }
+    const list = parseValueList(token);
+    if (list !== null) return list;
+    if (token !== '' && !isNaN(token)) return parseFloat(token);
+    return token;
+}
+
+// Parses a vertex token. A vertex can be:
+//   - a quoted string                       -> "a"
+//   - a multi-value node (list of keys)     -> [10,20]  or  10|20
+//   - a bare identifier / integer           -> a, 3, root   (kept as
+//     a raw string for backward compatibility with existing graphs)
 function parseNode(token) {
     token = token.trim();
     if ((token.startsWith('"') && token.endsWith('"')) ||
         (token.startsWith("'") && token.endsWith("'"))) {
         return token.slice(1, -1);
     }
+    const list = parseValueList(token);
+    if (list !== null) return list;
     return token; // bare identifier or integer
 }
 
@@ -307,7 +362,7 @@ function parseNeighbourEntry(entry) {
             return { target: parseNode(parts[0]), weight: 1 };
         }
     }
-    // bare node token
+    // bare node token (may itself be a multi-value node, e.g. "[7,9]")
     return { target: parseNode(entry), weight: 1 };
 }
 
@@ -333,7 +388,13 @@ function parsePythonAdjacencyDict(input, directed) {
         const source = parseNode(pair.slice(0, colonIdx).trim());
         const valueStr = pair.slice(colonIdx + 1).trim();
 
-        // Value is a list [...] or a single neighbour
+        // Value is a list of neighbours [...] or a single neighbour.
+        // Note: a *neighbour* list "[[10],[20,30]]" is distinguished from a
+        // multi-value *node* "[10,20]" by parseNeighbourEntry/parseNode
+        // being applied one level down — each element of the outer list is
+        // itself parsed as a full vertex token, so nested brackets like
+        // "[20,30]" correctly become one multi-key node rather than being
+        // split into separate neighbours.
         if (valueStr.startsWith('[')) {
             const listInner = stripOuter(valueStr, '[', ']');
             if (!listInner) continue;
@@ -377,28 +438,13 @@ function parsePythonEdgeList(input, directed) {
 }
 
 function parseCompactEdges(edgesInput, directed) {
-    function splitTopLevel(input) {
-        const result = [];
-        let depth = 0;
-        let current = '';
-        for (const char of input) {
-            if (char === '(') depth++;
-            if (char === ')') depth--;
-            if (char === ',' && depth === 0) {
-                result.push(current);
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        result.push(current);
-        return result.filter(s => s.trim() !== '');
-    }
-
+    // 2-character shorthand, e.g. "ab5" -> edge a->b weight 5. Deliberately
+    // restricted to single-char node names; use the paren or Python-style
+    // formats below for anything richer (multi-char names, weights, or
+    // multi-value tree nodes).
     const simpleFormat = /^([a-zA-Z0-9]{2})(-?\d*\.?\d*)$/;
-    const parenFormat = /^\(\s*([a-zA-Z0-9]+)\s*,\s*([a-zA-Z0-9]+)\s*(?:,\s*(-?\d*\.?\d*)\s*)?\)$/;
 
-    const edgesRaw = splitTopLevel(edgesInput).map(edge => {
+    const edgesRaw = tokeniseTopLevel(edgesInput).map(edge => {
         edge = edge.trim();
         let source, target, weight;
 
@@ -407,13 +453,20 @@ function parseCompactEdges(edgesInput, directed) {
             source = match[1][0];
             target = match[1][1];
             weight = parseFloat(match[2]);
-        } else if (parenFormat.test(edge)) {
-            const match = edge.match(parenFormat);
-            source = match[1];
-            target = match[2];
-            weight = parseFloat(match[3]);
-        } else if (edge.length === 1) {
-            source = edge;
+        } else if (edge.startsWith('(')) {
+            // Generic tuple: (source, target[, weight]). source/target may
+            // be quoted strings, bare identifiers, or multi-value nodes
+            // like [10,20] / 10|20 representing a 2-3/2-3-4/B-tree node.
+            const tupleInner = stripOuter(edge, '(', ')');
+            const parts = tokeniseTopLevel(tupleInner);
+            if (parts.length < 2) { console.error('Edge tuple needs ≥2 elements:', edge); return null; }
+            source = parseNode(parts[0]);
+            target = parseNode(parts[1]);
+            weight = parts.length >= 3 ? parseWeight(parts[2]) : 1;
+        } else if (edge.length === 1 || edge.startsWith('[') || edge.includes('|')) {
+            // Standalone vertex declaration (no edge yet) — e.g. a lone
+            // root node "[10,20]" for a tree that has no children.
+            source = parseNode(edge);
             target = null;
             weight = null;
         } else {
@@ -428,16 +481,26 @@ function parseCompactEdges(edgesInput, directed) {
     return deduplicateEdges(edgesRaw, directed);
 }
 
+// Builds a stable string key for a vertex so that arrays (multi-value
+// nodes), quoted strings, and bare identifiers can all be compared and
+// deduplicated consistently.
+function nodeKey(node) {
+    return Array.isArray(node) ? JSON.stringify(node) : String(node);
+}
+
 function deduplicateEdges(edges, directed) {
     const edgeMap = new Map();
     for (const edge of edges) {
         if (edge.source && edge.target) {
-            const key = `${edge.source}_${edge.target}`;
+            const key = `${nodeKey(edge.source)}_${nodeKey(edge.target)}`;
             edgeMap.set(key, edge);
             if (!directed) {
-                const reverseKey = `${edge.target}_${edge.source}`;
+                const reverseKey = `${nodeKey(edge.target)}_${nodeKey(edge.source)}`;
                 if (edgeMap.has(reverseKey)) edgeMap.delete(reverseKey);
             }
+        } else if (edge.source && edge.target === null) {
+            // standalone vertex declaration — one entry per distinct node
+            edgeMap.set(`__node__${nodeKey(edge.source)}`, edge);
         }
     }
     return Array.from(edgeMap.values());
@@ -1116,12 +1179,9 @@ function isTree(edgesInput, directed = true) {
 function convertToTreeJSON(edgesInput, svg, directed = true) {
     const nodeMap = new Map();
 
-    // 1. Extract physical node data from the SVG
     svg.selectAll("circle").each(function (d) {
         const element = d3.select(this);
         
-        // Assuming your circles have an 'id' attribute to match your edges.
-        // If the data is bound via D3, you can use d.id, d.x, d.y instead.
         const id = element.attr("id") || (d && d.id);
         const cx = parseFloat(element.attr("cx")) || (d && d.x) || 0;
         const cy = parseFloat(element.attr("cy")) || (d && d.y) || 0;
@@ -1136,7 +1196,6 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
         }
     });
 
-    // 2. Parse the logical edges (assuming parseEdges is defined)
     const edges = parseEdges(edgesInput, directed);
     if (!edges || edges.length === 0) return null;
 
@@ -1145,7 +1204,6 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
         inDegrees.set(key, 0);
     }
 
-    // 3. Build the tree structure by connecting parents to children
     edges.forEach(edge => {
         const sourceId = String(edge.source);
         const targetId = String(edge.target);
@@ -1159,7 +1217,6 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
         }
     });
 
-    // 4. Find the Root (The node with no incoming edges)
     let root = null;
     for (const [id, degree] of inDegrees.entries()) {
         if (degree === 0) {
@@ -1167,8 +1224,6 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
             break; // Found the root
         }
     }
-
-    // Return the deeply nested JSON object
     return root;
 }
 
@@ -1249,4 +1304,107 @@ function isBSTJSON(root) {
     }
  
     return validate(root, -Infinity, Infinity, `root(${root.id})`);
+}
+
+function isAVLJSON(root) {
+    if (!root) return { valid: true, reason: "Empty tree is trivially a valid AVL tree." };
+
+    // Decide which child is "left" and which is "right" for a given node.
+    // (This remains unchanged from the BST implementation)
+    function resolveChildren(node) {
+        const kids = node.children || [];
+
+        if (kids.length === 0) {
+            return { left: null, right: null };
+        }
+
+        if (kids.length === 1) {
+            // Ambiguous by position — decide by value instead.
+            const child = kids[0];
+            const parentValue = Number(node.id);
+            const childValue = Number(child.id);
+
+            if (childValue < parentValue) {
+                return { left: child, right: null };
+            } else if (childValue > parentValue) {
+                return { left: null, right: child };
+            } else {
+                // Equal values aren't valid in a strict BST regardless of side.
+                return { left: null, right: null, duplicate: child };
+            }
+        }
+
+        if (kids.length === 2) {
+            const [a, b] = kids;
+            if (a.x === b.x) {
+                // Can't disambiguate by position if x values tie.
+                return { ambiguous: true };
+            }
+            return a.x < b.x ? { left: a, right: b } : { left: b, right: a };
+        }
+
+        // More than 2 children can't be a binary tree at all.
+        return { tooManyChildren: true };
+    }
+
+    // Recursively validates BST properties and calculates height for AVL balance.
+    function validateAndGetHeight(node, min, max, path) {
+        if (!node) return { valid: true, height: 0 };
+
+        const value = Number(node.id);
+        if (Number.isNaN(value)) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has a non-numeric id.` };
+        }
+
+        if (value <= min || value >= max) {
+            return {
+                valid: false,
+                reason: `Node "${node.id}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
+            };
+        }
+
+        const resolved = resolveChildren(node);
+
+        if (resolved.tooManyChildren) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has more than 2 children.` };
+        }
+        if (resolved.ambiguous) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has two children with identical x coordinates; left/right can't be determined.` };
+        }
+        if (resolved.duplicate) {
+            return { valid: false, reason: `Node "${node.id}" at ${path} has a child "${resolved.duplicate.id}" with an equal value.` };
+        }
+
+        // 1. Validate left subtree and get its height
+        const leftResult = validateAndGetHeight(resolved.left, min, value, `${path} -> left`);
+        if (!leftResult.valid) return leftResult;
+
+        // 2. Validate right subtree and get its height
+        const rightResult = validateAndGetHeight(resolved.right, value, max, `${path} -> right`);
+        if (!rightResult.valid) return rightResult;
+
+        // 3. Check AVL Balance Property
+        const heightDifference = Math.abs(leftResult.height - rightResult.height);
+        if (heightDifference > 1) {
+            return {
+                valid: false, 
+                reason: `Node "${node.id}" at ${path} violates AVL balance property. Left subtree height is ${leftResult.height}, right subtree height is ${rightResult.height}.`
+            };
+        }
+
+        // 4. Return valid status and the current node's height
+        return { 
+            valid: true, 
+            height: 1 + Math.max(leftResult.height, rightResult.height) 
+        };
+    }
+
+    // Execute validation and format the final output to hide internal height tracking
+    const finalResult = validateAndGetHeight(root, -Infinity, Infinity, `root(${root.id})`);
+    
+    if (!finalResult.valid) {
+        return { valid: false, reason: finalResult.reason };
+    }
+
+    return { valid: true, reason: "Tree is a valid AVL tree." };
 }

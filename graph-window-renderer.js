@@ -120,15 +120,14 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
 /* End of align edges */
 
 // Function to even spaces nodes in a circle
-function autoLayoutNodes(nodes, simulation, width, height, edges = []) {
+function autoLayoutNodes(nodes, simulation, width, height, edges = [], treeFor) {
     simulation.alphaDecay(1);
     simulation.alphaTarget(0);
 
     // A simple graph is a tree if E = V - 1.
     // (Assuming the graph is fully connected based on the generator functions).
-    const isTreeInput = isTree(edges);
 
-    if (isTreeInput) {
+    if (treeFor) {
         edges = parseEdges(edges)
 
         // Helper to get node identifiers safely
@@ -227,13 +226,14 @@ function dragged(event, d, thisNode) {
     d.fy = event.y;
 }
 
-function dragEnded(event, d, simulation, thisNode) {
+function dragEnded(event, d, simulation, thisNode, treej) {
     d3.select(thisNode).attr("fill", d.previousFill);
     document.body.style.cursor = 'default';
     simulation.alphaDecay(1);
     if (!event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
+    console.log(treej);
 }
 /* End of Drag Functions */
 
@@ -359,22 +359,30 @@ function removeSelectElement(methodsSelect, name) {
     return false;
 }
 
-function addGraph(edgesInput = null, nodes = null, inputName = null, directed = null, weighted = null) { // Core function will all functionalities
+function addGraph(edgesInput = null, nodes = null, inputName = null, directed = null, weighted = null, isTreeType = null) { // Core function will all functionalities
     // Graph value details
     let edgesInputValue = document.getElementById('edges').value;
     edgesInput = edgesInput === null ? edgesInputValue.toUpperCase() : edgesInput; // Use the provided edgesInput or the value from the input field
     directed = directed ?? isDirected.checked;
     weighted = weighted ?? isWeighted.checked;
 
-    let isTreeType = false;
-    
-    if (isTypeTree.checked) {
-        isTreeType = true;
+    if (isTreeType === true) {
+        directed = false;
         if (!isTree(edgesInput)) {
             alert("Invalid edges for a tree");
             return;
         }
+    } else if (isTreeType === null) {
+        if (isTypeTree.checked) {
+            isTreeType = true;
+            directed = false;
+            if (!isTree(edgesInput)) {
+                alert("Invalid edges for a tree");
+                return;
+            }
+        }
     }
+
     // Common arrow head ID for this graph
     const arrowId = `arrowHead${graphCount}`; // Creating separate arrow heads for each graph, while also grouping the similar ones
     graphCount++;
@@ -590,7 +598,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     const menu = new FloatingMenu(menuElement);
 
     addMenuItem(menuElement, menu, 'Rearrange nodes', 'Rearrange nodes as they first appeared in the generation', () => {
-        autoLayoutNodes(nodes, simulation, width, height, stringifyEdges(edgesRaw));
+        autoLayoutNodes(nodes, simulation, width, height, stringifyEdges(edgesRaw), isTreeType);
         // Apply positions to nodes
         node.attr('cx', d => d.x).attr('cy', d => d.y);
 
@@ -604,11 +612,18 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         simulation.alphaTarget(0);
     });
 
-    addMenuItem(menuElement,menu,'Check BST','Check for BST', () => {
-        if (isTree(edgesInput,directed)) {
-            const treej = convertToTreeJSON(stringifyEdges(edgesRaw),svg,directed);
-
+    addMenuItem(menuElement, menu, 'Check BST', 'Check for BST', () => {
+        if (isTree(edgesInput, directed)) {
+            const treej = convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed);
             console.log(isBSTJSON(treej).valid);
+        }
+    })
+
+    addMenuItem(menuElement, menu, 'Check AVL', 'Check for AVL', () => {
+        if (isTree(edgesInput, directed)) {
+            console.log(edgesRaw)
+            const treej = convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed);
+            console.log(isAVLJSON(treej).valid);
         }
     })
 
@@ -650,7 +665,72 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
                 const centerX = svgP.x;
                 const centerY = svgP.y;
-                nodes.push({ id: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 });
+
+                const newNodeObj = { id: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
+                nodes.push(newNodeObj);
+
+                if (isTreeType && nodes.length > 1) {
+                    // Pick a random existing node to serve as the parent to maintain the tree
+                    const possibleParents = nodes.filter(n => n.id !== newVertex);
+                    const parentNode = possibleParents[Math.floor(Math.random() * possibleParents.length)];
+
+                    let weight = 1;
+                    edges.push({ source: parentNode, target: newNodeObj, weight });
+                    edgesRaw.push({ source: parentNode.id, target: newVertex, weight });
+
+                    // Re-bind data and redraw links (replicating the edge creation logic)
+                    link = edgeLayer.selectAll('.link')
+                        .data(edges)
+                        .join(
+                            enter => enter.append('path')
+                                .attr('class', 'link')
+                                .attr('source-id', d => `${arrowId}${d.source.id}`)
+                                .attr('target-id', d => `${arrowId}${d.target.id}`)
+                                .attr('fill', 'none')
+                                .attr('stroke', edgeColor)
+                                .attr('stroke-width', 4)
+                                .on('mouseover', function () { handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement); })
+                                .on('mouseout', function () { handleEdgeMouseOut(this, edgeColor, directed, svgElement); })
+                                .on('contextmenu', function (event, d) { showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2); }),
+                            update => update,
+                            exit => exit.remove()
+                        );
+
+                    link2 = edgeBufferLayer.selectAll('.link2')
+                        .data(edges)
+                        .join(
+                            enter => enter.append('path')
+                                .attr('class', 'link2')
+                                .attr('fill', 'none')
+                                .attr('stroke', 'transparent')
+                                .attr('stroke-width', 20)
+                                .style('pointer-events', 'stroke')
+                                .on('mouseover', function (event, d) {
+                                    const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                    d3.select(selector).dispatch('mouseover');
+                                })
+                                .on('mouseout', function (event, d) {
+                                    const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                    d3.select(selector).dispatch('mouseout');
+                                })
+                                .on('contextmenu', function (event, d) {
+                                    const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                    d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', { bubbles: false, cancelable: true, clientX: event.clientX, clientY: event.clientY, view: window }));
+                                }),
+                            update => update,
+                            exit => exit.remove()
+                        );
+
+                    if (weighted) {
+                        edgeLabel = labelLayer.selectAll('.edge-label')
+                            .data(edges)
+                            .join(
+                                enter => enter.append('text').attr('class', 'edge-label').text(d => d.weight),
+                                update => update.text(d => d.weight),
+                                exit => exit.remove()
+                            );
+                    }
+                }
 
                 let nodeSelection = nodeLayer.selectAll('circle')
                     .data(nodes, d => d.id);
@@ -672,7 +752,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                 dragged(event, d, this);
                             })
                             .on('end', function (event, d) {
-                                dragEnded(event, d, simulation, this);
+                                dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed));
                             })
                     )
                     .on('contextmenu', function (event, d) {
@@ -685,27 +765,32 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                         document.body.appendChild(menuElement);
                         const menu = new FloatingMenu(menuElement);
 
-                        // Delete node option
-                        addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
-                            // Remove the node from the nodes array
-                            const idx = nodes.indexOf(d);
-                            if (idx !== -1) {
-                                nodes.splice(idx, 1);
-                                edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
-                                edgesRaw = edgesRaw.filter(edge => edge.source !== d && edge.target !== d); // Remove from raw edges as well
+                        // Change Node Label Option
+                        addMenuItem(menuElement, menu, 'Change node value', null, () => {
+                            let newLabel = prompt("Enter new label for this vertex:", d.id);
+                            if (newLabel) {
+                                newLabel = newLabel.toUpperCase();
+                                if (newLabel !== d.id && nodes.some(n => n.id === newLabel)) {
+                                    alert(`Vertex ${newLabel} already exists.`);
+                                    return;
+                                }
+
+                                const oldId = d.id;
+                                d.id = newLabel; // Update the data reference directly
+
+                                // Update edgesRaw so the graph algorithms don't break
+                                edgesRaw.forEach(edge => {
+                                    if (edge.source === oldId) edge.source = newLabel;
+                                    if (edge.target === oldId) edge.target = newLabel;
+                                });
+
+                                // Visually update the labels on screen
+                                labelLayer.selectAll('.node-label').text(n => n.id);
+
+                                // Update source/target attributes on links if you depend on them for selections
+                                link.attr('source-id', e => `${arrowId}${e.source.id}`)
+                                    .attr('target-id', e => `${arrowId}${e.target.id}`);
                             }
-                            // Remove the node visually
-                            d3.select(this).remove();
-                            // Remove labels associated with this node
-                            label.filter(l => l === d).remove();
-                            if (edgeLabel) {
-                                edgeLabel.filter(e => e.source === d || e.target === d).remove();
-                            }
-                            // Remove edges that go to and from this node
-                            link.filter(l => l.source === d || l.target === d).remove();
-                            // Update edges and edgesRaw
-                            edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
-                            edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
                         });
 
                         // Create new edge
@@ -745,6 +830,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             }
 
                             edgesRaw.push({ source: d.id, target: targetNode.id, weight });
+
                             // Re-bind data and redraw links and edge labels
                             link = edgeLayer.selectAll('.link')
                                 .data(edges)
@@ -820,6 +906,29 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
                         });
 
+                        // Delete node option
+                        addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
+                            // Remove the node from the nodes array
+                            const idx = nodes.indexOf(d);
+                            if (idx !== -1) {
+                                nodes.splice(idx, 1);
+                                edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
+                                edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                            }
+                            // Remove the node visually
+                            d3.select(this).remove();
+                            // Remove labels associated with this node
+                            label.filter(l => l === d).remove();
+                            if (edgeLabel) {
+                                edgeLabel.filter(e => e.source === d || e.target === d).remove();
+                            }
+                            // Remove edges that go to and from this node
+                            link.filter(l => l.source === d || l.target === d).remove();
+                            // Update edges and edgesRaw
+                            edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
+                            edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                        });
+
                         menu.show(event);
                     });
 
@@ -829,13 +938,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 node = nodeEnter.merge(nodeSelection);
 
                 // Update labels
-                let labelSelection = labelLayer.selectAll('text')
+                let labelSelection = labelLayer.selectAll('.node-label') // Adjusted class selection to match enter() setup
                     .data(nodes, d => d.id);
 
                 // ENTER: Add new labels
                 let labelEnter = labelSelection.enter()
                     .append('text')
-                    .attr('dy', 3)
+                    .attr('dy', 7)
                     .attr('text-anchor', 'middle')
                     .text(d => d.id)
                     .attr('class', 'node-label')
@@ -843,10 +952,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     .style('font-weight', 'bold');
 
                 label = labelEnter.merge(labelSelection);
+
+                // Re-evaluate positions 
                 setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+                if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
             }
         }
-    })
+    });
 
     addMenuItem(menuElement, menu, 'Save as PNG', 'Save this graph as a PNG image', () => {
         updateColors();
@@ -887,7 +999,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* Function to save printable png */
     function updateColors() {
         document.documentElement.style.setProperty("--node-color", "#ccc");
-        document.documentElement.style.setProperty("--edge-weight-color", "#000");
         document.documentElement.style.setProperty("--grid-line-color", "transparent");
         edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
         nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
@@ -908,7 +1019,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
     function revertColors() {
         document.documentElement.style.setProperty("--node-color", "#42baff");
-        document.documentElement.style.setProperty("--edge-weight-color", "#fff");
         document.documentElement.style.setProperty("--grid-line-color", "#3c3d3c");
         edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--edge-color').trim();
         nodeColor = getComputedStyle(document.documentElement).getPropertyValue('--node-color').trim();
@@ -1296,7 +1406,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             d3.drag()
                 .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
                 .on('drag', function (event, d) { dragged(event, d, this); })
-                .on('end', function (event, d) { dragEnded(event, d, simulation, this); })
+                .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); })
         )
         .on('contextmenu', function (event, d) {
             event.preventDefault();
@@ -1308,38 +1418,32 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             document.body.appendChild(menuElement);
             const menu = new FloatingMenu(menuElement);
 
-            addMenuItem(menuElement, menu, 'Color this vertex', null, (event) => {
-                const vertex = d3.select(this);
+            // Change Node Label Option
+            addMenuItem(menuElement, menu, 'Change node value', null, () => {
+                let newLabel = prompt("Enter new label for this vertex:", d.id);
+                if (newLabel) {
+                    newLabel = newLabel.toUpperCase();
+                    if (newLabel !== d.id && nodes.some(n => n.id === newLabel)) {
+                        alert(`Vertex ${newLabel} already exists.`);
+                        return;
+                    }
 
-                showColorPicker(
-                    event.clientX,
-                    event.clientY,
-                    d3.color(vertex.attr("fill") || "#000000").formatHex(),
-                    color => vertex.attr("fill", color)
-                );
-            });
+                    const oldId = d.id;
+                    d.id = newLabel; // Update the data reference directly
 
-            // Delete node option
-            addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
-                // Remove the node from the nodes array
-                const idx = nodes.indexOf(d);
-                if (idx !== -1) {
-                    nodes.splice(idx, 1);
-                    edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
-                    edgesRaw = edgesRaw.filter(edge => edge.source !== d && edge.target !== d); // Remove from raw edges as well
+                    // Update edgesRaw so the graph algorithms don't break
+                    edgesRaw.forEach(edge => {
+                        if (edge.source === oldId) edge.source = newLabel;
+                        if (edge.target === oldId) edge.target = newLabel;
+                    });
+
+                    // Visually update the labels on screen
+                    labelLayer.selectAll('.node-label').text(n => n.id);
+
+                    // Update source/target attributes on links if you depend on them for selections
+                    link.attr('source-id', e => `${arrowId}${e.source.id}`)
+                        .attr('target-id', e => `${arrowId}${e.target.id}`);
                 }
-                // Remove the node visually
-                d3.select(this).remove();
-                // Remove labels associated with this node
-                label.filter(l => l === d).remove();
-                if (edgeLabel) {
-                    edgeLabel.filter(e => e.source === d || e.target === d).remove();
-                }
-                // Remove edges that go to and from this node
-                link.filter(l => l.source === d || l.target === d).remove();
-                // Update edges and edgesRaw
-                edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
-                edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
             });
 
             // Create new edge
@@ -1367,7 +1471,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 }
                 // Check if the reverse edge exists (i.e., bidirectional)
                 const reverseEdge = edges.find(e => e.source === targetNode && e.target === d);
-                const isSelfLoop = d.id === targetId
+                const isSelfLoop = d.id === targetId;
                 if (isSelfLoop) {
                     edges.push({ source: d, target: targetNode, weight, selfLoop: true })
                 } else if (reverseEdge) {
@@ -1379,6 +1483,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 }
 
                 edgesRaw.push({ source: d.id, target: targetNode.id, weight });
+
                 // Re-bind data and redraw links and edge labels
                 link = edgeLayer.selectAll('.link')
                     .data(edges)
@@ -1454,6 +1559,29 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
             });
 
+            // Delete node option
+            addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
+                // Remove the node from the nodes array
+                const idx = nodes.indexOf(d);
+                if (idx !== -1) {
+                    nodes.splice(idx, 1);
+                    edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
+                    edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                }
+                // Remove the node visually
+                d3.select(this).remove();
+                // Remove labels associated with this node
+                label.filter(l => l === d).remove();
+                if (edgeLabel) {
+                    edgeLabel.filter(e => e.source === d || e.target === d).remove();
+                }
+                // Remove edges that go to and from this node
+                link.filter(l => l.source === d || l.target === d).remove();
+                // Update edges and edgesRaw
+                edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
+                edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+            });
+
             menu.show(event);
         });
 
@@ -1463,7 +1591,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         .enter()
         .append('text')
         .attr('dy', 7)
-        .attr('color', '#ffffff')
         .attr('text-anchor', 'middle')
         .text(d => d.id)
         .attr('class', 'node-label')
@@ -1484,7 +1611,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* End of graph drawing */
 
     /* Functions to update positions */
-    autoLayoutNodes(nodes, simulation, width, height, edgesInput); // Initial call to generate the graph
+    autoLayoutNodes(nodes, simulation, width, height, edgesInput, isTreeType); // Initial call to generate the graph
 
     // Apply positions to nodes
     node.attr('cx', d => d.x).attr('cy', d => d.y);
