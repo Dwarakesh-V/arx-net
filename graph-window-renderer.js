@@ -14,7 +14,8 @@ function measureNodeTextWidth(text, font = '25px sans-serif') {
 }
 
 function nodeRectWidth(d) {
-    return Math.max(NODE_MIN_WIDTH, measureNodeTextWidth(d.id) + NODE_PADDING_X * 2);
+    const displayText = d.label !== undefined ? d.label : d.id;
+    return Math.max(NODE_MIN_WIDTH, measureNodeTextWidth(displayText) + NODE_PADDING_X * 2);
 }
 
 // Sizes a <rect class="node"> selection to fit its label, with a rounded corner.
@@ -564,11 +565,12 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 return;
             }
 
-            let newVertex = String(numericVal);
+            let baseVertex = String(numericVal);
+            let uniqueId = baseVertex;
+            let counter = 1;
 
-            if (nodes.some(node => node.id === newVertex)) {
-                alert(`Vertex ${newVertex} already exists in the BST.`);
-                return;
+            while (nodes.some(node => node.id === uniqueId)) {
+                uniqueId = `${baseVertex}_${counter++}`;
             }
 
             let newX, newY;
@@ -615,7 +617,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             }
 
             // 1. Create and push the new node
-            const newNodeObj = { id: newVertex, x: newX, y: newY, vx: 0, vy: 0 };
+            const newNodeObj = { id: uniqueId, label: baseVertex, x: newX, y: newY, vx: 0, vy: 0 };
             nodes.push(newNodeObj);
 
             // 2. Create and push the edges (if it has a parent)
@@ -626,7 +628,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     weight = (weight === null || weight.trim() === "") ? 1 : Number(weight);
                 }
                 edges.push({ source: parentNode, target: newNodeObj, weight });
-                edgesRaw.push({ source: parentNode.id, target: newVertex, weight });
+                edgesRaw.push({ source: parentNode.id, target: uniqueId, weight });
 
                 // Update visual links
                 link = edgeLayer.selectAll('.link')
@@ -716,7 +718,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 .append('text')
                 .attr('dy', 7)
                 .attr('text-anchor', 'middle')
-                .text(d => d.id)
+                .text(d => d.label !== undefined ? d.label : d.id)
                 .attr('class', 'node-label')
                 .style('pointer-events', 'none')
                 .style('font-weight', 'bold');
@@ -746,9 +748,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
             let newVertex = String(numericVal);
 
-            if (nodes.some(node => node.id === newVertex)) {
-                alert(`Vertex ${newVertex} already exists in the AVL Tree.`);
-                return;
+            newVertex = newVertex.toUpperCase();
+
+            // 1. Generate unique internal ID
+            let uniqueId = newVertex;
+            let counter = 1;
+            while (nodes.some(node => node.id === uniqueId)) {
+                uniqueId = `${newVertex}_${counter++}`;
             }
 
             // Capture edge weight based on provided snippet
@@ -844,7 +850,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             }
 
             // Create and push the new node (initial coords at 0, layout func will correct them)
-            const newNodeObj = { id: newVertex, x: 0, y: 0, vx: 0, vy: 0 };
+            const newNodeObj = { id: uniqueId, label: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
             nodes.push(newNodeObj);
 
             if (parentNode) {
@@ -967,7 +973,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 .append('text')
                 .attr('dy', 7)
                 .attr('text-anchor', 'middle')
-                .text(d => d.id)
+                .text(d => d.label !== undefined ? d.label : d.id)
                 .attr('class', 'node-label')
                 .style('pointer-events', 'none')
                 .style('font-weight', 'bold');
@@ -1149,378 +1155,384 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         let newVertex = prompt("Enter new vertex name (e.g., A, B, C):");
         if (newVertex) {
             newVertex = newVertex.toUpperCase();
-            if (nodes.some(node => node.id === newVertex)) {
-                alert(`Vertex ${newVertex} already exists.`);
-            } else {
-                // Place the new node at the cursor
-                // Calculate the SVG coordinates corresponding to the mouse position
-                const pt = svg.node().createSVGPoint();
-                pt.x = event.clientX;
-                pt.y = event.clientY;
-                const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
-                const centerX = svgP.x;
-                const centerY = svgP.y;
+            let uniqueId = newVertex;
+            let counter = 1;
+            while (nodes.some(node => node.id === uniqueId)) {
+                uniqueId = `${newVertex}_${counter++}`;
+            }
 
-                const newNodeObj = { id: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
-                nodes.push(newNodeObj);
+            // Place the new node at the cursor
+            // Calculate the SVG coordinates corresponding to the mouse position
+            const pt = svg.node().createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
+            const centerX = svgP.x;
+            const centerY = svgP.y;
 
-                if (isTreeType && nodes.length > 1) {
-                    // Pick a random existing node to serve as the parent to maintain the tree
-                    const possibleParents = nodes.filter(n => n.id !== newVertex);
-                    const parentNode = possibleParents[Math.floor(Math.random() * possibleParents.length)];
+            const newNodeObj = { id: uniqueId, label: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
+            nodes.push(newNodeObj);
 
-                    let weight = 1;
-                    edges.push({ source: parentNode, target: newNodeObj, weight });
-                    edgesRaw.push({ source: parentNode.id, target: newVertex, weight });
+            if (isTreeType && nodes.length > 1) {
+                const possibleParents = nodes.filter(n => n.id !== uniqueId);
+                const parentNode = possibleParents[Math.floor(Math.random() * possibleParents.length)];
+                let weight = 1;
+                edges.push({ source: parentNode, target: newNodeObj, weight });
+                edgesRaw.push({ source: parentNode.id, target: uniqueId, weight });
 
-                    // Re-bind data and redraw links (replicating the edge creation logic)
-                    link = edgeLayer.selectAll('.link')
+                // Re-bind data and redraw links (replicating the edge creation logic)
+                link = edgeLayer.selectAll('.link')
+                    .data(edges)
+                    .join(
+                        enter => enter.append('path')
+                            .attr('class', 'link')
+                            .attr('source-id', d => `${arrowId}${d.source.id}`)
+                            .attr('target-id', d => `${arrowId}${d.target.id}`)
+                            .attr('fill', 'none')
+                            .attr('stroke', edgeColor)
+                            .attr('stroke-width', 4)
+                            .on('mouseover', function () { handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement); })
+                            .on('mouseout', function () { handleEdgeMouseOut(this, edgeColor, directed, svgElement); })
+                            .on('contextmenu', function (event, d) { showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2); }),
+                        update => update,
+                        exit => exit.remove()
+                    );
+
+                link2 = edgeBufferLayer.selectAll('.link2')
+                    .data(edges)
+                    .join(
+                        enter => enter.append('path')
+                            .attr('class', 'link2')
+                            .attr('fill', 'none')
+                            .attr('stroke', 'transparent')
+                            .attr('stroke-width', 20)
+                            .style('pointer-events', 'stroke')
+                            .on('mouseover', function (event, d) {
+                                const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                d3.select(selector).dispatch('mouseover');
+                            })
+                            .on('mouseout', function (event, d) {
+                                const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                d3.select(selector).dispatch('mouseout');
+                            })
+                            .on('contextmenu', function (event, d) {
+                                const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', { bubbles: false, cancelable: true, clientX: event.clientX, clientY: event.clientY, view: window }));
+                            }),
+                        update => update,
+                        exit => exit.remove()
+                    );
+
+                if (weighted) {
+                    edgeLabel = labelLayer.selectAll('.edge-label')
                         .data(edges)
                         .join(
-                            enter => enter.append('path')
-                                .attr('class', 'link')
-                                .attr('source-id', d => `${arrowId}${d.source.id}`)
-                                .attr('target-id', d => `${arrowId}${d.target.id}`)
-                                .attr('fill', 'none')
-                                .attr('stroke', edgeColor)
-                                .attr('stroke-width', 4)
-                                .on('mouseover', function () { handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement); })
-                                .on('mouseout', function () { handleEdgeMouseOut(this, edgeColor, directed, svgElement); })
-                                .on('contextmenu', function (event, d) { showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2); }),
-                            update => update,
+                            enter => enter.append('text').attr('class', 'edge-label').text(d => d.weight),
+                            update => update.text(d => d.weight),
                             exit => exit.remove()
                         );
-
-                    link2 = edgeBufferLayer.selectAll('.link2')
-                        .data(edges)
-                        .join(
-                            enter => enter.append('path')
-                                .attr('class', 'link2')
-                                .attr('fill', 'none')
-                                .attr('stroke', 'transparent')
-                                .attr('stroke-width', 20)
-                                .style('pointer-events', 'stroke')
-                                .on('mouseover', function (event, d) {
-                                    const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                    d3.select(selector).dispatch('mouseover');
-                                })
-                                .on('mouseout', function (event, d) {
-                                    const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                    d3.select(selector).dispatch('mouseout');
-                                })
-                                .on('contextmenu', function (event, d) {
-                                    const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                    d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', { bubbles: false, cancelable: true, clientX: event.clientX, clientY: event.clientY, view: window }));
-                                }),
-                            update => update,
-                            exit => exit.remove()
-                        );
-
-                    if (weighted) {
-                        edgeLabel = labelLayer.selectAll('.edge-label')
-                            .data(edges)
-                            .join(
-                                enter => enter.append('text').attr('class', 'edge-label').text(d => d.weight),
-                                update => update.text(d => d.weight),
-                                exit => exit.remove()
-                            );
-                    }
                 }
+            }
 
-                let nodeSelection = nodeLayer.selectAll('rect')
-                    .data(nodes, d => d.id);
+            let nodeSelection = nodeLayer.selectAll('rect')
+                .data(nodes, d => d.id);
 
-                // Handle new nodes with enter()
-                let nodeEnter = nodeSelection.enter()
-                    .append('rect')
-                    .attr('class', 'node')
-                    .attr('fill', nodeColor)
-                    .attr('stroke', primaryBG)
-                    .call(sizeNodeRect)
-                    .call(positionNode)
-                    .call(
-                        d3.drag()
-                            .on('start', function (event, d) {
-                                dragStarted(event, d, simulation, this);
-                            })
-                            .on('drag', function (event, d) {
-                                dragged(event, d, this);
-                            })
-                            .on('end', function (event, d) {
-                                dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed));
-                            })
-                    )
-                    .on('contextmenu', function (event, d) {
-                        event.preventDefault();
-                        event.stopPropagation();
+            // Handle new nodes with enter()
+            let nodeEnter = nodeSelection.enter()
+                .append('rect')
+                .attr('class', 'node')
+                .attr('fill', nodeColor)
+                .attr('stroke', primaryBG)
+                .call(sizeNodeRect)
+                .call(positionNode)
+                .call(
+                    d3.drag()
+                        .on('start', function (event, d) {
+                            dragStarted(event, d, simulation, this);
+                        })
+                        .on('drag', function (event, d) {
+                            dragged(event, d, this);
+                        })
+                        .on('end', function (event, d) {
+                            dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed));
+                        })
+                )
+                .on('contextmenu', function (event, d) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-                        // Create context menu
-                        const menuElement = document.createElement('div');
-                        menuElement.className = 'floating-menu';
-                        document.body.appendChild(menuElement);
-                        const menu = new FloatingMenu(menuElement);
+                    // Create context menu
+                    const menuElement = document.createElement('div');
+                    menuElement.className = 'floating-menu';
+                    document.body.appendChild(menuElement);
+                    const menu = new FloatingMenu(menuElement);
 
-                        // Change Node Label Option
-                        addMenuItem(menuElement, menu, 'Change node value', null, () => {
-                            let newLabel = prompt("Enter new label for this vertex:", d.id);
-                            if (newLabel) {
-                                newLabel = newLabel.toUpperCase();
-                                if (newLabel !== d.id && nodes.some(n => n.id === newLabel)) {
-                                    alert(`Vertex ${newLabel} already exists.`);
-                                    return;
-                                }
+                    // Change Node Label Option
+                    addMenuItem(menuElement, menu, 'Change node value', null, () => {
+                        let newLabel = prompt("Enter new label for this vertex:", d.label !== undefined ? d.label : d.id);
+                        if (newLabel) {
+                            newLabel = newLabel.toUpperCase();
 
-                                const oldId = d.id;
-                                d.id = newLabel; // Update the data reference directly
-
-                                // Update edgesRaw so the graph algorithms don't break
-                                edgesRaw.forEach(edge => {
-                                    if (edge.source === oldId) edge.source = newLabel;
-                                    if (edge.target === oldId) edge.target = newLabel;
-                                });
-
-                                // Visually update the labels on screen
-                                labelLayer.selectAll('.node-label').text(n => n.id);
-
-                                // Resize this node's rect to fit the new label
-                                d3.select(this).call(sizeNodeRect);
-
-                                // Update source/target attributes on links if you depend on them for selections
-                                link.attr('source-id', e => `${arrowId}${e.source.id}`)
-                                    .attr('target-id', e => `${arrowId}${e.target.id}`);
-                            }
-                        });
-
-                        // Create new edge
-                        addMenuItem(menuElement, menu, 'Create new edge from this vertex', null, () => {
-                            let targetId = prompt("Enter target vertex id:").toUpperCase();
-                            if (!targetId) {
-                                return;
-                            }
-                            const targetNode = nodes.find(n => n.id === targetId);
-                            if (!targetNode) {
-                                alert("Target vertex does not exist.");
-                                return;
-                            }
-                            let weight = 1;
-                            if (weighted) {
-                                let w = prompt("Enter weight for this edge:", "1");
-                                if (w === null) {
-                                    return;
-                                }
-                                weight = parseFloat(w);
-                                if (isNaN(weight)) {
-                                    alert("Invalid weight.");
-                                    return;
-                                }
-                            }
-                            // Check if the reverse edge exists (i.e., bidirectional)
-                            const reverseEdge = edges.find(e => e.source === targetNode && e.target === d);
-                            const isSelfLoop = d.id === targetId;
-                            if (isSelfLoop) {
-                                edges.push({ source: d, target: targetNode, weight, selfLoop: true })
-                            } else if (reverseEdge) {
-                                // Mark both edges as bidirectional
-                                edges.push({ source: d, target: targetNode, weight, bidirectional: true });
-                                reverseEdge.bidirectional = true;
-                            } else {
-                                edges.push({ source: d, target: targetNode, weight });
+                            let uniqueId = newLabel;
+                            let counter = 1;
+                            while (nodes.some(node => node.id === uniqueId)) {
+                                uniqueId = `${newLabel}_${counter++}`;
                             }
 
-                            edgesRaw.push({ source: d.id, target: targetNode.id, weight });
+                            const oldId = d.id;
 
-                            // Re-bind data and redraw links and edge labels
-                            link = edgeLayer.selectAll('.link')
-                                .data(edges)
-                                .join(
-                                    enter => enter.append('path')
-                                        .attr('class', 'link')
-                                        .attr('source-id', d => `${arrowId}${d.source.id}`)
-                                        .attr('target-id', d => `${arrowId}${d.target.id}`)
-                                        .attr('fill', 'none')
-                                        .attr('stroke', edgeColor)
-                                        .attr('stroke-width', 4)
-                                        .on('mouseover', function () {
-                                            handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
-                                        })
-                                        .on('mouseout', function () {
-                                            handleEdgeMouseOut(this, edgeColor, directed, svgElement);
-                                        })
-                                        .on('contextmenu', function (event, d) {
-                                            showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2);
-                                        }),
-                                    update => update,
-                                    exit => exit.remove()
-                                );
+                            // Update both the internal ID and the visual label
+                            d.id = uniqueId;
+                            d.label = newLabel;
 
-                            // Re-bind data and redraw buffer links for edge hover/click
-                            link2 = edgeBufferLayer.selectAll('.link2')
-                                .data(edges)
-                                .join(
-                                    enter => enter.append('path')
-                                        .attr('class', 'link2')
-                                        .attr('fill', 'none')
-                                        .attr('stroke', 'transparent')
-                                        .attr('stroke-width', 20)
-                                        .style('pointer-events', 'stroke')
-                                        .on('mouseover', function (event, d) {
-                                            const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                            d3.select(selector).dispatch('mouseover');
-                                        })
-                                        .on('mouseout', function (event, d) {
-                                            const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                            d3.select(selector).dispatch('mouseout');
-                                        })
-                                        .on('contextmenu', function (event, d) {
-                                            const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                            d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', {
-                                                bubbles: false,
-                                                cancelable: true,
-                                                clientX: event.clientX,
-                                                clientY: event.clientY,
-                                                view: window
-                                            }));
-                                        }),
-                                    update => update,
-                                    exit => exit.remove()
-                                );
-
-                            // If weighted, update edge labels
-                            if (weighted) {
-                                edgeLabel.exit().remove();
-                                edgeLabel = labelLayer.selectAll('.edge-label')
-                                    .data(edges)
-                                    .join(
-                                        enter => enter.append('text')
-                                            .attr('class', 'edge-label')
-                                            .text(d => d.weight),
-                                        update => update.text(d => d.weight),
-                                        exit => exit.remove()
-                                    );
-                            }
-
-                            // Update positions
-                            setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-                            setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
-                        });
-
-                        if (!isTreeType) {
-                            // Delete node option
-                            addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
-                                // Remove the node from the nodes array
-                                const idx = nodes.indexOf(d);
-                                if (idx !== -1) {
-                                    nodes.splice(idx, 1);
-                                    edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
-                                    edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
-                                }
-                                // Remove the node visually
-                                d3.select(this).remove();
-                                // Remove labels associated with this node
-                                label.filter(l => l === d).remove();
-                                if (edgeLabel) {
-                                    edgeLabel.filter(e => e.source === d || e.target === d).remove();
-                                }
-                                // Remove edges that go to and from this node
-                                link.filter(l => l.source === d || l.target === d).remove();
-                                // Update edges and edgesRaw
-                                edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
-                                edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                            // Update edgesRaw to use the unique internal ID, not the visual label
+                            edgesRaw.forEach(edge => {
+                                if (edge.source === oldId) edge.source = uniqueId;
+                                if (edge.target === oldId) edge.target = uniqueId;
                             });
-                        } else {
-                            // Cascading Delete node option
-                            addMenuItem(menuElement, menu, 'Delete this vertex and its subtree', null, () => {
-                                // 1. Identify all nodes in the subtree rooted at this node (d)
-                                const idsToDelete = new Set([d.id]);
-                                const queue = [d.id];
 
-                                // Traverse downward to find all descendants
-                                while (queue.length > 0) {
-                                    const currentId = queue.shift();
+                            // Visually update the labels on screen
+                            labelLayer.selectAll('.node-label').text(n => n.label !== undefined ? n.label : n.id);
 
-                                    edgesRaw.forEach(edge => {
-                                        if (edge.source === currentId && !idsToDelete.has(edge.target)) {
-                                            idsToDelete.add(edge.target);
-                                            queue.push(edge.target);
-                                        }
-                                    });
-                                }
+                            // Resize this node's rect to fit the new label
+                            d3.select(this).call(sizeNodeRect);
 
-                                // 2. Remove the nodes from the data array
-                                // Iterating backwards allows us to splice safely without messing up indices
-                                for (let i = nodes.length - 1; i >= 0; i--) {
-                                    if (idsToDelete.has(nodes[i].id)) {
-                                        nodes.splice(i, 1);
-                                    }
-                                }
-
-                                // 3. Remove edges connected to ANY of the deleted nodes from the data arrays
-                                edges = edges.filter(edge => !idsToDelete.has(edge.source.id) && !idsToDelete.has(edge.target.id));
-                                edgesRaw = edgesRaw.filter(edge => !idsToDelete.has(edge.source) && !idsToDelete.has(edge.target));
-
-                                // 4. Remove the visual elements using D3 filters
-
-                                // Remove node circles
-                                node.filter(n => idsToDelete.has(n.id)).remove();
-
-                                // Remove node text labels
-                                label.filter(n => idsToDelete.has(n.id)).remove();
-
-                                // Remove links (edges)
-                                link.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
-
-                                // Remove buffer links (invisible wider paths for easier clicking/hovering)
-                                if (typeof link2 !== 'undefined' && link2) {
-                                    link2.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
-                                }
-
-                                // Remove edge labels if the graph is weighted
-                                if (typeof edgeLabel !== 'undefined' && edgeLabel) {
-                                    edgeLabel.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
-                                }
-
-                                // 5. Reassign the active D3 selections so subsequent updates or drag events don't throw errors
-                                node = nodeLayer.selectAll('.node');
-                                label = labelLayer.selectAll('.node-label');
-                                link = edgeLayer.selectAll('.link');
-
-                                if (typeof link2 !== 'undefined' && link2) {
-                                    link2 = edgeBufferLayer.selectAll('.link2');
-                                }
-                                if (typeof edgeLabel !== 'undefined' && edgeLabel) {
-                                    edgeLabel = labelLayer.selectAll('.edge-label');
-                                }
-                            });
+                            // Update source/target attributes on links if you depend on them for selections
+                            link.attr('source-id', e => `${arrowId}${e.source.id}`)
+                                .attr('target-id', e => `${arrowId}${e.target.id}`);
                         }
-
-                        menu.show(event);
                     });
 
-                nodeSelection.exit().remove();
+                    // Create new edge
+                    addMenuItem(menuElement, menu, 'Create new edge from this vertex', null, () => {
+                        let targetId = prompt("Enter target vertex id:").toUpperCase();
+                        if (!targetId) {
+                            return;
+                        }
+                        const targetNode = nodes.find(n => n.id === targetId);
+                        if (!targetNode) {
+                            alert("Target vertex does not exist.");
+                            return;
+                        }
+                        let weight = 1;
+                        if (weighted) {
+                            let w = prompt("Enter weight for this edge:", "1");
+                            if (w === null) {
+                                return;
+                            }
+                            weight = parseFloat(w);
+                            if (isNaN(weight)) {
+                                alert("Invalid weight.");
+                                return;
+                            }
+                        }
+                        // Check if the reverse edge exists (i.e., bidirectional)
+                        const reverseEdge = edges.find(e => e.source === targetNode && e.target === d);
+                        const isSelfLoop = d.id === targetId;
+                        if (isSelfLoop) {
+                            edges.push({ source: d, target: targetNode, weight, selfLoop: true })
+                        } else if (reverseEdge) {
+                            // Mark both edges as bidirectional
+                            edges.push({ source: d, target: targetNode, weight, bidirectional: true });
+                            reverseEdge.bidirectional = true;
+                        } else {
+                            edges.push({ source: d, target: targetNode, weight });
+                        }
 
-                // Merge new and existing nodes if needed later
-                node = nodeEnter.merge(nodeSelection);
+                        edgesRaw.push({ source: d.id, target: targetNode.id, weight });
 
-                // Update labels
-                let labelSelection = labelLayer.selectAll('.node-label') // Adjusted class selection to match enter() setup
-                    .data(nodes, d => d.id);
+                        // Re-bind data and redraw links and edge labels
+                        link = edgeLayer.selectAll('.link')
+                            .data(edges)
+                            .join(
+                                enter => enter.append('path')
+                                    .attr('class', 'link')
+                                    .attr('source-id', d => `${arrowId}${d.source.id}`)
+                                    .attr('target-id', d => `${arrowId}${d.target.id}`)
+                                    .attr('fill', 'none')
+                                    .attr('stroke', edgeColor)
+                                    .attr('stroke-width', 4)
+                                    .on('mouseover', function () {
+                                        handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
+                                    })
+                                    .on('mouseout', function () {
+                                        handleEdgeMouseOut(this, edgeColor, directed, svgElement);
+                                    })
+                                    .on('contextmenu', function (event, d) {
+                                        showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2);
+                                    }),
+                                update => update,
+                                exit => exit.remove()
+                            );
 
-                // ENTER: Add new labels
-                let labelEnter = labelSelection.enter()
-                    .append('text')
-                    .attr('dy', 7)
-                    .attr('text-anchor', 'middle')
-                    .text(d => d.id)
-                    .attr('class', 'node-label')
-                    .style('pointer-events', 'none')
-                    .style('font-weight', 'bold');
+                        // Re-bind data and redraw buffer links for edge hover/click
+                        link2 = edgeBufferLayer.selectAll('.link2')
+                            .data(edges)
+                            .join(
+                                enter => enter.append('path')
+                                    .attr('class', 'link2')
+                                    .attr('fill', 'none')
+                                    .attr('stroke', 'transparent')
+                                    .attr('stroke-width', 20)
+                                    .style('pointer-events', 'stroke')
+                                    .on('mouseover', function (event, d) {
+                                        const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                        d3.select(selector).dispatch('mouseover');
+                                    })
+                                    .on('mouseout', function (event, d) {
+                                        const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                        d3.select(selector).dispatch('mouseout');
+                                    })
+                                    .on('contextmenu', function (event, d) {
+                                        const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
+                                        d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', {
+                                            bubbles: false,
+                                            cancelable: true,
+                                            clientX: event.clientX,
+                                            clientY: event.clientY,
+                                            view: window
+                                        }));
+                                    }),
+                                update => update,
+                                exit => exit.remove()
+                            );
 
-                label = labelEnter.merge(labelSelection);
+                        // If weighted, update edge labels
+                        if (weighted) {
+                            edgeLabel.exit().remove();
+                            edgeLabel = labelLayer.selectAll('.edge-label')
+                                .data(edges)
+                                .join(
+                                    enter => enter.append('text')
+                                        .attr('class', 'edge-label')
+                                        .text(d => d.weight),
+                                    update => update.text(d => d.weight),
+                                    exit => exit.remove()
+                                );
+                        }
 
-                // Re-evaluate positions 
-                setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-                if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
-            }
+                        // Update positions
+                        setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+                        setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+                    });
+
+                    if (!isTreeType) {
+                        // Delete node option
+                        addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
+                            // Remove the node from the nodes array
+                            const idx = nodes.indexOf(d);
+                            if (idx !== -1) {
+                                nodes.splice(idx, 1);
+                                edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
+                                edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                            }
+                            // Remove the node visually
+                            d3.select(this).remove();
+                            // Remove labels associated with this node
+                            label.filter(l => l === d).remove();
+                            if (edgeLabel) {
+                                edgeLabel.filter(e => e.source === d || e.target === d).remove();
+                            }
+                            // Remove edges that go to and from this node
+                            link.filter(l => l.source === d || l.target === d).remove();
+                            // Update edges and edgesRaw
+                            edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
+                            edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
+                        });
+                    } else {
+                        // Cascading Delete node option
+                        addMenuItem(menuElement, menu, 'Delete this vertex and its subtree', null, () => {
+                            // 1. Identify all nodes in the subtree rooted at this node (d)
+                            const idsToDelete = new Set([d.id]);
+                            const queue = [d.id];
+
+                            // Traverse downward to find all descendants
+                            while (queue.length > 0) {
+                                const currentId = queue.shift();
+
+                                edgesRaw.forEach(edge => {
+                                    if (edge.source === currentId && !idsToDelete.has(edge.target)) {
+                                        idsToDelete.add(edge.target);
+                                        queue.push(edge.target);
+                                    }
+                                });
+                            }
+
+                            // 2. Remove the nodes from the data array
+                            // Iterating backwards allows us to splice safely without messing up indices
+                            for (let i = nodes.length - 1; i >= 0; i--) {
+                                if (idsToDelete.has(nodes[i].id)) {
+                                    nodes.splice(i, 1);
+                                }
+                            }
+
+                            // 3. Remove edges connected to ANY of the deleted nodes from the data arrays
+                            edges = edges.filter(edge => !idsToDelete.has(edge.source.id) && !idsToDelete.has(edge.target.id));
+                            edgesRaw = edgesRaw.filter(edge => !idsToDelete.has(edge.source) && !idsToDelete.has(edge.target));
+
+                            // 4. Remove the visual elements using D3 filters
+
+                            // Remove node circles
+                            node.filter(n => idsToDelete.has(n.id)).remove();
+
+                            // Remove node text labels
+                            label.filter(n => idsToDelete.has(n.id)).remove();
+
+                            // Remove links (edges)
+                            link.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
+
+                            // Remove buffer links (invisible wider paths for easier clicking/hovering)
+                            if (typeof link2 !== 'undefined' && link2) {
+                                link2.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
+                            }
+
+                            // Remove edge labels if the graph is weighted
+                            if (typeof edgeLabel !== 'undefined' && edgeLabel) {
+                                edgeLabel.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
+                            }
+
+                            // 5. Reassign the active D3 selections so subsequent updates or drag events don't throw errors
+                            node = nodeLayer.selectAll('.node');
+                            label = labelLayer.selectAll('.node-label');
+                            link = edgeLayer.selectAll('.link');
+
+                            if (typeof link2 !== 'undefined' && link2) {
+                                link2 = edgeBufferLayer.selectAll('.link2');
+                            }
+                            if (typeof edgeLabel !== 'undefined' && edgeLabel) {
+                                edgeLabel = labelLayer.selectAll('.edge-label');
+                            }
+                        });
+                    }
+
+                    menu.show(event);
+                });
+
+            nodeSelection.exit().remove();
+
+            // Merge new and existing nodes if needed later
+            node = nodeEnter.merge(nodeSelection);
+
+            // Update labels
+            let labelSelection = labelLayer.selectAll('.node-label') // Adjusted class selection to match enter() setup
+                .data(nodes, d => d.id);
+
+            // ENTER: Add new labels
+            let labelEnter = labelSelection.enter()
+                .append('text')
+                .attr('dy', 7)
+                .attr('text-anchor', 'middle')
+                .text(d => d.label !== undefined ? d.label : d.id)
+                .attr('class', 'node-label')
+                .style('pointer-events', 'none')
+                .style('font-weight', 'bold');
+
+            label = labelEnter.merge(labelSelection);
+
+            // Re-evaluate positions 
+            setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+
         }
     });
 
@@ -1976,25 +1988,30 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
             // Change Node Label Option
             addMenuItem(menuElement, menu, 'Change node value', null, () => {
-                let newLabel = prompt("Enter new label for this vertex:", d.id);
+                let newLabel = prompt("Enter new label for this vertex:", d.label !== undefined ? d.label : d.id);
                 if (newLabel) {
                     newLabel = newLabel.toUpperCase();
-                    if (newLabel !== d.id && nodes.some(n => n.id === newLabel)) {
-                        alert(`Vertex ${newLabel} already exists.`);
-                        return;
+
+                    let uniqueId = newLabel;
+                    let counter = 1;
+                    while (nodes.some(node => node.id === uniqueId)) {
+                        uniqueId = `${newLabel}_${counter++}`;
                     }
 
                     const oldId = d.id;
-                    d.id = newLabel; // Update the data reference directly
 
-                    // Update edgesRaw so the graph algorithms don't break
+                    // Update both the internal ID and the visual label
+                    d.id = uniqueId;
+                    d.label = newLabel;
+
+                    // Update edgesRaw to use the unique internal ID, not the visual label
                     edgesRaw.forEach(edge => {
-                        if (edge.source === oldId) edge.source = newLabel;
-                        if (edge.target === oldId) edge.target = newLabel;
+                        if (edge.source === oldId) edge.source = uniqueId;
+                        if (edge.target === oldId) edge.target = uniqueId;
                     });
 
                     // Visually update the labels on screen
-                    labelLayer.selectAll('.node-label').text(n => n.id);
+                    labelLayer.selectAll('.node-label').text(n => n.label !== undefined ? n.label : n.id);
 
                     // Resize this node's rect to fit the new label
                     d3.select(this).call(sizeNodeRect);
@@ -2218,7 +2235,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         .append('text')
         .attr('dy', 7)
         .attr('text-anchor', 'middle')
-        .text(d => d.id)
+        .text(d => d.label !== undefined ? d.label : d.id)
         .attr('class', 'node-label')
         .style('pointer-events', 'none')
         .style('font-weight', 'bold');
