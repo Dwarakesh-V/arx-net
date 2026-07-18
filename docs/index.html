@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Arx-Net Docs</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-container">
+    <button class="mobile-toggle" id="menuToggle" aria-label="Toggle Menu">
+      <i data-lucide="menu" id="menuIcon"></i>
+    </button>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Arx-Net Docs</h2>
+        <p>Graph Visualization</p>
+      </div>
+      
+      <div class="sidebar-links">
+        <a href="#/" class="nav-link" data-route="/"><i data-lucide="home" style="width:18px;height:18px"></i> Introduction</a>
+        <a href="#/generation" class="nav-link" data-route="/generation"><i data-lucide="code" style="width:18px;height:18px"></i> Graph Generation</a>
+        <a href="#/interactions" class="nav-link" data-route="/interactions"><i data-lucide="mouse-pointer-click" style="width:18px;height:18px"></i> UI & Interactions</a>
+        <a href="#/algorithms" class="nav-link" data-route="/algorithms"><i data-lucide="cpu" style="width:18px;height:18px"></i> Algorithms</a>
+        <a href="#/python-integration" class="nav-link" data-route="/python-integration"><i data-lucide="terminal-square" style="width:18px;height:18px"></i> Python Integration</a>
+      </div>
+    </nav>
+
+    <main class="main-content" id="main-content">
+      <!-- Content injected by JS -->
+    </main>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>
