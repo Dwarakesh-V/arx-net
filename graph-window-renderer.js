@@ -421,7 +421,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     weighted = weighted ?? isWeighted.checked;
 
     if (isTreeType === true) {
-        directed = false;
+        directed = false; // Can be modified for directed, weighted trees in the future
+        weighted = false;
         if (!isTree(edgesInput)) {
             alert("Invalid edges for a tree");
             return;
@@ -429,7 +430,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     } else if (isTreeType === null) {
         if (isTypeTree.checked) {
             isTreeType = true;
-            directed = false;
+            directed = false; // Can be modified for directed, weighted trees in the future
+            weighted = false;
             if (!isTree(edgesInput)) {
                 alert("Invalid edges for a tree");
                 return;
@@ -550,7 +552,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         methodsSelect.appendChild(option1);
 
         function insertBST() {
-            console.log(isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)), convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed))
             if (!isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
                 alert("This structure is not a BST.")
                 return;
@@ -736,7 +737,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         option2.dataset.algorithm = 'AVLI';
         methodsSelect.appendChild(option2);
 
-        function insertAVL(value = prompt("Enter numeric value to insert:")) {
+        function insertAVL() {
+            if (!isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+                if (!isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+                    alert("This structure is not a BST/AVL")
+                    return;
+                }
+                alert("This structure is not an AVL, but it is a BST. Balance it first (manually or automatically using the algorithm) to use this operation.")
+                return;
+            }
+            value = prompt("Enter numeric value to insert:")
             if (!value) return;
 
             const numericVal = Number(value);
@@ -998,6 +1008,240 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         methodsSelect.appendChild(option3);
     }
 
+    function balanceAVL() {
+        if (!isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+            alert("This structure is not a BST.")
+            return;
+        }
+        if (nodes.length <= 1) return;
+
+        // Helper Functions
+        function getChildren(nodeId) {
+            return edgesRaw.filter(e => String(e.source) === String(nodeId)).map(e => String(e.target));
+        }
+        function getLeftChild(nodeId) {
+            return getChildren(nodeId).find(id => Number(id) < Number(nodeId)) || null;
+        }
+        function getRightChild(nodeId) {
+            return getChildren(nodeId).find(id => Number(id) > Number(nodeId)) || null;
+        }
+        function getParent(nodeId) {
+            const edge = edgesRaw.find(e => String(e.target) === String(nodeId));
+            return edge ? String(edge.source) : null;
+        }
+        function getHeight(nodeId) {
+            if (!nodeId) return 0;
+            return 1 + Math.max(getHeight(getLeftChild(nodeId)), getHeight(getRightChild(nodeId)));
+        }
+        function getBalance(nodeId) {
+            if (!nodeId) return 0;
+            return getHeight(getLeftChild(nodeId)) - getHeight(getRightChild(nodeId));
+        }
+
+        function removeEdge(src, tgt) {
+            if (!src || !tgt) return;
+            edgesRaw = edgesRaw.filter(e => !(String(e.source) === String(src) && String(e.target) === String(tgt)));
+        }
+        function addEdge(src, tgt) {
+            if (!src || !tgt) return;
+            // Keep existing weight if available, else default to 1
+            const existingEdge = edgesRaw.find(e => String(e.source) === String(src) && String(e.target) === String(tgt));
+            const weight = existingEdge ? existingEdge.weight : 1;
+            edgesRaw.push({ source: String(src), target: String(tgt), weight: weight });
+        }
+        function updateParentEdge(oldChildId, newChildId) {
+            const p = getParent(oldChildId);
+            if (p) {
+                removeEdge(p, oldChildId);
+                addEdge(p, newChildId);
+            }
+        }
+
+        function rightRotate(yId) {
+            const xId = getLeftChild(yId);
+            const T2Id = getRightChild(xId);
+
+            updateParentEdge(yId, xId);
+            removeEdge(yId, xId);
+            if (T2Id) {
+                removeEdge(xId, T2Id);
+                addEdge(yId, T2Id);
+            }
+            addEdge(xId, yId);
+        }
+        function leftRotate(xId) {
+            const yId = getRightChild(xId);
+            const T2Id = getLeftChild(yId);
+
+            updateParentEdge(xId, yId);
+            removeEdge(xId, yId);
+            if (T2Id) {
+                removeEdge(yId, T2Id);
+                addEdge(xId, T2Id);
+            }
+            addEdge(yId, xId);
+        }
+
+        function getRoot() {
+            const targetIds = new Set(edgesRaw.map(e => String(e.target)));
+            const rootNode = nodes.find(n => !targetIds.has(String(n.id)));
+            return rootNode ? String(rootNode.id) : null;
+        }
+
+        function isTreeBalanced(nodeId) {
+            if (!nodeId) return true;
+            if (Math.abs(getBalance(nodeId)) > 1) return false;
+            return isTreeBalanced(getLeftChild(nodeId)) && isTreeBalanced(getRightChild(nodeId));
+        }
+
+        // Bottom-up evaluation matching the logic of recursion unwinding in an AVL tree
+        function postOrderBalance(nodeId) {
+            if (!nodeId) return;
+
+            postOrderBalance(getLeftChild(nodeId));
+            postOrderBalance(getRightChild(nodeId));
+
+            const balance = getBalance(nodeId);
+
+            if (balance > 1) { // Left Heavy
+                const leftChild = getLeftChild(nodeId);
+                if (getBalance(leftChild) < 0) {
+                    leftRotate(leftChild);
+                    rightRotate(nodeId);
+                } else {
+                    rightRotate(nodeId);
+                }
+            }
+            else if (balance < -1) { // Right Heavy
+                const rightChild = getRightChild(nodeId);
+                if (getBalance(rightChild) > 0) {
+                    rightRotate(rightChild);
+                    leftRotate(nodeId);
+                } else {
+                    leftRotate(nodeId);
+                }
+            }
+        }
+
+        // Core Balancing Execution
+        let currentRoot = getRoot();
+        let maxIterations = nodes.length; // Safety catch to prevent infinite looping in edge cases
+        let iterations = 0;
+
+        // Loop until the entire tree validates as a proper AVL tree
+        while (currentRoot && !isTreeBalanced(currentRoot) && iterations < maxIterations) {
+            postOrderBalance(currentRoot);
+            currentRoot = getRoot();
+            iterations++;
+        }
+
+        edgesRaw.sort((a, b) => {
+            if (String(a.source) === String(b.source)) {
+                return Number(a.target) - Number(b.target);
+            }
+            return 0;
+        });
+
+        // Get SVG dimensions dynamically
+        const svgRect = svg.node().getBoundingClientRect();
+        const width = svgRect.width || 800;
+        const height = svgRect.height || 600;
+
+        // Refresh node layout based on new internal structure
+        autoLayoutNodes(nodes, simulation, width, height, stringifyEdges(edgesRaw), true);
+
+        // Rebuild D3 edges to mirror exactly what the rotations modified
+        edges.length = 0;
+        edgesRaw.forEach(er => {
+            const srcNode = nodes.find(n => String(n.id) === String(er.source));
+            const tgtNode = nodes.find(n => String(n.id) === String(er.target));
+            if (srcNode && tgtNode) {
+                edges.push({ source: srcNode, target: tgtNode, weight: er.weight || 1 });
+            }
+        });
+
+        // Update Links
+        link = edgeLayer.selectAll('.link')
+            .data(edges, d => `${d.source.id}-${d.target.id}`)
+            .join(
+                enter => enter.append('path')
+                    .attr('class', 'link')
+                    .attr('source-id', d => `${arrowId}${d.source.id}`)
+                    .attr('target-id', d => `${arrowId}${d.target.id}`)
+                    .attr('fill', 'none')
+                    .attr('stroke', edgeColor)
+                    .attr('stroke-width', 4),
+                update => update
+                    .attr('source-id', d => `${arrowId}${d.source.id}`)
+                    .attr('target-id', d => `${arrowId}${d.target.id}`),
+                exit => exit.remove()
+            );
+
+        // Update Link Buffers
+        link2 = edgeBufferLayer.selectAll('.link2')
+            .data(edges, d => `${d.source.id}-${d.target.id}`)
+            .join(
+                enter => enter.append('path')
+                    .attr('class', 'link2')
+                    .attr('fill', 'none')
+                    .attr('stroke', 'transparent')
+                    .attr('stroke-width', 20)
+                    .style('pointer-events', 'stroke'),
+                update => update,
+                exit => exit.remove()
+            );
+
+        if (typeof weighted !== 'undefined' && weighted) {
+            edgeLabel = labelLayer.selectAll('.edge-label')
+                .data(edges, d => `${d.source.id}-${d.target.id}`)
+                .join(
+                    enter => enter.append('text').attr('class', 'edge-label').text(d => d.weight),
+                    update => update.text(d => d.weight),
+                    exit => exit.remove()
+                );
+        }
+
+        // Update Nodes
+        let nodeSelection = nodeLayer.selectAll('rect').data(nodes, d => d.id);
+        let nodeEnter = nodeSelection.enter()
+            .append('rect')
+            .attr('class', 'node')
+            .attr('fill', nodeColor)
+            .attr('stroke', primaryBG)
+            .call(sizeNodeRect)
+            .call(d3.drag().on('start', dragStarted).on('drag', dragged).on('end', dragEnded));
+
+        nodeSelection.exit().remove();
+        node = nodeEnter.merge(nodeSelection)
+            .transition().duration(500) // Smooth movement to layout positions — D3 tweens
+            .call(positionNode);
+
+        node = nodeLayer.selectAll('rect');
+
+        // Update Node Labels
+        let labelSelection = labelLayer.selectAll('.node-label').data(nodes, d => d.id);
+        let labelEnter = labelSelection.enter()
+            .append('text')
+            .attr('dy', 7)
+            .attr('text-anchor', 'middle')
+            .text(d => d.label !== undefined ? d.label : d.id)
+            .attr('class', 'node-label')
+            .style('pointer-events', 'none')
+            .style('font-weight', 'bold');
+
+        labelSelection.exit().remove();
+        label = labelEnter.merge(labelSelection);
+        label.transition().duration(500)
+            .attr('x', d => d.x)
+            .attr('y', d => d.y);
+
+        // Snap edges seamlessly
+        setTimeout(() => {
+            setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+        }, 500);
+    }
+
     headerSpan.appendChild(methodsSelect);
 
     // Handle selection
@@ -1025,6 +1269,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             insertBST();
         } else if (event.target.value === "AVLI") {
             insertAVL();
+        } else if (event.target.value === "AVLB") {
+            balanceAVL();
         }
 
         // Reset back to placeholder after running
