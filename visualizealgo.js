@@ -6,7 +6,7 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
     }
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -14,7 +14,7 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
     svg.select('#interaction-blocker').remove(); // Clear any old ones
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     // Calculate BFS path
     const queue = [startNodeId];
@@ -95,7 +95,7 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
         resultLog.scrollTop = resultLog.scrollHeight;
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
             const isActive = activeNodes.has(d.id);
 
@@ -210,7 +210,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -218,7 +218,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
     svg.select('#interaction-blocker').remove(); // Clear any old ones
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     // Calculate DFS path using a Stack
     const stack = [{ id: startNodeId, level: 0, fromEdge: null }];
@@ -429,7 +429,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -437,7 +437,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     // Initialize Dijkstra's requirements
     const distances = {};
@@ -654,7 +654,7 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -662,7 +662,7 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
 
@@ -839,7 +839,7 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -847,7 +847,7 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
@@ -1090,7 +1090,7 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -1098,7 +1098,7 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
@@ -1326,14 +1326,14 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
@@ -1543,7 +1543,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -1552,7 +1552,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
@@ -1783,7 +1783,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -1791,7 +1791,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
 
@@ -2060,7 +2060,7 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -2068,7 +2068,7 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
@@ -2324,7 +2324,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -2332,7 +2332,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
 
@@ -2623,7 +2623,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -2632,7 +2632,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;
@@ -2928,7 +2928,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
 
     const originalNodeColors = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect.node").each(function (d) {
         originalNodeColors.set(d.id, d3.select(this).attr("fill"));
     });
 
@@ -2936,7 +2936,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
     svg.select('#interaction-blocker').remove();
     svg.append('style')
         .attr('id', 'interaction-blocker')
-        .text('circle, .link, .link2 { pointer-events: none !important; }');
+        .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
     const V = nodeIds.length;

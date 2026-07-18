@@ -1190,23 +1190,38 @@ function isTree(edgesInput, directed = true) {
     }
 }
 
-/* Convert to JSON for tree representation */
+// Parses "translate(x,y)" out of a transform attribute — used as a
+// fallback when the bound datum isn't available for some reason.
+function parseTranslate(transformStr) {
+    if (!transformStr) return null;
+    const match = transformStr.match(/translate\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/);
+    return match ? { x: parseFloat(match[1]), y: parseFloat(match[2]) } : null;
+}
+
 function convertToTreeJSON(edgesInput, svg, directed = true) {
     const nodeMap = new Map();
 
-    svg.selectAll("rect").each(function (d) {
+    // Nodes are now <rect class="node"> positioned via a
+    // transform="translate(x,y)" (rects have no cx/cy), instead of
+    // <circle> with cx/cy attributes.
+    svg.selectAll("rect.node").each(function (d) {
         const element = d3.select(this);
-        
+
         const id = element.attr("id") || (d && d.id);
-        const cx = parseFloat(element.attr("cx")) || (d && d.x) || 0;
-        const cy = parseFloat(element.attr("cy")) || (d && d.y) || 0;
+        const fromTransform = parseTranslate(element.attr("transform"));
+
+        // Prefer the bound datum's x/y (authoritative — kept in sync by
+        // the simulation/drag/layout code); fall back to parsing the
+        // transform attribute directly if the datum is unavailable.
+        const cx = (d && d.x) ?? fromTransform?.x ?? 0;
+        const cy = (d && d.y) ?? fromTransform?.y ?? 0;
 
         if (id !== undefined && id !== null) {
-            nodeMap.set(String(id), { 
-                id: id, 
-                x: cx, 
-                y: cy, 
-                children: [] 
+            nodeMap.set(String(id), {
+                id: id,
+                x: cx,
+                y: cy,
+                children: []
             });
         }
     });
@@ -1222,7 +1237,7 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
     edges.forEach(edge => {
         const sourceId = String(edge.source);
         const targetId = String(edge.target);
-        
+
         const parentNode = nodeMap.get(sourceId);
         const childNode = nodeMap.get(targetId);
 
