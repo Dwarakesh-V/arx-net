@@ -140,12 +140,6 @@ const routes = {
           <li><strong>Double-Click Background:</strong> Reset camera transform and center the graph.</li>
           <li><strong>Right-Click Canvas:</strong> Summon advanced viewport configurations.</li>
         </ul>
-
-        <h3>Force Physics Engine</h3>
-        <p>
-          By enabling the <strong>Force</strong> checkbox, the system applies a physics simulation to the nodes. 
-          Nodes will naturally repel each other while edges act as springs, causing the graph to automatically untangle itself into an aesthetically pleasing layout.
-        </p>
       </div>
     </div>
   `,

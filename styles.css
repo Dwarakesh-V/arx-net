@@ -47,7 +47,7 @@
 }
 
 .node {
-    r: 30;
+    /* r: 30; */
     stroke-width: 5;
 }
 
@@ -60,6 +60,9 @@
     font-weight: bold;
     fill: var(--node-label-color);
     pointer-events: none;
+    /* stroke: #141414;
+    stroke-width: 4;
+    paint-order: stroke; */
 }
 
 .edge-label {

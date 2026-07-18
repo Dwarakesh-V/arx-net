@@ -11,7 +11,6 @@ const cgb = document.getElementById('createGraphButton'); // Create graph button
 const graphGenMenu = document.getElementById('sourceInput')
 
 const graphInputField = document.getElementById('edges'); // Edge list
-const graphInputVertices = document.getElementById('vertices'); // Vertices
 const connected = document.getElementById('connectedGraph'); // Connected graph checkbox
 const minWeight = document.getElementById('minWeight'); // Minimum weight input
 const maxWeight = document.getElementById('maxWeight'); // Maximum weight input

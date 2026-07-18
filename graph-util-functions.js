@@ -245,11 +245,11 @@ function handleAlgorithmClick(algorithm, container, svgElement, svg, nodes, edge
 // Parse edges input into an array of edge objects
 function parseEdges(edgesInput, directed = true) {
     const trimmed = edgesInput.trim();
-    if (trimmed.startsWith('{')) {
-        return parsePythonAdjacencyDict(trimmed, directed);
-    }
+    let edges;
 
-    if (trimmed.startsWith('[')) {
+    if (trimmed.startsWith('{')) {
+        edges = parsePythonAdjacencyDict(trimmed, directed);
+    } else if (trimmed.startsWith('[')) {
         // A leading '[' is ambiguous: it could be a python-style edge list
         // (a list of tuples, e.g. "[('a','b')]") or a *single* standalone
         // multi-value vertex written in bracket notation (e.g. "[10,20]"
@@ -257,13 +257,40 @@ function parseEdges(edgesInput, directed = true) {
         // edge-list parser when the contents actually look like tuples.
         const inner = stripOuter(trimmed, '[', ']');
         const looksLikeTupleList = inner === '' || tokeniseTopLevel(inner).some(t => t.startsWith('('));
-        if (looksLikeTupleList) {
-            return parsePythonEdgeList(trimmed, directed);
-        }
-        return parseCompactEdges(trimmed, directed);
+        edges = looksLikeTupleList
+            ? parsePythonEdgeList(trimmed, directed)
+            : parseCompactEdges(trimmed, directed);
+    } else {
+        edges = parseCompactEdges(trimmed, directed);
     }
 
-    return parseCompactEdges(trimmed, directed);
+    return finalizeVertexTypes(edges);
+}
+
+// Multi-value vertices are represented as arrays internally (so ordering,
+// nesting, and dedup all behave correctly — see nodeKey/deduplicateEdges).
+// But raw arrays are a bad public contract: every occurrence of "[10,20]"
+// in the input text produces a *new* array object, so anything doing
+// reference-based lookups downstream (a JS Map keyed by node, a D3
+// force-link .id() resolution, a Set) will treat logically-identical
+// nodes as distinct and fail to match them up. To keep source/target
+// safe to use as stable identifiers — exactly like before multi-value
+// vertices existed — this converts them to a canonical, deterministic
+// string, and moves the structured key list to sourceKeys/targetKeys for
+// anyone who wants to render the individual keys.
+function finalizeVertexTypes(edges) {
+    return edges.map(edge => {
+        const out = Object.assign({}, edge);
+        if (Array.isArray(out.source)) {
+            out.sourceKeys = out.source;
+            out.source = out.source.join(',');
+        }
+        if (Array.isArray(out.target)) {
+            out.targetKeys = out.target;
+            out.target = out.target.join(',');
+        }
+        return out;
+    });
 }
 
 function tokeniseTopLevel(input, delimiter = ',') {
@@ -644,8 +671,7 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
     }
 
     graphInputField.value = stringifyEdges(edgeList);
-    graphInputVertices.value = vertices.join(', ');
-    addGraph();
+    addGraph(null,null,null,null,null,false);
 }
 
 function generateRandomTree(vertexCount, options = {}) {
@@ -765,22 +791,11 @@ function generateRandomTree(vertexCount, options = {}) {
     }
 
     // Output to the DOM elements
-    if (typeof graphInputField !== 'undefined') {
-        graphInputField.value = typeof stringifyEdges === 'function' ? stringifyEdges(edgeList) : JSON.stringify(edgeList);
-    }
-    if (typeof graphInputVertices !== 'undefined') {
-        graphInputVertices.value = vertices.join(', ');
-    }
-    if (typeof addGraph === 'function') {
-        addGraph();
-    }
-
+    graphInputField.value = stringifyEdges(edgeList);
+    addGraph(null,null,null,null,null,true);
     return { vertices, edgeList };
 }
 
-// ---------------------------------------------------------------------------
-// Plain (unbalanced) BST insertion
-// ---------------------------------------------------------------------------
 function buildPlainBST(indices) {
     let root = null;
 
@@ -1179,7 +1194,7 @@ function isTree(edgesInput, directed = true) {
 function convertToTreeJSON(edgesInput, svg, directed = true) {
     const nodeMap = new Map();
 
-    svg.selectAll("circle").each(function (d) {
+    svg.selectAll("rect").each(function (d) {
         const element = d3.select(this);
         
         const id = element.attr("id") || (d && d.id);
@@ -1408,3 +1423,126 @@ function isAVLJSON(root) {
 
     return { valid: true, reason: "Tree is a valid AVL tree." };
 }
+
+// function isRedBlackJSON(root) {
+//     if (!root) return { valid: true, reason: "Empty tree is trivially a valid Red-Black tree." };
+
+//     const rootColor = (root.color || "").toLowerCase();
+//     if (rootColor !== "black") {
+//         return { valid: false, reason: `Root node "${root.id}" violates Red-Black property: Root must be black.` };
+//     }
+
+//     function resolveChildren(node) {
+//         const kids = node.children || [];
+
+//         if (kids.length === 0) {
+//             return { left: null, right: null };
+//         }
+
+//         if (kids.length === 1) {
+//             const child = kids[0];
+//             const parentValue = Number(node.id);
+//             const childValue = Number(child.id);
+
+//             if (childValue < parentValue) {
+//                 return { left: child, right: null };
+//             } else if (childValue > parentValue) {
+//                 return { left: null, right: child };
+//             } else {
+//                 return { left: null, right: null, duplicate: child };
+//             }
+//         }
+
+//         if (kids.length === 2) {
+//             const [a, b] = kids;
+//             if (a.x === b.x) {
+//                 return { ambiguous: true };
+//             }
+//             return a.x < b.x ? { left: a, right: b } : { left: b, right: a };
+//         }
+
+//         return { tooManyChildren: true };
+//     }
+
+//     // Recursively validates BST bounds, Red-Black color rules, and calculates black height
+//     function validateAndCheckBlackHeight(node, min, max, path) {
+//         if (!node) {
+//             return { valid: true, blackHeight: 1, isBlack: true };
+//         }
+
+//         const value = Number(node.id);
+//         if (Number.isNaN(value)) {
+//             return { valid: false, reason: `Node "${node.id}" at ${path} has a non-numeric id.` };
+//         }
+
+//         if (value <= min || value >= max) {
+//             return {
+//                 valid: false,
+//                 reason: `Node "${node.id}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
+//             };
+//         }
+
+//         // Rule 1: Every node is either red or black.
+//         const color = (node.color || "").toLowerCase();
+//         if (color !== "red" && color !== "black") {
+//             return { 
+//                 valid: false, 
+//                 reason: `Node "${node.id}" at ${path} has an invalid or missing color: "${color}". Must be "red" or "black".` 
+//             };
+//         }
+//         const isCurrentBlack = (color === "black");
+
+//         const resolved = resolveChildren(node);
+
+//         if (resolved.tooManyChildren) {
+//             return { valid: false, reason: `Node "${node.id}" at ${path} has more than 2 children.` };
+//         }
+//         if (resolved.ambiguous) {
+//             return { valid: false, reason: `Node "${node.id}" at ${path} has two children with identical x coordinates.` };
+//         }
+//         if (resolved.duplicate) {
+//             return { valid: false, reason: `Node "${node.id}" at ${path} has a child "${resolved.duplicate.id}" with an equal value.` };
+//         }
+
+//         // Validate subtrees
+//         const leftResult = validateAndCheckBlackHeight(resolved.left, min, value, `${path} -> left`);
+//         if (!leftResult.valid) return leftResult;
+
+//         const rightResult = validateAndCheckBlackHeight(resolved.right, value, max, `${path} -> right`);
+//         if (!rightResult.valid) return rightResult;
+
+//         // Rule 4: If a node is red, both children must be black.
+//         if (!isCurrentBlack) {
+//             if (!leftResult.isBlack || !rightResult.isBlack) {
+//                 return {
+//                     valid: false,
+//                     reason: `Node "${node.id}" at ${path} is red, but has a red child. Violates no-consecutive-reds rule.`
+//                 };
+//             }
+//         }
+
+//         if (leftResult.blackHeight !== rightResult.blackHeight) {
+//             return {
+//                 valid: false,
+//                 reason: `Node "${node.id}" at ${path} violates black-height rule. Left path black height is ${leftResult.blackHeight}, right path is ${rightResult.blackHeight}.`
+//             };
+//         }
+
+//         // Calculate and return current subtree's black height.
+//         const currentBlackHeight = leftResult.blackHeight + (isCurrentBlack ? 1 : 0);
+
+//         return { 
+//             valid: true, 
+//             blackHeight: currentBlackHeight,
+//             isBlack: isCurrentBlack
+//         };
+//     }
+
+//     const finalResult = validateAndCheckBlackHeight(root, -Infinity, Infinity, `root(${root.id})`);
+    
+//     if (!finalResult.valid) {
+//         return { valid: false, reason: finalResult.reason };
+//     }
+
+//     return { valid: true, reason: "Tree is a valid Red-Black tree." };
+// }

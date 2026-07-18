@@ -59,8 +59,6 @@
 
     <div class='customizeRandom' id='customizeRandom'>
         <input type='text' id='graphName' placeholder='Graph/tree name (Can be blank)'> <br>
-        <input type='text' id='vertices' placeholder='Vertices in Graph/tree: E.G., A, B, C (Can be blank)'
-            style='text-transform: uppercase;'> <br>
         <input type='text' id='edges' placeholder='Edges in Graph: E.G., AB5, 12-3.14, (B,C,-2.71)' autocomplete='off'
             spellcheck='false'
             value='AB7, AA6, BA9, AC5, AD3, BC4, BE6, CD2, CF8, DE5, DG7, EE2, EF3, EH4, FG6, FI7, GH2, HI5, HJ9, IJ4'
@@ -79,11 +77,11 @@
                 <option value="binary">Binary</option>
                 <option value="binarySearch">BST</option>
                 <option value="avl">AVL</option>
-                <option value="redBlack">Red Black</option>
+                <!-- <option value="redBlack">Red Black</option>
                 <option value="twoThree">2-3 Tree</option>
                 <option value="twoThreeFour">2-3-4 Tree</option>
                 <option value="B">B Tree</option>
-                <option value="B">B+ Tree</option>
+                <option value="B">B+ Tree</option> -->
             </select>
         </div>
 
@@ -261,7 +259,8 @@
                     automatically reset and re-center the graph relative to your current camera view.</li>
                 <li style="margin-bottom: 10px;">Click the <strong>Book Icon</strong> to toggle the algorithm results
                     panel. Every computed algorithm features an interactive <span
-                        style="color: var(--accent-orange);">[Explanation]</span> link that dynamically maps out the step-by-step
+                        style="color: var(--accent-orange);">[Explanation]</span> link that dynamically maps out the
+                    step-by-step
                     logic in the right-hand panel.</li>
                 <li>The <strong>Force</strong> checkbox activates a physics-based layout engine. This applies simulated
                     repulsions and attractions to the nodes collectively, preventing visual overlap or excessive spacing
@@ -282,7 +281,8 @@
                     style parsing and seamless type conversion between adjacency list, edge list and adjacency matrix to
                     use in combination with networkx. </li>
                 <li style="margin-bottom: 10px;">To get started, run &nbsp;<span
-                        style="color: var(--accent-orange); font-family: monospace;">pip install arx-net networkx</span>&nbsp; from
+                        style="color: var(--accent-orange); font-family: monospace;">pip install arx-net
+                        networkx</span>&nbsp; from
                     your python
                     environment.</li>
                 <li style="margin-bottom: 10px;">This is a sample program on how they can be used together: <br></li>
@@ -311,7 +311,10 @@
                 </div>
             </center>
             <ul style="margin-bottom: 0; color: #ccc; padding-left: 20px;">
-                <li style="margin-bottom: 10px;">For more details, please refer to the <a
+                <li style="margin-bottom: 10px;">For more details, please refer to the <a href="docs/index.html"
+                        style="color:#5bc0de;">arx net
+                        documentation</a></li>
+                <li style="margin-bottom: 10px;">For more details on networkx, please refer to the <a
                         href="https://networkx.org/documentation/stable/" style="color:#5bc0de;">networkx
                         documentation</a></li>
             </ul>
