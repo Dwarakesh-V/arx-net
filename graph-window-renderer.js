@@ -288,7 +288,6 @@ function dragEnded(event, d, simulation, thisNode, treej) {
     if (!event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
-    console.log(treej);
 }
 /* End of Drag Functions */
 
@@ -551,7 +550,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         methodsSelect.appendChild(option1);
 
         function insertBST() {
-            console.log(isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed))
+            console.log(isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)), convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed))
             if (!isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
                 alert("This structure is not a BST.")
                 return;

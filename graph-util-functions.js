@@ -1259,21 +1259,37 @@ function convertToTreeJSON(edgesInput, svg, directed = true) {
 
 function isBSTJSON(root) {
     if (!root) return { valid: true, reason: "Empty tree is trivially a valid BST." };
- 
+
+    // Helper to get the display name/value, handling the new label property
+    // Helper to get the display name/value, handling missing labels
+    const getValStr = (n) => {
+        if (n.label !== undefined) return n.label;
+        
+        // If label is missing, strip the suffix (e.g., "10_1" becomes "10")
+        const idStr = String(n.id);
+        const lastUnderscore = idStr.lastIndexOf('_');
+        
+        if (lastUnderscore !== -1) {
+            return idStr.substring(0, lastUnderscore);
+        }
+        
+        return idStr;
+    };
+
     // Decide which child is "left" and which is "right" for a given node.
     function resolveChildren(node) {
         const kids = node.children || [];
- 
+
         if (kids.length === 0) {
             return { left: null, right: null };
         }
- 
+
         if (kids.length === 1) {
             // Ambiguous by position — decide by value instead.
             const child = kids[0];
-            const parentValue = Number(node.id);
-            const childValue = Number(child.id);
- 
+            const parentValue = Number(getValStr(node));
+            const childValue = Number(getValStr(child));
+
             if (childValue < parentValue) {
                 return { left: child, right: null };
             } else if (childValue > parentValue) {
@@ -1283,7 +1299,7 @@ function isBSTJSON(root) {
                 return { left: null, right: null, duplicate: child };
             }
         }
- 
+
         if (kids.length === 2) {
             const [a, b] = kids;
             if (a.x === b.x) {
@@ -1292,55 +1308,73 @@ function isBSTJSON(root) {
             }
             return a.x < b.x ? { left: a, right: b } : { left: b, right: a };
         }
- 
+
         // More than 2 children can't be a binary tree at all.
         return { tooManyChildren: true };
     }
- 
+
     function validate(node, min, max, path) {
         if (!node) return { valid: true };
- 
-        const value = Number(node.id);
+
+        const valStr = getValStr(node);
+        const value = Number(valStr);
+        
         if (Number.isNaN(value)) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has a non-numeric id.` };
+            return { valid: false, reason: `Node "${valStr}" at ${path} has a non-numeric value. (Internal ID: ${node.id})` };
         }
- 
+
         if (value <= min || value >= max) {
             return {
                 valid: false,
-                reason: `Node "${node.id}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
+                reason: `Node "${valStr}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
             };
         }
- 
+
         const resolved = resolveChildren(node);
- 
+
         if (resolved.tooManyChildren) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has more than 2 children.` };
+            return { valid: false, reason: `Node "${valStr}" at ${path} has more than 2 children.` };
         }
         if (resolved.ambiguous) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has two children with identical x coordinates; left/right can't be determined.` };
+            return { valid: false, reason: `Node "${valStr}" at ${path} has two children with identical x coordinates; left/right can't be determined.` };
         }
         if (resolved.duplicate) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has a child "${resolved.duplicate.id}" with an equal value.` };
+            const dupValStr = getValStr(resolved.duplicate);
+            return { valid: false, reason: `Node "${valStr}" at ${path} has a child "${dupValStr}" with an equal value.` };
         }
- 
+
         const leftResult = validate(resolved.left, min, value, `${path} -> left`);
         if (!leftResult.valid) return leftResult;
- 
+
         const rightResult = validate(resolved.right, value, max, `${path} -> right`);
         if (!rightResult.valid) return rightResult;
- 
+
         return { valid: true };
     }
- 
-    return validate(root, -Infinity, Infinity, `root(${root.id})`);
+
+    return validate(root, -Infinity, Infinity, `root(${getValStr(root)})`);
 }
 
 function isAVLJSON(root) {
     if (!root) return { valid: true, reason: "Empty tree is trivially a valid AVL tree." };
 
+    // Helper to get the display name/value, handling the new label property
+    // Helper to get the display name/value, handling missing labels
+    const getValStr = (n) => {
+        if (n.label !== undefined) return n.label;
+        
+        // If label is missing, strip the suffix (e.g., "10_1" becomes "10")
+        const idStr = String(n.id);
+        const lastUnderscore = idStr.lastIndexOf('_');
+        
+        if (lastUnderscore !== -1) {
+            return idStr.substring(0, lastUnderscore);
+        }
+        
+        return idStr;
+    };
+
     // Decide which child is "left" and which is "right" for a given node.
-    // (This remains unchanged from the BST implementation)
     function resolveChildren(node) {
         const kids = node.children || [];
 
@@ -1351,8 +1385,8 @@ function isAVLJSON(root) {
         if (kids.length === 1) {
             // Ambiguous by position — decide by value instead.
             const child = kids[0];
-            const parentValue = Number(node.id);
-            const childValue = Number(child.id);
+            const parentValue = Number(getValStr(node));
+            const childValue = Number(getValStr(child));
 
             if (childValue < parentValue) {
                 return { left: child, right: null };
@@ -1381,28 +1415,31 @@ function isAVLJSON(root) {
     function validateAndGetHeight(node, min, max, path) {
         if (!node) return { valid: true, height: 0 };
 
-        const value = Number(node.id);
+        const valStr = getValStr(node);
+        const value = Number(valStr);
+        
         if (Number.isNaN(value)) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has a non-numeric id.` };
+            return { valid: false, reason: `Node "${valStr}" at ${path} has a non-numeric value. (Internal ID: ${node.id})` };
         }
 
         if (value <= min || value >= max) {
             return {
                 valid: false,
-                reason: `Node "${node.id}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
+                reason: `Node "${valStr}" at ${path} violates BST bounds (must be in (${min}, ${max})).`
             };
         }
 
         const resolved = resolveChildren(node);
 
         if (resolved.tooManyChildren) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has more than 2 children.` };
+            return { valid: false, reason: `Node "${valStr}" at ${path} has more than 2 children.` };
         }
         if (resolved.ambiguous) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has two children with identical x coordinates; left/right can't be determined.` };
+            return { valid: false, reason: `Node "${valStr}" at ${path} has two children with identical x coordinates; left/right can't be determined.` };
         }
         if (resolved.duplicate) {
-            return { valid: false, reason: `Node "${node.id}" at ${path} has a child "${resolved.duplicate.id}" with an equal value.` };
+            const dupValStr = getValStr(resolved.duplicate);
+            return { valid: false, reason: `Node "${valStr}" at ${path} has a child "${dupValStr}" with an equal value.` };
         }
 
         // 1. Validate left subtree and get its height
@@ -1418,7 +1455,7 @@ function isAVLJSON(root) {
         if (heightDifference > 1) {
             return {
                 valid: false, 
-                reason: `Node "${node.id}" at ${path} violates AVL balance property. Left subtree height is ${leftResult.height}, right subtree height is ${rightResult.height}.`
+                reason: `Node "${valStr}" at ${path} violates AVL balance property. Left subtree height is ${leftResult.height}, right subtree height is ${rightResult.height}.`
             };
         }
 
@@ -1430,7 +1467,7 @@ function isAVLJSON(root) {
     }
 
     // Execute validation and format the final output to hide internal height tracking
-    const finalResult = validateAndGetHeight(root, -Infinity, Infinity, `root(${root.id})`);
+    const finalResult = validateAndGetHeight(root, -Infinity, Infinity, `root(${getValStr(root)})`);
     
     if (!finalResult.valid) {
         return { valid: false, reason: finalResult.reason };
