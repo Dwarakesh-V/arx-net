@@ -416,7 +416,7 @@ class AboutBox {
     });
 
     this.title = document.createElement("span");
-    this.title.textContent = "About";
+    this.title.textContent = "Stats";
 
     this.toggle = document.createElement("span");
     this.toggle.textContent = "-";

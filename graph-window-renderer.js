@@ -2546,6 +2546,14 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     aboutType.textContent = isTreeType ? "Tree" : "Graph";
     aboutContent.append("Type: ", aboutType, document.createElement("br"));
 
+    const aboutVC = document.createElement("b");
+    aboutVC.textContent = nodes.length
+    aboutContent.append("Vertex count: ", aboutVC, document.createElement("br"));
+
+    const aboutEC = document.createElement("b");
+    aboutEC.textContent = edgesRaw.length
+    aboutContent.append("Edge count: ", aboutEC, document.createElement("br"));
+
     const aboutDirected = document.createElement("b");
     aboutDirected.textContent = directed ? "Yes" : "No";
     aboutContent.append("Directed: ", aboutDirected, document.createElement("br"));
