@@ -385,20 +385,22 @@ function showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, la
         setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
     });
 
-    addMenuItem(menuElement, menu, 'Change edge weight', null, () => {
-        let newWeight = parseFloat(prompt('Enter new weight for this edge:', d.weight));
-        if (newWeight == null || isNaN(newWeight)) {
-            alert('Weight must be a valid number.');
-        } else {
-            d.weight = newWeight;
-            if (edgeLabel) edgeLabel.filter(e => e === d).text(newWeight);
-            const raw = edgesRaw.find(e =>
-                e.source === (d.source.id || d.source) &&
-                e.target === (d.target.id || d.target)
-            );
-            if (raw) raw.weight = newWeight;
-        }
-    });
+    if (weighted) {
+        addMenuItem(menuElement, menu, 'Change edge weight', null, () => {
+            let newWeight = parseFloat(prompt('Enter new weight for this edge:', d.weight));
+            if (newWeight == null || isNaN(newWeight)) {
+                alert('Weight must be a valid number.');
+            } else {
+                d.weight = newWeight;
+                if (edgeLabel) edgeLabel.filter(e => e === d).text(newWeight);
+                const raw = edgesRaw.find(e =>
+                    e.source === (d.source.id || d.source) &&
+                    e.target === (d.target.id || d.target)
+                );
+                if (raw) raw.weight = newWeight;
+            }
+        });
+    }
 
     menu.show(event);
 }
@@ -727,7 +729,8 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
             // 5. Apply final positioning mapping
             setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-            if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            adjustViewBox(svg, nodes, grid);
         }
 
         const option2 = document.createElement('option');
@@ -859,7 +862,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             }
 
             // Create and push the new node (initial coords at 0, layout func will correct them)
-            const newNodeObj = { id: uniqueId, label: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
+            const newNodeObj = { id: uniqueId, label: newVertex, x: 0, y: 0, vx: 0, vy: 0 };
             nodes.push(newNodeObj);
 
             if (parentNode) {
@@ -998,6 +1001,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
                 if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
             }, 500);
+            adjustViewBox(svg, nodes, grid);
         };
 
         const option3 = document.createElement('option');
@@ -1398,34 +1402,37 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     // Create new vertex
     addMenuItem(menuElement, menu, 'Create new vertex', 'Add a new vertex to this graph', () => {
         let newVertex = prompt("Enter new vertex name (e.g., A, B, C):");
-        if (newVertex) {
-            newVertex = newVertex.toUpperCase();
-            let uniqueId = newVertex;
-            let counter = 1;
-            while (nodes.some(node => node.id === uniqueId)) {
-                uniqueId = `${newVertex}_${counter++}`;
-            }
+        if (!newVertex) return;
 
-            // Place the new node at the cursor
-            // Calculate the SVG coordinates corresponding to the mouse position
-            const pt = svg.node().createSVGPoint();
-            pt.x = event.clientX;
-            pt.y = event.clientY;
-            const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
-            const centerX = svgP.x;
-            const centerY = svgP.y;
+        newVertex = newVertex.toUpperCase();
+        let uniqueId = newVertex;
+        let counter = 1;
+        while (nodes.some(node => node.id === uniqueId)) {
+            uniqueId = `${newVertex}_${counter++}`;
+        }
 
-            const newNodeObj = { id: uniqueId, label: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
+        // Place the new node at the cursor
+        // Calculate the SVG coordinates corresponding to the mouse position
+        const pt = svg.node().createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
+        const svgP = pt.matrixTransform(svg.node().getScreenCTM().inverse());
+        const centerX = svgP.x;
+        const centerY = svgP.y;
+
+        const newNodeObj = { id: uniqueId, label: newVertex, x: centerX, y: centerY, vx: 0, vy: 0 };
+
+        // Wrapper function to finalize adding the vertex and drawing it
+        const finalizeVertexCreation = (parentNode = null) => {
             nodes.push(newNodeObj);
 
-            if (isTreeType && nodes.length > 1) {
-                const possibleParents = nodes.filter(n => n.id !== uniqueId);
-                const parentNode = possibleParents[Math.floor(Math.random() * possibleParents.length)];
+            // If a parent node was selected (Tree mode), create the connection
+            if (parentNode) {
                 let weight = 1;
                 edges.push({ source: parentNode, target: newNodeObj, weight });
                 edgesRaw.push({ source: parentNode.id, target: uniqueId, weight });
 
-                // Re-bind data and redraw links (replicating the edge creation logic)
+                // Re-bind data and redraw links
                 link = edgeLayer.selectAll('.link')
                     .data(edges)
                     .join(
@@ -1479,10 +1486,10 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 }
             }
 
+            // Render nodes
             let nodeSelection = nodeLayer.selectAll('rect')
                 .data(nodes, d => d.id);
 
-            // Handle new nodes with enter()
             let nodeEnter = nodeSelection.enter()
                 .append('rect')
                 .attr('class', 'node')
@@ -1525,24 +1532,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             }
 
                             const oldId = d.id;
-
-                            // Update both the internal ID and the visual label
                             d.id = uniqueId;
                             d.label = newLabel;
 
-                            // Update edgesRaw to use the unique internal ID, not the visual label
                             edgesRaw.forEach(edge => {
                                 if (edge.source === oldId) edge.source = uniqueId;
                                 if (edge.target === oldId) edge.target = uniqueId;
                             });
 
-                            // Visually update the labels on screen
                             labelLayer.selectAll('.node-label').text(n => n.label !== undefined ? n.label : n.id);
-
-                            // Resize this node's rect to fit the new label
                             d3.select(this).call(sizeNodeRect);
-
-                            // Update source/target attributes on links if you depend on them for selections
                             link.attr('source-id', e => `${arrowId}${e.source.id}`)
                                 .attr('target-id', e => `${arrowId}${e.target.id}`);
                         }
@@ -1551,9 +1550,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     // Create new edge
                     addMenuItem(menuElement, menu, 'Create new edge from this vertex', null, () => {
                         let targetId = prompt("Enter target vertex id:").toUpperCase();
-                        if (!targetId) {
-                            return;
-                        }
+                        if (!targetId) return;
                         const targetNode = nodes.find(n => n.id === targetId);
                         if (!targetNode) {
                             alert("Target vertex does not exist.");
@@ -1562,22 +1559,19 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                         let weight = 1;
                         if (weighted) {
                             let w = prompt("Enter weight for this edge:", "1");
-                            if (w === null) {
-                                return;
-                            }
+                            if (w === null) return;
                             weight = parseFloat(w);
                             if (isNaN(weight)) {
                                 alert("Invalid weight.");
                                 return;
                             }
                         }
-                        // Check if the reverse edge exists (i.e., bidirectional)
+
                         const reverseEdge = edges.find(e => e.source === targetNode && e.target === d);
                         const isSelfLoop = d.id === targetId;
                         if (isSelfLoop) {
-                            edges.push({ source: d, target: targetNode, weight, selfLoop: true })
+                            edges.push({ source: d, target: targetNode, weight, selfLoop: true });
                         } else if (reverseEdge) {
-                            // Mark both edges as bidirectional
                             edges.push({ source: d, target: targetNode, weight, bidirectional: true });
                             reverseEdge.bidirectional = true;
                         } else {
@@ -1586,9 +1580,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
                         edgesRaw.push({ source: d.id, target: targetNode.id, weight });
 
-                        // Re-bind data and redraw links and edge labels
-                        link = edgeLayer.selectAll('.link')
-                            .data(edges)
+                        link = edgeLayer.selectAll('.link').data(edges)
                             .join(
                                 enter => enter.append('path')
                                     .attr('class', 'link')
@@ -1597,22 +1589,14 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                     .attr('fill', 'none')
                                     .attr('stroke', edgeColor)
                                     .attr('stroke-width', 4)
-                                    .on('mouseover', function () {
-                                        handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement);
-                                    })
-                                    .on('mouseout', function () {
-                                        handleEdgeMouseOut(this, edgeColor, directed, svgElement);
-                                    })
-                                    .on('contextmenu', function (event, d) {
-                                        showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2);
-                                    }),
+                                    .on('mouseover', function () { handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement); })
+                                    .on('mouseout', function () { handleEdgeMouseOut(this, edgeColor, directed, svgElement); })
+                                    .on('contextmenu', function (event, d) { showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2); }),
                                 update => update,
                                 exit => exit.remove()
                             );
 
-                        // Re-bind data and redraw buffer links for edge hover/click
-                        link2 = edgeBufferLayer.selectAll('.link2')
-                            .data(edges)
+                        link2 = edgeBufferLayer.selectAll('.link2').data(edges)
                             .join(
                                 enter => enter.append('path')
                                     .attr('class', 'link2')
@@ -1630,71 +1614,50 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                     })
                                     .on('contextmenu', function (event, d) {
                                         const selector = `.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`;
-                                        d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', {
-                                            bubbles: false,
-                                            cancelable: true,
-                                            clientX: event.clientX,
-                                            clientY: event.clientY,
-                                            view: window
-                                        }));
+                                        d3.select(selector).node().dispatchEvent(new MouseEvent('contextmenu', { bubbles: false, cancelable: true, clientX: event.clientX, clientY: event.clientY, view: window }));
                                     }),
                                 update => update,
                                 exit => exit.remove()
                             );
 
-                        // If weighted, update edge labels
                         if (weighted) {
                             edgeLabel.exit().remove();
-                            edgeLabel = labelLayer.selectAll('.edge-label')
-                                .data(edges)
+                            edgeLabel = labelLayer.selectAll('.edge-label').data(edges)
                                 .join(
-                                    enter => enter.append('text')
-                                        .attr('class', 'edge-label')
-                                        .text(d => d.weight),
+                                    enter => enter.append('text').attr('class', 'edge-label').text(d => d.weight),
                                     update => update.text(d => d.weight),
                                     exit => exit.remove()
                                 );
                         }
 
-                        // Update positions
                         setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
                         setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
                     });
 
                     if (!isTreeType) {
-                        // Delete node option
                         addMenuItem(menuElement, menu, 'Delete this vertex', null, () => {
-                            // Remove the node from the nodes array
                             const idx = nodes.indexOf(d);
                             if (idx !== -1) {
                                 nodes.splice(idx, 1);
-                                edges = edges.filter(edge => edge.source !== d && edge.target !== d); // Remove edges connected to this node
+                                edges = edges.filter(edge => edge.source !== d && edge.target !== d);
                                 edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
                             }
-                            // Remove the node visually
                             d3.select(this).remove();
-                            // Remove labels associated with this node
                             label.filter(l => l === d).remove();
                             if (edgeLabel) {
                                 edgeLabel.filter(e => e.source === d || e.target === d).remove();
                             }
-                            // Remove edges that go to and from this node
                             link.filter(l => l.source === d || l.target === d).remove();
-                            // Update edges and edgesRaw
                             edges = edges.filter(edge => edge.source.id !== d.id && edge.target.id !== d.id);
                             edgesRaw = edgesRaw.filter(edge => edge.source !== d.id && edge.target !== d.id);
                         });
                     } else {
-                        // Cascading Delete node option
                         addMenuItem(menuElement, menu, 'Delete this vertex and its subtree', null, () => {
-                            // 1. Identify all nodes in the subtree rooted at this node (d)
                             const idsToDelete = new Set([d.id]);
                             const queue = [d.id];
 
-                            // Traverse downward to find all descendants
                             while (queue.length > 0) {
                                 const currentId = queue.shift();
-
                                 edgesRaw.forEach(edge => {
                                     if (edge.source === currentId && !idsToDelete.has(edge.target)) {
                                         idsToDelete.add(edge.target);
@@ -1703,50 +1666,32 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                                 });
                             }
 
-                            // 2. Remove the nodes from the data array
-                            // Iterating backwards allows us to splice safely without messing up indices
                             for (let i = nodes.length - 1; i >= 0; i--) {
                                 if (idsToDelete.has(nodes[i].id)) {
                                     nodes.splice(i, 1);
                                 }
                             }
 
-                            // 3. Remove edges connected to ANY of the deleted nodes from the data arrays
                             edges = edges.filter(edge => !idsToDelete.has(edge.source.id) && !idsToDelete.has(edge.target.id));
                             edgesRaw = edgesRaw.filter(edge => !idsToDelete.has(edge.source) && !idsToDelete.has(edge.target));
 
-                            // 4. Remove the visual elements using D3 filters
-
-                            // Remove node circles
                             node.filter(n => idsToDelete.has(n.id)).remove();
-
-                            // Remove node text labels
                             label.filter(n => idsToDelete.has(n.id)).remove();
-
-                            // Remove links (edges)
                             link.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
 
-                            // Remove buffer links (invisible wider paths for easier clicking/hovering)
                             if (typeof link2 !== 'undefined' && link2) {
                                 link2.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
                             }
-
-                            // Remove edge labels if the graph is weighted
                             if (typeof edgeLabel !== 'undefined' && edgeLabel) {
                                 edgeLabel.filter(e => idsToDelete.has(e.source.id) || idsToDelete.has(e.target.id)).remove();
                             }
 
-                            // 5. Reassign the active D3 selections so subsequent updates or drag events don't throw errors
                             node = nodeLayer.selectAll('.node');
                             label = labelLayer.selectAll('.node-label');
                             link = edgeLayer.selectAll('.link');
 
-                            if (typeof link2 !== 'undefined' && link2) {
-                                link2 = edgeBufferLayer.selectAll('.link2');
-                            }
-                            if (typeof edgeLabel !== 'undefined' && edgeLabel) {
-                                edgeLabel = labelLayer.selectAll('.edge-label');
-                            }
+                            if (typeof link2 !== 'undefined' && link2) link2 = edgeBufferLayer.selectAll('.link2');
+                            if (typeof edgeLabel !== 'undefined' && edgeLabel) edgeLabel = labelLayer.selectAll('.edge-label');
                         });
                     }
 
@@ -1754,17 +1699,16 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 });
 
             nodeSelection.exit().remove();
-
-            // Merge new and existing nodes if needed later
             node = nodeEnter.merge(nodeSelection);
 
-            // Update labels
-            let labelSelection = labelLayer.selectAll('.node-label') // Adjusted class selection to match enter() setup
+            // Render Labels
+            let labelSelection = labelLayer.selectAll('.node-label')
                 .data(nodes, d => d.id);
 
-            // ENTER: Add new labels
             let labelEnter = labelSelection.enter()
                 .append('text')
+                .attr('x', d => d.x) // FIX: Explicitly set spawn X position
+                .attr('y', d => d.y) // FIX: Explicitly set spawn Y position
                 .attr('dy', 7)
                 .attr('text-anchor', 'middle')
                 .text(d => d.label !== undefined ? d.label : d.id)
@@ -1774,10 +1718,40 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
 
             label = labelEnter.merge(labelSelection);
 
-            // Re-evaluate positions 
+            // Final position sync
+            label.attr('x', d => d.x).attr('y', d => d.y);
             setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
-            if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            if (typeof link2 !== 'undefined' && link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+        };
 
+        if (typeof isTreeType !== 'undefined' && isTreeType && nodes.length > 0) {
+            // Change cursor to indicate Selection Mode
+            node.style('cursor', 'crosshair');
+
+            // Helper to abort/clean up temporary handlers
+            const cleanupSelectionMode = () => {
+                node.on('click.parentSelection', null).style('cursor', null);
+                d3.select(document).on('contextmenu.cancelVertex', null);
+            };
+
+            // Right-click anywhere to cancel vertex creation
+            d3.select(document).on('contextmenu.cancelVertex', function (cancelEvent) {
+                cancelEvent.preventDefault();
+                cleanupSelectionMode();
+                console.log("Vertex creation cancelled.");
+            });
+
+            // Left-click on a valid parent node to confirm creation
+            node.on('click.parentSelection', function (clickEvent, parentNodeData) {
+                clickEvent.stopPropagation(); // Stop D3/SVG from registering clicks elsewhere
+                cleanupSelectionMode();
+                finalizeVertexCreation(parentNodeData);
+            });
+
+            alert("Click an existing vertex to set it as the parent.\nRight-click anywhere to cancel.");
+        } else {
+            // Not a tree (or first node being added), add immediately without parent selection
+            finalizeVertexCreation();
         }
     });
 
