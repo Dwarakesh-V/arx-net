@@ -1,7 +1,3 @@
-/* Shared node-rectangle sizing/positioning — replaces the old fixed-radius
-   circle approach so nodes with long ids (e.g. multi-value B-tree keys
-   like "10,20,30") get a box that fits their label instead of a
-   hardcoded r=30 circle. */
 const _nodeTextMeasureCtx = document.createElement('canvas').getContext('2d');
 const NODE_MIN_WIDTH = 60;
 const NODE_HEIGHT = 60;
@@ -29,8 +25,7 @@ function sizeNodeRect(selection) {
         .attr('ry', NODE_CORNER_RADIUS);
 }
 
-// Positions a node <rect> (or a selection being transitioned) at d.x/d.y.
-// Replaces the old cx/cy attrs, since <rect> has no notion of a center point.
+// Positions a node <rect> (or a selection being transitioned) at d.x/d.y
 function positionNode(selection) {
     return selection.attr('transform', d => `translate(${d.x},${d.y})`);
 }
@@ -44,11 +39,11 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
         const dx = px - cx;
         const dy = py - cy;
         if (dx === 0 && dy === 0) return { x: cx, y: cy };
- 
+
         const len = Math.sqrt(dx * dx + dy * dy);
         const ux = dx / len;
         const uy = dy / len;
- 
+
         const scaleX = dx !== 0 ? halfW / Math.abs(dx) : Infinity;
         const scaleY = dy !== 0 ? halfH / Math.abs(dy) : Infinity;
         // Cap at 1 so we never overshoot past the other node's own center
@@ -56,17 +51,17 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
         const scale = Math.min(scaleX, scaleY, 1);
         const flatX = dx * scale;
         const flatY = dy * scale;
- 
+
         const r = Math.min(cornerRadius || 0, halfW, halfH);
         if (r <= 0) {
             return { x: cx + flatX, y: cy + flatY };
         }
- 
+
         const iw = halfW - r; // where the flat edge ends and the corner curve begins
         const ih = halfH - r;
         const hitVerticalEdge = scaleX <= scaleY;
         const inCornerZone = hitVerticalEdge ? Math.abs(flatY) > ih : Math.abs(flatX) > iw;
- 
+
         if (!inCornerZone) {
             return { x: cx + flatX, y: cy + flatY };
         }
@@ -75,7 +70,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
         const b = ux * qx + uy * qy;
         const c = qx * qx + qy * qy - r * r;
         const s = Math.min(b + Math.sqrt(Math.max(b * b - c, 0)), len);
- 
+
         return { x: cx + ux * s, y: cy + uy * s };
     }
     function computeEdgeGeometry(d) {
@@ -85,7 +80,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
             const loopRadius = 50;
             const offsetX = 0;
             const offsetY = -35;
- 
+
             return {
                 path: `M${x + offsetX},${y + offsetY - loopRadius}
                     a${loopRadius},${loopRadius} 0 1,1 0,${2 * loopRadius}
@@ -94,7 +89,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
                 labelY: y - 40
             };
         }
- 
+
         if (d.bidirectional) {
             const sHalfW = nodeRectWidth(d.source) / 2;
             const sHalfH = NODE_HEIGHT / 2;
@@ -102,7 +97,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
             const tHalfH = NODE_HEIGHT / 2;
             const start = rectBorderPoint(d.source.x, d.source.y, sHalfW, sHalfH, d.target.x, d.target.y, NODE_CORNER_RADIUS);
             const end = rectBorderPoint(d.target.x, d.target.y, tHalfW, tHalfH, d.source.x, d.source.y, NODE_CORNER_RADIUS);
- 
+
             const cdx = d.target.x - d.source.x;
             const cdy = d.target.y - d.source.y;
             const centerLen = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
@@ -117,7 +112,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
             const mx = (start.x + end.x) / 2;
             const my = (start.y + end.y) / 2;
             const h = Math.sqrt(Math.max(dr * dr - (len / 2) * (len / 2), 0));
- 
+
             return {
                 path: `M${start.x},${start.y}A${dr},${dr} 0 0,1 ${end.x},${end.y}`,
                 labelX: mx + (dr - h) * (ady / len),
@@ -127,21 +122,21 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
         const halfW = nodeRectWidth(d.target) / 2;
         const halfH = NODE_HEIGHT / 2;
         const end = rectBorderPoint(d.target.x, d.target.y, halfW, halfH, d.source.x, d.source.y, NODE_CORNER_RADIUS);
- 
+
         return {
             path: `M${d.source.x},${d.source.y}L${end.x},${end.y}`,
             labelX: (d.source.x + end.x) / 2,
             labelY: (d.source.y + end.y) / 2
         };
     }
- 
+
     link.attr('d', d => computeEdgeGeometry(d).path);
- 
+
     if (link.attr('class') === 'link') {
         link.each(function (d) {
             const path = d3.select(this);
             const uniqueArrowId = `${arrowId}-${safe(d.source.id)}-${safe(d.target.id)}`;
- 
+
             if (directed) {
                 if (!svg.select(`#${uniqueArrowId}`).node()) {
                     svg.append('defs')
@@ -157,12 +152,12 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
                         .append('path')
                         .attr('d', 'M0,-5L10,0L0,5');
                 }
- 
+
                 path.attr('marker-end', `url(#${uniqueArrowId})`);
             }
- 
+
             const marker = svg.select(`#${uniqueArrowId}`);
- 
+
             if (d.selfLoop) {
                 marker
                     .attr('refX', 4)
@@ -179,7 +174,7 @@ function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg,
                 .attr('x', d => computeEdgeGeometry(d).labelX)
                 .attr('y', d => computeEdgeGeometry(d).labelY);
         }
- 
+
         positionNode(node);
         label.attr('x', d => d.x).attr('y', d => d.y);
     }
@@ -479,7 +474,12 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     if (inputName === null) {
         inputName = document.getElementById('graphName').value;
     }
-    let displayName = inputName.trim() ? inputName.trim() : `Graph`; // Give a default name if the name field is empty
+    let displayName;
+    if (!isTypeTree) {
+        displayName = inputName.trim() ? inputName.trim() : `Graph`; // Give a default name if the name field is empty
+    } else {
+        displayName = inputName.trim() ? inputName.trim() : `Tree`;
+    }
     let baseName = displayName;
 
     let counter = 1;
@@ -2080,8 +2080,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* End of zoom functionality */
 
     /* Pan functionality to middle mouse hold or Ctrl + LMB and drag */
-    /* Pan functionality functions */
-    /* Pan functionality functions */
     svg.on('pointerdown', (event) => {
         svgPanStart(event);
     });
@@ -2100,7 +2098,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* End of pan functionality */
     /* End of pan functionality */
 
-    // CHANGED: Prevent adjustViewBox from firing if we just finished a double-click pan
     svg.on('dblclick', () => {
         if (hasDragged) {
             hasDragged = false; // Reset the flag
@@ -2151,7 +2148,6 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     /* End of graph elements creation */
 
     // Resolve edge source/target ids to actual node object references.
-    // d3.forceLink used to do this automatically; since link force is removed, do it manually.
     const nodeById = new Map(nodes.map(n => [n.id, n]));
     edges.forEach(edge => {
         if (typeof edge.source !== 'object') edge.source = nodeById.get(edge.source);
@@ -2538,4 +2534,52 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
     });
     /* End of functions to update positions */
+
+    /* Graph statistics */
+    const about = new AboutBox();
+    container.appendChild(about.element);
+
+    const aboutContent = document.createElement("span");
+    aboutContent.classList.add("about-content");
+
+    const aboutType = document.createElement("b");
+    aboutType.textContent = isTreeType ? "Tree" : "Graph";
+    aboutContent.append("Type: ", aboutType, document.createElement("br"));
+
+    const aboutDirected = document.createElement("b");
+    aboutDirected.textContent = directed ? "Yes" : "No";
+    aboutContent.append("Directed: ", aboutDirected, document.createElement("br"));
+
+    const aboutWeighted = document.createElement("b");
+    aboutWeighted.textContent = weighted ? "Yes" : "No";
+    aboutContent.append("Weighted: ", aboutWeighted, document.createElement("br"));
+
+    const aboutCycle = document.createElement("b");
+    aboutCycle.textContent = hasCycle(edgesRaw) ? "Yes" : "No";
+    aboutContent.append("Cycle: ", aboutCycle);
+
+    if (isTreeType) {
+        console.log(convertToTreeJSON(stringifyEdges(edgesRaw),svg,directed));
+        aboutContent.append(document.createElement("br"), document.createElement("br"));
+        aboutContent.append("Tree specific attributes", document.createElement("br"));
+
+        const aboutBST = document.createElement("b");
+        aboutBST.textContent = isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+        aboutContent.append("BST: ", aboutBST, document.createElement("br"));
+
+        const aboutAVL = document.createElement("b");
+        aboutAVL.textContent = isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+        aboutContent.append("AVL: ", aboutAVL, document.createElement("br"));
+
+        const aboutB = document.createElement("b");
+        aboutB.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+        aboutContent.append("B: ", aboutB, document.createElement("br"));
+
+        const aboutBPlus = document.createElement("b");
+        aboutBPlus.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+        aboutContent.append("B+: ", aboutBPlus);
+    }
+
+    about.appendChild(aboutContent);
+    /* End of graph statistics */
 };

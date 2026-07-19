@@ -250,11 +250,6 @@ function parseEdges(edgesInput, directed = true) {
     if (trimmed.startsWith('{')) {
         edges = parsePythonAdjacencyDict(trimmed, directed);
     } else if (trimmed.startsWith('[')) {
-        // A leading '[' is ambiguous: it could be a python-style edge list
-        // (a list of tuples, e.g. "[('a','b')]") or a *single* standalone
-        // multi-value vertex written in bracket notation (e.g. "[10,20]"
-        // for a lone 2-3/B-tree node with no edges yet). Only route to the
-        // edge-list parser when the contents actually look like tuples.
         const inner = stripOuter(trimmed, '[', ']');
         const looksLikeTupleList = inner === '' || tokeniseTopLevel(inner).some(t => t.startsWith('('));
         edges = looksLikeTupleList
@@ -267,17 +262,6 @@ function parseEdges(edgesInput, directed = true) {
     return finalizeVertexTypes(edges);
 }
 
-// Multi-value vertices are represented as arrays internally (so ordering,
-// nesting, and dedup all behave correctly — see nodeKey/deduplicateEdges).
-// But raw arrays are a bad public contract: every occurrence of "[10,20]"
-// in the input text produces a *new* array object, so anything doing
-// reference-based lookups downstream (a JS Map keyed by node, a D3
-// force-link .id() resolution, a Set) will treat logically-identical
-// nodes as distinct and fail to match them up. To keep source/target
-// safe to use as stable identifiers — exactly like before multi-value
-// vertices existed — this converts them to a canonical, deterministic
-// string, and moves the structured key list to sourceKeys/targetKeys for
-// anyone who wants to render the individual keys.
 function finalizeVertexTypes(edges) {
     return edges.map(edge => {
         const out = Object.assign({}, edge);
@@ -317,17 +301,6 @@ function stripOuter(s, open, close) {
     return s;
 }
 
-/**
- * Detects whether a token represents a *list* of values — i.e. a
- * multi-key vertex such as the ones stored in a single node of a
- * 2-3 tree, 2-3-4 tree, B-tree, or B+-tree. Two notations are supported:
- *   - bracket notation:  "[10,20,30]"
- *   - pipe notation:      "10|20|30"   (handy shorthand, mirrors the
- *                                       way B-tree nodes are often
- *                                       drawn as boxes of "key | key | key")
- * Returns an array of parsed values, or null if the token is not a list
- * (in which case the caller falls back to treating it as a single value).
- */
 function parseValueList(token) {
     if (token.startsWith('[') && token.endsWith(']')) {
         const inner = stripOuter(token, '[', ']');
@@ -340,9 +313,6 @@ function parseValueList(token) {
     return null;
 }
 
-// Parses a single scalar element that lives *inside* a multi-value vertex
-// (e.g. each key of a B-tree node). Numeric-looking elements are converted
-// to real numbers since tree keys are almost always compared/sorted.
 function parseValue(token) {
     token = token.trim();
     if ((token.startsWith('"') && token.endsWith('"')) ||
@@ -355,11 +325,6 @@ function parseValue(token) {
     return token;
 }
 
-// Parses a vertex token. A vertex can be:
-//   - a quoted string                       -> "a"
-//   - a multi-value node (list of keys)     -> [10,20]  or  10|20
-//   - a bare identifier / integer           -> a, 3, root   (kept as
-//     a raw string for backward compatibility with existing graphs)
 function parseNode(token) {
     token = token.trim();
     if ((token.startsWith('"') && token.endsWith('"')) ||
@@ -415,13 +380,6 @@ function parsePythonAdjacencyDict(input, directed) {
         const source = parseNode(pair.slice(0, colonIdx).trim());
         const valueStr = pair.slice(colonIdx + 1).trim();
 
-        // Value is a list of neighbours [...] or a single neighbour.
-        // Note: a *neighbour* list "[[10],[20,30]]" is distinguished from a
-        // multi-value *node* "[10,20]" by parseNeighbourEntry/parseNode
-        // being applied one level down — each element of the outer list is
-        // itself parsed as a full vertex token, so nested brackets like
-        // "[20,30]" correctly become one multi-key node rather than being
-        // split into separate neighbours.
         if (valueStr.startsWith('[')) {
             const listInner = stripOuter(valueStr, '[', ']');
             if (!listInner) continue;
@@ -465,10 +423,6 @@ function parsePythonEdgeList(input, directed) {
 }
 
 function parseCompactEdges(edgesInput, directed) {
-    // 2-character shorthand, e.g. "ab5" -> edge a->b weight 5. Deliberately
-    // restricted to single-char node names; use the paren or Python-style
-    // formats below for anything richer (multi-char names, weights, or
-    // multi-value tree nodes).
     const simpleFormat = /^([a-zA-Z0-9]{2})(-?\d*\.?\d*)$/;
 
     const edgesRaw = tokeniseTopLevel(edgesInput).map(edge => {
@@ -508,9 +462,6 @@ function parseCompactEdges(edgesInput, directed) {
     return deduplicateEdges(edgesRaw, directed);
 }
 
-// Builds a stable string key for a vertex so that arrays (multi-value
-// nodes), quoted strings, and bare identifiers can all be compared and
-// deduplicated consistently.
 function nodeKey(node) {
     return Array.isArray(node) ? JSON.stringify(node) : String(node);
 }
@@ -533,6 +484,67 @@ function deduplicateEdges(edges, directed) {
     return Array.from(edgeMap.values());
 }
 /* End of edge parsing functionality */
+
+/* Cycle detection */
+function hasCycle(edgesRaw, directed = true) {
+    if (!edgesRaw || edgesRaw.length === 0) return false;
+
+    const adjList = new Map();
+    const addNode = (v) => { if (!adjList.has(v)) adjList.set(v, []); };
+
+    for (const edge of edgesRaw) {
+        if (edge.target === null || edge.target === undefined) continue;
+        addNode(edge.source);
+        addNode(edge.target);
+        adjList.get(edge.source).push(edge.target);
+        if (!directed) {
+            adjList.get(edge.target).push(edge.source);
+        }
+    }
+
+    if (directed) {
+        const WHITE = 0, GRAY = 1, BLACK = 2;
+        const color = new Map();
+        adjList.forEach((_, v) => color.set(v, WHITE));
+
+        const dfs = (node) => {
+            color.set(node, GRAY);
+            for (const neighbor of adjList.get(node)) {
+                const c = color.get(neighbor);
+                if (c === GRAY) return true;
+                if (c === WHITE && dfs(neighbor)) return true;
+            }
+            color.set(node, BLACK);
+            return false;
+        };
+
+        for (const v of adjList.keys()) {
+            if (color.get(v) === WHITE && dfs(v)) return true;
+        }
+        return false;
+
+    } else {
+        const visited = new Set();
+
+        const dfs = (node, parent) => {
+            visited.add(node);
+            for (const neighbor of adjList.get(node)) {
+                if (!visited.has(neighbor)) {
+                    if (dfs(neighbor, node)) return true;
+                } else if (neighbor !== parent) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        for (const v of adjList.keys()) {
+            if (!visited.has(v) && dfs(v, null)) return true;
+        }
+        return false;
+    }
+}
+/* End of cycle detection */
 
 // Inverse of parseEdges function
 function stringifyEdges(edgesRaw) {

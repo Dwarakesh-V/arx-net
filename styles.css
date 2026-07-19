@@ -524,6 +524,10 @@ h2 button:hover {
     background: var(--highlight-button-color)
 }
 
+.about-content b {
+    color: var(--accent);
+}
+
 /* Background color of the svg element */
 .graphContent {
     background-color: var(--bg-primary);

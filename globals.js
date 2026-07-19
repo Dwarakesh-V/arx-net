@@ -383,6 +383,69 @@ class GraphPlaybackController {
     }
 }
 
+class AboutBox {
+  constructor() {
+    this.expanded = true;
+
+    // Main container
+    this.element = document.createElement("div");
+    Object.assign(this.element.style, {
+      position: "absolute",
+      left: "10px",
+      top: "4rem",
+      background: "#252627",
+      color: "#fff",
+      fontFamily: "sans-serif",
+      minWidth: "250px",
+      border: "1px solid #3a3b3c",
+      borderRadius: "6px",
+      overflow: "hidden",
+      userSelect: "none",
+    });
+
+    // Header
+    this.header = document.createElement("div");
+    Object.assign(this.header.style, {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "8px 10px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      background: "#252627",
+    });
+
+    this.title = document.createElement("span");
+    this.title.textContent = "About";
+
+    this.toggle = document.createElement("span");
+    this.toggle.textContent = "-";
+    this.toggle.style.fontWeight = "normal";
+
+    this.header.append(this.title, this.toggle);
+
+    // Content area
+    this.content = document.createElement("div");
+    Object.assign(this.content.style, {
+      padding: "10px",
+    });
+
+    this.header.addEventListener("click", () => this.setExpanded(!this.expanded));
+
+    this.element.append(this.header, this.content);
+  }
+
+  setExpanded(expanded) {
+    this.expanded = expanded;
+    this.content.style.display = expanded ? "block" : "none";
+    this.toggle.textContent = expanded ? "-" : "+";
+  }
+
+  appendChild(child) {
+    this.content.appendChild(child);
+  }
+}
+
 let isMobile = window.innerWidth <= 768; // Mobile device support modification
 
 window.addEventListener("resize", () => {
