@@ -674,12 +674,14 @@ function generateRandomGraph(vertexCount, edgeCount, options = {}) {
     addGraph(null,null,null,null,null,false);
 }
 
+/* Random tree generation functionality */
 function generateRandomTree(vertexCount, options = {}) {
     const {
         minWeightValue = parseInt(minWeight?.value || 1),
         maxWeightValue = parseInt(maxWeight?.value || 10),
         isDirectedValue = isDirected?.checked || false,
         treeTypeValue = typeof treeTypeSelect !== 'undefined' ? treeTypeSelect.value : 'regular',
+        bTreeOrderValue = typeof bTreeOrderInput !== 'undefined' ? parseInt(bTreeOrderInput.value) : 4,
         alphabet = false // false = numbers (1, 2, 3), true = letters (A, B, C)
     } = options;
 
@@ -690,6 +692,7 @@ function generateRandomTree(vertexCount, options = {}) {
     }
 
     const edgeList = [];
+    let standaloneLabel = null;
     const treeType = treeTypeValue;
 
     // Helper to generate sequential labels (Numbers: 1, 2, 3... or Letters: A, B, C... Z, AA...)
@@ -739,6 +742,65 @@ function generateRandomTree(vertexCount, options = {}) {
         // Emit edges: left child before right child, for every node.
         emitOrderedEdges(root, vertices, edgeList, getRandomWeight);
 
+    } else if (vertexCount >= 1 && treeType === 'b') {
+        const order = Math.max(2, parseInt(bTreeOrderValue) || 4);
+        const indices = shuffle(Array.from({ length: vertexCount }, (_, i) => i));
+
+        let root = { keys: [], children: [], leaf: true };
+        for (const idx of indices) {
+            const result = bTreeInsert(root, idx, order);
+            if (result) {
+                root = {
+                    keys: [result.promotedKey],
+                    children: [root, result.newRightNode],
+                    leaf: false
+                };
+            }
+        }
+
+        emitBTreeEdges(root, vertices, edgeList, getRandomWeight);
+
+        if (edgeList.length === 0) {
+            // Whole tree fit in one node (no split happened yet) — still show
+            // it as a standalone multi-value vertex declaration.
+            standaloneLabel = '[' + root.keys.map(k => vertices[k]).join(',') + ']';
+        }
+
+    } else if (vertexCount >= 1 && treeType === 'bPlus') {
+        // not from post-hoc index math.
+        const order = Math.max(2, parseInt(bTreeOrderValue) || 4);
+        const indices = shuffle(Array.from({ length: vertexCount }, (_, i) => i));
+
+        let root = { keys: [], children: [], leaf: true, next: null };
+        for (const idx of indices) {
+            const result = bPlusTreeInsert(root, idx, order);
+            if (result) {
+                root = {
+                    keys: [result.promotedKey],
+                    children: [root, result.newRightNode],
+                    leaf: false
+                };
+            }
+        }
+
+        emitBTreeEdges(root, vertices, edgeList, getRandomWeight);
+
+        // Link leaves left-to-right using the real sibling pointers built
+        // during leaf splits, not an approximation.
+        let leftmost = root;
+        while (!leftmost.leaf) leftmost = leftmost.children[0];
+        let leaf = leftmost;
+        while (leaf.next) {
+            const sourceLabel = '[' + leaf.keys.map(k => vertices[k]).join(',') + ']';
+            const targetLabel = '[' + leaf.next.keys.map(k => vertices[k]).join(',') + ']';
+            edgeList.push({ source: sourceLabel, target: targetLabel, weight: 1, isLeafLink: true });
+            leaf = leaf.next;
+        }
+
+        if (edgeList.length === 0) {
+            standaloneLabel = '[' + root.keys.map(k => vertices[k]).join(',') + ']';
+        }
+
     } else if (vertexCount > 1) {
         let branchingFactor;
         switch (treeType) {
@@ -750,12 +812,6 @@ function generateRandomTree(vertexCount, options = {}) {
                 break;
             case 'twoThreeFour':
                 branchingFactor = 4;
-                break;
-            case 'b':
-            case 'bPlus':
-                branchingFactor = 5; // Simulating a B/B+ tree of order 5 (structural approximation only —
-                                     // a real B-tree node holds multiple keys, which a simple edge list
-                                     // can't represent; this just gives a matching branching shape).
                 break;
             case 'regular':
             default:
@@ -770,28 +826,20 @@ function generateRandomTree(vertexCount, options = {}) {
             let v = vertices[i];
             edgeList.push({ source: u, target: v, weight: getRandomWeight() });
         }
-
-        // Special logic for B+ Trees: link leaf nodes sequentially
-        if (treeType === 'bPlus') {
-            const leaves = [];
-            for (let i = 0; i < vertexCount; i++) {
-                if (i * branchingFactor + 1 >= vertexCount) {
-                    leaves.push(vertices[i]);
-                }
-            }
-            for (let i = 0; i < leaves.length - 1; i++) {
-                edgeList.push({
-                    source: leaves[i],
-                    target: leaves[i + 1],
-                    weight: getRandomWeight(),
-                    isLeafLink: true
-                });
-            }
-        }
     }
 
-    // Output to the DOM elements
-    graphInputField.value = stringifyEdges(edgeList);
+    // Output to the DOM elements.
+    // B-tree / B+-tree results are written as an adjacency dict (grouping
+    // each node's children together, e.g. "{[20,40]: [[10], [30,35]]}")
+    // since that's the natural shape for multi-key tree nodes; every other
+    // tree type keeps using the original tuple-list format unchanged.
+    if (treeType === 'b' || treeType === 'bPlus') {
+        graphInputField.value = standaloneLabel !== null
+            ? standaloneLabel
+            : stringifyEdgesAsAdjacencyDict(edgeList);
+    } else {
+        graphInputField.value = stringifyEdges(edgeList);
+    }
     addGraph(null,null,null,null,null,true);
     return { vertices, edgeList };
 }
@@ -812,9 +860,6 @@ function buildPlainBST(indices) {
     return root;
 }
 
-// ---------------------------------------------------------------------------
-// AVL insertion with standard rotations to keep the tree balanced
-// ---------------------------------------------------------------------------
 function buildAVL(indices) {
     let root = null;
 
@@ -871,116 +916,127 @@ function buildAVL(indices) {
     return root;
 }
 
-// ---------------------------------------------------------------------------
-// Red-Black tree insertion with standard fixup (color tracked internally
-// only — the exported edge list doesn't carry color, but the resulting
-// shape is a genuine, structurally valid red-black tree).
-// ---------------------------------------------------------------------------
-function buildRedBlack(indices) {
-    const RED = 0, BLACK = 1;
-    const NIL = { color: BLACK, left: null, right: null, parent: null, idx: null };
-    let root = NIL;
+// --- Real B-tree construction (order = max children per node) ---
+function bTreeInsert(node, key, order) {
+    const maxKeys = order - 1;
 
-    const rotateLeft = (x) => {
-        const y = x.right;
-        x.right = y.left;
-        if (y.left !== NIL) y.left.parent = x;
-        y.parent = x.parent;
-        if (x.parent === null) root = y;
-        else if (x === x.parent.left) x.parent.left = y;
-        else x.parent.right = y;
-        y.left = x;
-        x.parent = y;
-    };
-
-    const rotateRight = (x) => {
-        const y = x.left;
-        x.left = y.right;
-        if (y.right !== NIL) y.right.parent = x;
-        y.parent = x.parent;
-        if (x.parent === null) root = y;
-        else if (x === x.parent.right) x.parent.right = y;
-        else x.parent.left = y;
-        y.right = x;
-        x.parent = y;
-    };
-
-    const insertFixup = (z) => {
-        while (z.parent && z.parent.color === RED) {
-            const gp = z.parent.parent;
-            if (z.parent === gp.left) {
-                const uncle = gp.right;
-                if (uncle.color === RED) {
-                    z.parent.color = BLACK;
-                    uncle.color = BLACK;
-                    gp.color = RED;
-                    z = gp;
-                } else {
-                    if (z === z.parent.right) {
-                        z = z.parent;
-                        rotateLeft(z);
-                    }
-                    z.parent.color = BLACK;
-                    gp.color = RED;
-                    rotateRight(gp);
-                }
-            } else {
-                const uncle = gp.left;
-                if (uncle.color === RED) {
-                    z.parent.color = BLACK;
-                    uncle.color = BLACK;
-                    gp.color = RED;
-                    z = gp;
-                } else {
-                    if (z === z.parent.left) {
-                        z = z.parent;
-                        rotateRight(z);
-                    }
-                    z.parent.color = BLACK;
-                    gp.color = RED;
-                    rotateLeft(gp);
-                }
-            }
+    if (node.leaf) {
+        insertSortedKey(node.keys, key);
+    } else {
+        let i = 0;
+        while (i < node.keys.length && key > node.keys[i]) i++;
+        const result = bTreeInsert(node.children[i], key, order);
+        if (result) {
+            node.keys.splice(i, 0, result.promotedKey);
+            node.children.splice(i + 1, 0, result.newRightNode);
         }
-        root.color = BLACK;
-    };
+    }
 
-    const insert = (idx) => {
-        const node = { idx, color: RED, left: NIL, right: NIL, parent: null };
-        let y = null;
-        let x = root;
-        while (x !== NIL) {
-            y = x;
-            x = idx < x.idx ? x.left : x.right;
-        }
-        node.parent = y;
-        if (y === null) root = node;
-        else if (idx < y.idx) y.left = node;
-        else y.right = node;
-
-        insertFixup(node);
-    };
-
-    for (const idx of indices) insert(idx);
-
-    // Convert NIL sentinels to plain null so the traversal step below
-    // doesn't need to know about red-black internals.
-    const strip = (node) => {
-        if (!node || node === NIL) return null;
-        return {
-            idx: node.idx,
-            left: strip(node.left),
-            right: strip(node.right)
-        };
-    };
-
-    return strip(root);
+    if (node.keys.length > maxKeys) {
+        return splitBTreeNode(node);
+    }
+    return null;
 }
 
-// ---------------------------------------------------------------------------
-// Shared traversal: emits edges left-child-first, right-child-second for
-// every node, so (parent, left) always appears before (parent, right).
-// ---------------------------------------------------------------------------
+function splitBTreeNode(node) {
+    // node.keys.length === order (one over capacity) when this is called.
+    const mid = Math.floor(node.keys.length / 2);
+    const promotedKey = node.keys[mid];
+
+    const leftKeys = node.keys.slice(0, mid);
+    const rightKeys = node.keys.slice(mid + 1);
+
+    let leftChildren = [];
+    let rightChildren = [];
+    if (!node.leaf) {
+        leftChildren = node.children.slice(0, mid + 1);
+        rightChildren = node.children.slice(mid + 1);
+    }
+
+    // Reuse `node` as the left half in place, and build a fresh right half.
+    node.keys = leftKeys;
+    node.children = leftChildren;
+
+    const newRightNode = { keys: rightKeys, children: rightChildren, leaf: node.leaf };
+    return { promotedKey, newRightNode };
+}
+
+function insertSortedKey(keys, key) {
+    let i = keys.length - 1;
+    while (i >= 0 && keys[i] > key) i--;
+    keys.splice(i + 1, 0, key);
+}
+
+function emitBTreeEdges(node, vertices, edgeList, getRandomWeight) {
+    if (!node) return null;
+
+    const label = '[' + node.keys.map(k => vertices[k]).join(',') + ']';
+
+    if (!node.leaf) {
+        for (const child of node.children) {
+            const childLabel = emitBTreeEdges(child, vertices, edgeList, getRandomWeight);
+            edgeList.push({ source: label, target: childLabel, weight: getRandomWeight() });
+        }
+    }
+
+    return label;
+}
+
+// --- Real B+-tree construction ---
+
+function bPlusTreeInsert(node, key, order) {
+    const maxKeys = order - 1;
+
+    if (node.leaf) {
+        insertSortedKey(node.keys, key);
+        if (node.keys.length > maxKeys) {
+            return splitBPlusLeaf(node);
+        }
+        return null;
+    }
+
+    let i = 0;
+    while (i < node.keys.length && key >= node.keys[i]) i++;
+    const result = bPlusTreeInsert(node.children[i], key, order);
+    if (result) {
+        node.keys.splice(i, 0, result.promotedKey);
+        node.children.splice(i + 1, 0, result.newRightNode);
+    }
+
+    if (node.keys.length > maxKeys) {
+        return splitBTreeNode(node); // internal nodes split like a plain B-tree
+    }
+    return null;
+}
+
+function splitBPlusLeaf(leaf) {
+    // leaf.keys.length === order (one over capacity) when this is called.
+    const mid = Math.floor(leaf.keys.length / 2);
+    const rightKeys = leaf.keys.slice(mid);
+    leaf.keys = leaf.keys.slice(0, mid);
+
+    const newRightLeaf = { keys: rightKeys, children: [], leaf: true, next: leaf.next };
+    leaf.next = newRightLeaf;
+
+    // Promote a *copy* of the right leaf's first key — it still lives in
+    // the leaf too, unlike an internal-node split which removes it.
+    return { promotedKey: rightKeys[0], newRightNode: newRightLeaf };
+}
+
+function stringifyEdgesAsAdjacencyDict(edgeList) {
+    if (edgeList.length === 0) return '';
+
+    const groups = new Map();
+    for (const edge of edgeList) {
+        if (!groups.has(edge.source)) groups.set(edge.source, []);
+        groups.get(edge.source).push(edge.target);
+    }
+
+    const entries = Array.from(groups.entries())
+        .map(([source, targets]) => `${source}: [${targets.join(', ')}]`);
+    return `{${entries.join(', ')}}`;
+}
+
 function emitOrderedEdges(root, vertices, edgeList, getRandomWeight) {
     if (!root) return;
 
@@ -1006,6 +1062,171 @@ function emitOrderedEdges(root, vertices, edgeList, getRandomWeight) {
 
     walk(root);
 }
+/* End of random tree generation functionality */
+
+function buildPlainBST(indices) {
+    let root = null;
+
+    const insert = (node, idx) => {
+        if (!node) return { idx, left: null, right: null };
+        if (idx < node.idx) node.left = insert(node.left, idx);
+        else node.right = insert(node.right, idx);
+        return node;
+    };
+
+    for (const idx of indices) {
+        root = insert(root, idx);
+    }
+    return root;
+}
+
+function buildAVL(indices) {
+    let root = null;
+
+    const height = (n) => (n ? n.height : 0);
+    const updateHeight = (n) => { n.height = 1 + Math.max(height(n.left), height(n.right)); };
+    const balanceFactor = (n) => (n ? height(n.left) - height(n.right) : 0);
+
+    const rotateRight = (y) => {
+        const x = y.left;
+        y.left = x.right;
+        x.right = y;
+        updateHeight(y);
+        updateHeight(x);
+        return x;
+    };
+
+    const rotateLeft = (x) => {
+        const y = x.right;
+        x.right = y.left;
+        y.left = x;
+        updateHeight(x);
+        updateHeight(y);
+        return y;
+    };
+
+    const insert = (node, idx) => {
+        if (!node) return { idx, left: null, right: null, height: 1 };
+        if (idx < node.idx) node.left = insert(node.left, idx);
+        else node.right = insert(node.right, idx);
+
+        updateHeight(node);
+        const bf = balanceFactor(node);
+
+        // Left Left
+        if (bf > 1 && idx < node.left.idx) return rotateRight(node);
+        // Right Right
+        if (bf < -1 && idx > node.right.idx) return rotateLeft(node);
+        // Left Right
+        if (bf > 1 && idx > node.left.idx) {
+            node.left = rotateLeft(node.left);
+            return rotateRight(node);
+        }
+        // Right Left
+        if (bf < -1 && idx < node.right.idx) {
+            node.right = rotateRight(node.right);
+            return rotateLeft(node);
+        }
+        return node;
+    };
+
+    for (const idx of indices) {
+        root = insert(root, idx);
+    }
+    return root;
+}
+
+function bTreeInsert(node, key, order) {
+    const maxKeys = order - 1;
+
+    if (node.leaf) {
+        insertSortedKey(node.keys, key);
+    } else {
+        let i = 0;
+        while (i < node.keys.length && key > node.keys[i]) i++;
+        const result = bTreeInsert(node.children[i], key, order);
+        if (result) {
+            node.keys.splice(i, 0, result.promotedKey);
+            node.children.splice(i + 1, 0, result.newRightNode);
+        }
+    }
+
+    if (node.keys.length > maxKeys) {
+        return splitBTreeNode(node);
+    }
+    return null;
+}
+
+function splitBTreeNode(node) {
+    // node.keys.length === order (one over capacity) when this is called.
+    const mid = Math.floor(node.keys.length / 2);
+    const promotedKey = node.keys[mid];
+
+    const leftKeys = node.keys.slice(0, mid);
+    const rightKeys = node.keys.slice(mid + 1);
+
+    let leftChildren = [];
+    let rightChildren = [];
+    if (!node.leaf) {
+        leftChildren = node.children.slice(0, mid + 1);
+        rightChildren = node.children.slice(mid + 1);
+    }
+
+    // Reuse `node` as the left half in place, and build a fresh right half.
+    node.keys = leftKeys;
+    node.children = leftChildren;
+
+    const newRightNode = { keys: rightKeys, children: rightChildren, leaf: node.leaf };
+    return { promotedKey, newRightNode };
+}
+
+function insertSortedKey(keys, key) {
+    let i = keys.length - 1;
+    while (i >= 0 && keys[i] > key) i--;
+    keys.splice(i + 1, 0, key);
+}
+
+function emitBTreeEdges(node, vertices, edgeList, getRandomWeight) {
+    if (!node) return null;
+
+    const label = '[' + node.keys.map(k => vertices[k]).join(',') + ']';
+
+    if (!node.leaf) {
+        for (const child of node.children) {
+            const childLabel = emitBTreeEdges(child, vertices, edgeList, getRandomWeight);
+            edgeList.push({ source: label, target: childLabel, weight: getRandomWeight() });
+        }
+    }
+
+    return label;
+}
+
+function emitOrderedEdges(root, vertices, edgeList, getRandomWeight) {
+    if (!root) return;
+
+    const walk = (node) => {
+        if (!node) return;
+        if (node.left) {
+            edgeList.push({
+                source: vertices[node.idx],
+                target: vertices[node.left.idx],
+                weight: getRandomWeight()
+            });
+        }
+        if (node.right) {
+            edgeList.push({
+                source: vertices[node.idx],
+                target: vertices[node.right.idx],
+                weight: getRandomWeight()
+            });
+        }
+        walk(node.left);
+        walk(node.right);
+    };
+
+    walk(root);
+}
+/* End of random tree generation functionality */
 
 generateRandomButton.addEventListener('click', () => {
     const vertexCount = vertexInput.value;
@@ -1108,21 +1329,16 @@ function deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv) {
 /* Tree functionality - This is determined by the location of the nodes */
 /* Verify for tree */
 function isTree(edgesInput, directed = true) {
-    const edges = parseEdges(edgesInput, directed);
+    const edges = typeof parseEdges === 'function' ? parseEdges(edgesInput, directed) : edgesInput;
     if (!edges) return false;
 
     const vertices = new Set();
     edges.forEach(edge => {
-        if (edge.source) vertices.add(edge.source);
-        if (edge.target) vertices.add(edge.target);
+        if (edge.source !== undefined) vertices.add(edge.source);
+        if (edge.target !== undefined) vertices.add(edge.target);
     });
 
     if (vertices.size <= 1) return edges.length === 0;
-
-    // A tree must have exactly V - 1 edges
-    if (edges.length !== vertices.size - 1) {
-        return false;
-    }
 
     const adjList = new Map();
     vertices.forEach(v => adjList.set(v, []));
@@ -1143,13 +1359,17 @@ function isTree(edgesInput, directed = true) {
             if (deg === 0) {
                 root = v;
                 rootCount++;
-            } else if (deg > 1) {
-                return false; // A node in a tree can only have one parent
+            } else if (deg > 2) {
+                // Standard/B/2-3/2-3-4 trees max in-degree is 1. 
+                // B+ trees max in-degree is 2 (1 parent link, 1 left sibling link).
+                return false; 
             }
         }
 
+        // A valid tree (or B+ tree) must have exactly one root
         if (rootCount !== 1) return false;
 
+        // 1. Check if all nodes are reachable from the root (Fully Connected)
         const visited = new Set([root]);
         const queue = [root];
 
@@ -1163,10 +1383,34 @@ function isTree(edgesInput, directed = true) {
             }
         }
 
-        return visited.size === vertices.size;
+        if (visited.size !== vertices.size) return false;
+
+        // 2. Check for cycles (DAG check). B+ tree sibling links do not create 
+        // directed cycles, but they would falsely trigger standard undirected checks.
+        const cycleVisited = new Set();
+        const recursionStack = new Set();
+        let hasCycle = false;
+
+        const dfsCycle = (node) => {
+            if (hasCycle) return;
+            cycleVisited.add(node);
+            recursionStack.add(node);
+
+            for (const neighbor of adjList.get(node)) {
+                if (!cycleVisited.has(neighbor)) {
+                    dfsCycle(neighbor);
+                } else if (recursionStack.has(neighbor)) {
+                    hasCycle = true;
+                }
+            }
+            recursionStack.delete(node);
+        };
+
+        dfsCycle(root);
+        return !hasCycle;
 
     } else {
-        // Undirected graph population
+        // Undirected graph evaluation
         edges.forEach(edge => {
             adjList.get(edge.source).push(edge.target);
             adjList.get(edge.target).push(edge.source);
@@ -1186,7 +1430,16 @@ function isTree(edgesInput, directed = true) {
             }
         }
 
-        return visited.size === vertices.size;
+        // Graph must be fully connected
+        if (visited.size !== vertices.size) return false;
+
+        // Standard trees (including B, 2-3, 2-3-4) strictly adhere to E = V - 1
+        if (edges.length === vertices.size - 1) {
+            return true;
+        }
+        const isBTreeFormat = Array.from(vertices).some(v => typeof v === 'string' && v.trim().startsWith('[') && v.trim().endsWith(']'));
+        
+        return isBTreeFormat;
     }
 }
 

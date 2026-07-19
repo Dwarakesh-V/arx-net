@@ -423,7 +423,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     weighted = weighted ?? isWeighted.checked;
 
     if (isTreeType === true) {
-        directed = false; // Can be modified for directed, weighted trees in the future
+        // directed = false; // Can be modified for directed, weighted trees in the future
         weighted = false;
         if (!isTree(edgesInput)) {
             alert("Invalid edges for a tree");
@@ -432,7 +432,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
     } else if (isTreeType === null) {
         if (isTypeTree.checked) {
             isTreeType = true;
-            directed = false; // Can be modified for directed, weighted trees in the future
+            // directed = false; // Can be modified for directed, weighted trees in the future
             weighted = false;
             if (!isTree(edgesInput)) {
                 alert("Invalid edges for a tree");
@@ -554,6 +554,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         methodsSelect.appendChild(option1);
 
         function insertBST() {
+            console.log(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed));
             if (!isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
                 alert("This structure is not a BST.")
                 return;
@@ -1519,6 +1520,17 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     document.body.appendChild(menuElement);
                     const menu = new FloatingMenu(menuElement);
 
+                    addMenuItem(menuElement, menu, 'Color this vertex', null, (event) => {
+                        const vertex = d3.select(this);
+
+                        showColorPicker(
+                            event.clientX,
+                            event.clientY,
+                            d3.color(vertex.attr("fill") || "#000000").formatHex(),
+                            color => vertex.attr("fill", color)
+                        );
+                    });
+
                     // Change Node Label Option
                     addMenuItem(menuElement, menu, 'Change node value', null, () => {
                         let newLabel = prompt("Enter new label for this vertex:", d.label !== undefined ? d.label : d.id);
@@ -2204,6 +2216,17 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             menuElement.className = 'floating-menu';
             document.body.appendChild(menuElement);
             const menu = new FloatingMenu(menuElement);
+
+            addMenuItem(menuElement, menu, 'Color this vertex', null, (event) => {
+                const vertex = d3.select(this);
+
+                showColorPicker(
+                    event.clientX,
+                    event.clientY,
+                    d3.color(vertex.attr("fill") || "#000000").formatHex(),
+                    color => vertex.attr("fill", color)
+                );
+            });
 
             // Change Node Label Option
             addMenuItem(menuElement, menu, 'Change node value', null, () => {
