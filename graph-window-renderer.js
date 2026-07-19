@@ -38,118 +38,148 @@ function positionNode(selection) {
 /* Function to align edges */
 function setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId) {
     const safe = x => String(x).replace(/[^\w-]/g, "_");
-    link.attr('d', d => {
-        // Arc bidirectional edges
+    const ARROW_REFX = 9;
+    const BIDIRECTIONAL_SEPARATION = -8;
+    function rectBorderPoint(cx, cy, halfW, halfH, px, py, cornerRadius) {
+        const dx = px - cx;
+        const dy = py - cy;
+        if (dx === 0 && dy === 0) return { x: cx, y: cy };
+ 
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const ux = dx / len;
+        const uy = dy / len;
+ 
+        const scaleX = dx !== 0 ? halfW / Math.abs(dx) : Infinity;
+        const scaleY = dy !== 0 ? halfH / Math.abs(dy) : Infinity;
+        // Cap at 1 so we never overshoot past the other node's own center
+        // (guards against nodes that are overlapping / very close together).
+        const scale = Math.min(scaleX, scaleY, 1);
+        const flatX = dx * scale;
+        const flatY = dy * scale;
+ 
+        const r = Math.min(cornerRadius || 0, halfW, halfH);
+        if (r <= 0) {
+            return { x: cx + flatX, y: cy + flatY };
+        }
+ 
+        const iw = halfW - r; // where the flat edge ends and the corner curve begins
+        const ih = halfH - r;
+        const hitVerticalEdge = scaleX <= scaleY;
+        const inCornerZone = hitVerticalEdge ? Math.abs(flatY) > ih : Math.abs(flatX) > iw;
+ 
+        if (!inCornerZone) {
+            return { x: cx + flatX, y: cy + flatY };
+        }
+        const qx = Math.sign(dx) * iw;
+        const qy = Math.sign(dy) * ih;
+        const b = ux * qx + uy * qy;
+        const c = qx * qx + qy * qy - r * r;
+        const s = Math.min(b + Math.sqrt(Math.max(b * b - c, 0)), len);
+ 
+        return { x: cx + ux * s, y: cy + uy * s };
+    }
+    function computeEdgeGeometry(d) {
         if (d.selfLoop) {
             const x = d.source.x;
             const y = d.source.y;
             const loopRadius = 50;
-            const offsetX = 0; // Offset to make the loop visible
-            const offsetY = -35; // No vertical offset for the loop
-
-            // Draw a loop using an elliptical arc command
-            // Draw a visible self-loop as an elliptical arc
-            return `M${x + offsetX},${y + offsetY - loopRadius}
-                a${loopRadius},${loopRadius} 0 1,1 0,${2 * loopRadius}
-                a${loopRadius},${loopRadius} 0 1,1 0,${-2 * loopRadius}`;
-
-        } else if (d.bidirectional) {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const dr = Math.sqrt(dx * dx + dy * dy) * 1.2; // Arc radius
-            return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+            const offsetX = 0;
+            const offsetY = -35;
+ 
+            return {
+                path: `M${x + offsetX},${y + offsetY - loopRadius}
+                    a${loopRadius},${loopRadius} 0 1,1 0,${2 * loopRadius}
+                    a${loopRadius},${loopRadius} 0 1,1 0,${-2 * loopRadius}`,
+                labelX: x + offsetX - 5,
+                labelY: y - 40
+            };
         }
-        return `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`;
-    });
-
+ 
+        if (d.bidirectional) {
+            const sHalfW = nodeRectWidth(d.source) / 2;
+            const sHalfH = NODE_HEIGHT / 2;
+            const tHalfW = nodeRectWidth(d.target) / 2;
+            const tHalfH = NODE_HEIGHT / 2;
+            const start = rectBorderPoint(d.source.x, d.source.y, sHalfW, sHalfH, d.target.x, d.target.y, NODE_CORNER_RADIUS);
+            const end = rectBorderPoint(d.target.x, d.target.y, tHalfW, tHalfH, d.source.x, d.source.y, NODE_CORNER_RADIUS);
+ 
+            const cdx = d.target.x - d.source.x;
+            const cdy = d.target.y - d.source.y;
+            const centerLen = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
+            const dr = centerLen * 1.2; // curvature stays based on true center distance
+            const px = (-cdy / centerLen) * BIDIRECTIONAL_SEPARATION;
+            const py = (cdx / centerLen) * BIDIRECTIONAL_SEPARATION;
+            start.x += px; start.y += py;
+            end.x += px; end.y += py;
+            const adx = end.x - start.x;
+            const ady = end.y - start.y;
+            const len = Math.sqrt(adx * adx + ady * ady) || 1;
+            const mx = (start.x + end.x) / 2;
+            const my = (start.y + end.y) / 2;
+            const h = Math.sqrt(Math.max(dr * dr - (len / 2) * (len / 2), 0));
+ 
+            return {
+                path: `M${start.x},${start.y}A${dr},${dr} 0 0,1 ${end.x},${end.y}`,
+                labelX: mx + (dr - h) * (ady / len),
+                labelY: my - (dr - h) * (adx / len)
+            };
+        }
+        const halfW = nodeRectWidth(d.target) / 2;
+        const halfH = NODE_HEIGHT / 2;
+        const end = rectBorderPoint(d.target.x, d.target.y, halfW, halfH, d.source.x, d.source.y, NODE_CORNER_RADIUS);
+ 
+        return {
+            path: `M${d.source.x},${d.source.y}L${end.x},${end.y}`,
+            labelX: (d.source.x + end.x) / 2,
+            labelY: (d.source.y + end.y) / 2
+        };
+    }
+ 
+    link.attr('d', d => computeEdgeGeometry(d).path);
+ 
     if (link.attr('class') === 'link') {
         link.each(function (d) {
             const path = d3.select(this);
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
-            const length = Math.sqrt(dx * dx + dy * dy); // Arc radius
-
-            // Create a unique marker ID for each arrow
             const uniqueArrowId = `${arrowId}-${safe(d.source.id)}-${safe(d.target.id)}`;
-
+ 
             if (directed) {
-                // Append a unique marker for this edge if it doesn't already exist
                 if (!svg.select(`#${uniqueArrowId}`).node()) {
                     svg.append('defs')
                         .append('marker')
                         .attr('id', uniqueArrowId)
                         .attr('class', 'directed-arrow')
                         .attr('viewBox', '0 -5 10 10')
-                        .attr('refX', 24.5)
+                        .attr('refX', ARROW_REFX)
                         .attr('refY', 0)
                         .attr('markerWidth', 5)
                         .attr('markerHeight', 5)
                         .attr('orient', 'auto')
                         .append('path')
-                        .attr('d', 'M0,-5L10,0L0,5')
+                        .attr('d', 'M0,-5L10,0L0,5');
                 }
-
-                // Update the marker-end attribute of the path to use the unique marker to match the curve of bidirectional edge
+ 
                 path.attr('marker-end', `url(#${uniqueArrowId})`);
             }
-
-            // Update the orient attribute of the unique marker
+ 
+            const marker = svg.select(`#${uniqueArrowId}`);
+ 
             if (d.selfLoop) {
-                const angle = Math.atan2(dy, dx) + Math.PI / (smoothFunction(length));
-                // For self-loops, we can set a fixed orientation
-                svg.select(`#${uniqueArrowId}`)
-                    .attr('orient', 0) // Convert radians to degrees
+                marker
                     .attr('refX', 4)
-                    .attr('refY', -0.5);
-            }
-            else if (d.bidirectional) {
-                // Calculate the tangent angle at the end of the arc - used to rotate directed markers based on the edge curving
-                const angle = Math.atan2(dy, dx) + Math.PI / (smoothFunction(length));
-                svg.select(`#${uniqueArrowId}`)
-                    .attr('orient', angle * (180 / Math.PI)); // Convert radians to degrees
-            } else {
-                svg.select(`#${uniqueArrowId}`)
+                    .attr('refY', -0.5)
                     .attr('orient', 'auto');
+            } else {
+                marker.attr('orient', 'auto');
             }
         });
-
-        // Add weights if weighted
         if (weighted) {
             edgeLabel
-                .attr('x', d => {
-                    const midpointX = (d.source.x + d.target.x) / 2;
-                    const dx = d.target.x - d.source.x;
-                    const dy = d.target.y - d.source.y;
-                    const length = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx);
-                    if (d.selfLoop === true) {
-                        const offsetX = -5;
-                        return midpointX + offsetX;
-                    }
-                    else if (d.bidirectional === true) {
-                        const offsetX = Math.sin(angle) * length / 10;
-                        return midpointX + offsetX;
-                    }
-                    return midpointX;
-                })
-                .attr('y', d => {
-                    const midpointY = (d.source.y + d.target.y) / 2;
-                    const dx = d.target.x - d.source.x;
-                    const dy = d.target.y - d.source.y;
-                    const length = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx);
-                    if (d.selfLoop === true) {
-                        const offsetY = -40;
-                        return midpointY + offsetY;
-                    }
-                    else if (d.bidirectional === true) {
-                        const offsetY = -Math.cos(angle) * length / 10;
-                        return midpointY + offsetY;
-                    }
-                    return midpointY;
-                });
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('x', d => computeEdgeGeometry(d).labelX)
+                .attr('y', d => computeEdgeGeometry(d).labelY);
         }
-
+ 
         positionNode(node);
         label.attr('x', d => d.x).attr('y', d => d.y);
     }

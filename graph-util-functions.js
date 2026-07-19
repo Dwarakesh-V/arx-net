@@ -1303,14 +1303,6 @@ function handleGraphNameInput(event, nameInput) {
     availableGraphs.add(requestedName);
 }
 
-// Supporting function that will be used to rotate arrows based on edge direction
-function smoothFunction(x, k = 0.02, c = 275) {
-    const exponent = -k * (x - c);
-    const denominator = 1 + Math.exp(exponent);
-    const result = 10 - (2.4 / denominator);
-    return result;
-}
-
 function deleteGraph(container, displayName, dupDelMenuObj, showHideDeleteDiv) {
     dupDelMenuObj.style.display = 'none';
     // Remove the container from the DOM
