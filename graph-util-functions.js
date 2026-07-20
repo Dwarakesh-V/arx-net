@@ -840,11 +840,6 @@ function generateRandomTree(vertexCount, options = {}) {
         }
     }
 
-    // Output to the DOM elements.
-    // B-tree / B+-tree results are written as an adjacency dict (grouping
-    // each node's children together, e.g. "{[20,40]: [[10], [30,35]]}")
-    // since that's the natural shape for multi-key tree nodes; every other
-    // tree type keeps using the original tuple-list format unchanged.
     if (treeType === 'b' || treeType === 'bPlus') {
         graphInputField.value = standaloneLabel !== null
             ? standaloneLabel
@@ -928,7 +923,7 @@ function buildAVL(indices) {
     return root;
 }
 
-// --- Real B-tree construction (order = max children per node) ---
+// Real B-tree construction (order = max children per node)
 function bTreeInsert(node, key, order) {
     const maxKeys = order - 1;
 
@@ -994,7 +989,7 @@ function emitBTreeEdges(node, vertices, edgeList, getRandomWeight) {
     return label;
 }
 
-// --- Real B+-tree construction ---
+// B+-tree construction
 
 function bPlusTreeInsert(node, key, order) {
     const maxKeys = order - 1;
