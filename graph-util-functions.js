@@ -1610,8 +1610,6 @@ function isBSTJSON(root) {
 function isAVLJSON(root) {
     if (!root) return { valid: true, reason: "Empty tree is trivially a valid AVL tree." };
 
-    // Helper to get the display name/value, handling the new label property
-    // Helper to get the display name/value, handling missing labels
     const getValStr = (n) => {
         if (n.label !== undefined) return n.label;
         
@@ -1727,6 +1725,213 @@ function isAVLJSON(root) {
 
     return { valid: true, reason: "Tree is a valid AVL tree." };
 }
+
+function getRawValStr(n) {
+    if (n.label !== undefined) return n.label;
+
+    const idStr = String(n.id);
+    const lastUnderscore = idStr.lastIndexOf('_');
+
+    if (lastUnderscore !== -1) {
+        return idStr.substring(0, lastUnderscore);
+    }
+
+    return idStr;
+}
+
+function getKeysFromLabel(n) {
+    const valStr = String(getRawValStr(n)).trim();
+    const inner = (valStr.startsWith('[') && valStr.endsWith(']')) ? valStr.slice(1, -1) : valStr;
+    if (inner === '') return [];
+    return inner.split(',').map(s => Number(s.trim()));
+}
+
+function keysLabel(keys) {
+    return '[' + keys.join(',') + ']';
+}
+
+function resolveOrderedChildren(node) {
+    const kids = node.children || [];
+    if (kids.length <= 1) return { children: kids };
+
+    const sorted = kids.slice().sort((a, b) => a.x - b.x);
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].x === sorted[i - 1].x) {
+            return { ambiguous: true };
+        }
+    }
+    return { children: sorted };
+}
+
+function isBJSON(root, order = null) {
+    if (!root) return { valid: true, reason: "Empty tree is trivially a valid B-tree." };
+
+    const maxKeys = order ? order - 1 : null;
+    const minKeys = order ? Math.ceil(order / 2) - 1 : null;
+
+    let expectedLeafDepth = null;
+
+    function validate(node, min, max, path, depth, isRoot) {
+        const keys = getKeysFromLabel(node);
+        const label = keysLabel(keys);
+
+        if (keys.length === 0) {
+            return { valid: false, reason: `Node ${label} at ${path} has no keys. (Internal ID: ${node.id})` };
+        }
+        for (const k of keys) {
+            if (Number.isNaN(k)) {
+                return { valid: false, reason: `Node ${label} at ${path} has a non-numeric key. (Internal ID: ${node.id})` };
+            }
+        }
+        for (let i = 1; i < keys.length; i++) {
+            if (keys[i] <= keys[i - 1]) {
+                return { valid: false, reason: `Node ${label} at ${path} has keys that are not strictly sorted.` };
+            }
+        }
+        for (const k of keys) {
+            if (k <= min || k >= max) {
+                return {
+                    valid: false,
+                    reason: `Node ${label} at ${path} has key ${k} outside its valid range (${min}, ${max}).`
+                };
+            }
+        }
+
+        if (maxKeys !== null && keys.length > maxKeys) {
+            return { valid: false, reason: `Node ${label} at ${path} has ${keys.length} keys, more than the order-${order} maximum of ${maxKeys}.` };
+        }
+        if (!isRoot && minKeys !== null && keys.length < minKeys) {
+            return { valid: false, reason: `Node ${label} at ${path} has ${keys.length} keys, fewer than the order-${order} minimum of ${minKeys}.` };
+        }
+
+        const resolved = resolveOrderedChildren(node);
+        if (resolved.ambiguous) {
+            return { valid: false, reason: `Node ${label} at ${path} has children with identical x coordinates; left-to-right order can't be determined.` };
+        }
+        const children = resolved.children;
+
+        if (children.length === 0) {
+            if (expectedLeafDepth === null) {
+                expectedLeafDepth = depth;
+            } else if (depth !== expectedLeafDepth) {
+                return {
+                    valid: false,
+                    reason: `Node ${label} at ${path} is a leaf at depth ${depth}, but other leaves are at depth ${expectedLeafDepth} — a B-tree must keep all leaves at the same depth.`
+                };
+            }
+            return { valid: true };
+        }
+
+        if (children.length !== keys.length + 1) {
+            return {
+                valid: false,
+                reason: `Node ${label} at ${path} has ${keys.length} keys but ${children.length} children (expected ${keys.length + 1}).`
+            };
+        }
+
+        for (let i = 0; i < children.length; i++) {
+            const childMin = i === 0 ? min : keys[i - 1];
+            const childMax = i === keys.length ? max : keys[i];
+            const result = validate(children[i], childMin, childMax, `${path} -> child[${i}]`, depth + 1, false);
+            if (!result.valid) return result;
+        }
+
+        return { valid: true };
+    }
+
+    return validate(root, -Infinity, Infinity, `root(${keysLabel(getKeysFromLabel(root))})`, 0, true);
+}
+
+function isBPlusJSON(root, order = null) {
+    if (!root) return { valid: true, reason: "Empty tree is trivially a valid B+-tree." };
+
+    const maxKeys = order ? order - 1 : null;
+    const minKeys = order ? Math.ceil(order / 2) - 1 : null;
+
+    let expectedLeafDepth = null;
+
+    function validate(node, min, max, path, depth, isRoot) {
+        const keys = getKeysFromLabel(node);
+        const label = keysLabel(keys);
+
+        if (keys.length === 0) {
+            return { valid: false, reason: `Node ${label} at ${path} has no keys. (Internal ID: ${node.id})` };
+        }
+        for (const k of keys) {
+            if (Number.isNaN(k)) {
+                return { valid: false, reason: `Node ${label} at ${path} has a non-numeric key. (Internal ID: ${node.id})` };
+            }
+        }
+        for (let i = 1; i < keys.length; i++) {
+            if (keys[i] <= keys[i - 1]) {
+                return { valid: false, reason: `Node ${label} at ${path} has keys that are not strictly sorted.` };
+            }
+        }
+        for (const k of keys) {
+            if (k < min || k >= max) {
+                return {
+                    valid: false,
+                    reason: `Node ${label} at ${path} has key ${k} outside its valid range [${min}, ${max}).`
+                };
+            }
+        }
+
+        if (maxKeys !== null && keys.length > maxKeys) {
+            return { valid: false, reason: `Node ${label} at ${path} has ${keys.length} keys, more than the order-${order} maximum of ${maxKeys}.` };
+        }
+        if (!isRoot && minKeys !== null && keys.length < minKeys) {
+            return { valid: false, reason: `Node ${label} at ${path} has ${keys.length} keys, fewer than the order-${order} minimum of ${minKeys}.` };
+        }
+
+        const resolved = resolveOrderedChildren(node);
+        if (resolved.ambiguous) {
+            return { valid: false, reason: `Node ${label} at ${path} has children with identical x coordinates; left-to-right order can't be determined.` };
+        }
+        const children = resolved.children;
+
+        if (children.length === 0) {
+            if (expectedLeafDepth === null) {
+                expectedLeafDepth = depth;
+            } else if (depth !== expectedLeafDepth) {
+                return {
+                    valid: false,
+                    reason: `Node ${label} at ${path} is a leaf at depth ${depth}, but other leaves are at depth ${expectedLeafDepth} — a B+-tree must keep all leaves at the same depth.`
+                };
+            }
+            return { valid: true, min: keys[0] };
+        }
+
+        if (children.length !== keys.length + 1) {
+            return {
+                valid: false,
+                reason: `Node ${label} at ${path} has ${keys.length} keys but ${children.length} children (expected ${keys.length + 1}).`
+            };
+        }
+
+        let subtreeMin = null;
+        for (let i = 0; i < children.length; i++) {
+            const childMin = i === 0 ? min : keys[i - 1];
+            const childMax = i === keys.length ? max : keys[i];
+            const result = validate(children[i], childMin, childMax, `${path} -> child[${i}]`, depth + 1, false);
+            if (!result.valid) return result;
+
+            if (i === 0) {
+                subtreeMin = result.min;
+            } else if (result.min !== keys[i - 1]) {
+                return {
+                    valid: false,
+                    reason: `Node ${label} at ${path}: separator key ${keys[i - 1]} does not match the smallest key (${result.min}) in its right subtree — B+-tree routing keys must be exact copies.`
+                };
+            }
+        }
+
+        return { valid: true, min: subtreeMin };
+    }
+
+    const result = validate(root, -Infinity, Infinity, `root(${keysLabel(getKeysFromLabel(root))})`, 0, true);
+    return { valid: result.valid, reason: result.reason };
+}
+
 
 // function isRedBlackJSON(root) {
 //     if (!root) return { valid: true, reason: "Empty tree is trivially a valid Red-Black tree." };

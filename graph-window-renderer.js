@@ -724,7 +724,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     d3.drag()
                         .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
                         .on('drag', function (event, d) { dragged(event, d, this); })
-                        .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics();})
+                        .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics(); })
                 )
                 .on('contextmenu', function (event, d) {
                     event.preventDefault();
@@ -917,7 +917,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     d3.drag()
                         .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
                         .on('drag', function (event, d) { dragged(event, d, this); })
-                        .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics();})
+                        .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics(); })
                 )
                 .on('contextmenu', function (event, d) {
                     event.preventDefault();
@@ -1021,6 +1021,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             const height = svgRect.height || 600;
 
             autoLayoutNodes(nodes, simulation, width, height, edgesRaw, true);
+            adjustViewBox(svg, nodes, grid);
 
             // Rebuild D3 edges to mirror the rebalanced tree
             edges.length = 0;
@@ -1112,9 +1113,420 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
                 if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
             }, 500);
-            adjustViewBox(svg, nodes, grid);
             updateStatistics();
         };
+
+        // --- shared helpers: parsing / model construction ------------------------
+
+        // Nodes are labeled/identified exactly as parsed elsewhere in the app:
+        // a bracket-notation key list like "[10,20]" (a single-key node like "[5]"
+        // or a bare "5" both work too).
+        function parseKeyList(idOrLabel) {
+            const s = String(idOrLabel).trim();
+            const inner = (s.startsWith('[') && s.endsWith(']')) ? s.slice(1, -1) : s;
+            if (inner === '') return [];
+            return inner.split(',').map(v => Number(v.trim()));
+        }
+
+        // Rebuilds the { keys, children, leaf, domNode } model this file operates
+        // on from whatever's currently on the canvas, so the real insert-and-split
+        // algorithm can run against it. `edgesList` lets callers pass a filtered
+        // edge list (see filterTreeEdgesOnly) when the canvas also contains
+        // non-hierarchy edges, like a B+-tree's leaf-sibling chain.
+        function buildBTreeModel(nodesList, edgesList) {
+            if (nodesList.length === 0) return null;
+
+            const targetIds = new Set(edgesList.map(e => String(e.target)));
+            const rootDomNode = nodesList.find(n => !targetIds.has(String(n.id))) || nodesList[0];
+            const nodeById = new Map(nodesList.map(n => [String(n.id), n]));
+
+            function build(domNode) {
+                const keys = parseKeyList(domNode.id);
+                const childDomNodes = edgesList
+                    .filter(e => String(e.source) === String(domNode.id))
+                    .map(e => nodeById.get(String(e.target)))
+                    .filter(Boolean)
+                    .sort((a, b) => a.x - b.x); // left-to-right by canvas position
+
+                const children = childDomNodes.map(build);
+                return { keys, children, leaf: children.length === 0, domNode };
+            }
+
+            return build(rootDomNode);
+        }
+
+        function modelHasKey(model, key) {
+            if (!model) return false;
+            if (model.keys.includes(key)) return true;
+            return model.children.some(c => modelHasKey(c, key));
+        }
+
+        // A B+-tree's leaf-sibling chain shows up on the canvas as plain edges
+        // alongside the real parent/child ones, with nothing in the data marking
+        // which is which. They're recovered the same way isTree's bPlus mode does
+        // it: a branching (internal) node always has >= 2 children in a valid
+        // B/B+ tree, so any edge whose source has out-degree >= 2 must be a real
+        // hierarchy edge; a leaf can only ever emit its optional "next" pointer,
+        // so out-degree <= 1 sources are chain edges.
+        function filterTreeEdgesOnly(edgesList) {
+            const outDegree = new Map();
+            edgesList.forEach(e => {
+                const s = String(e.source);
+                outDegree.set(s, (outDegree.get(s) || 0) + 1);
+            });
+            return edgesList.filter(e => (outDegree.get(String(e.source)) || 0) >= 2);
+        }
+
+        function insertKeySorted(keys, key) {
+            let i = keys.length - 1;
+            while (i >= 0 && keys[i] > key) i--;
+            keys.splice(i + 1, 0, key);
+        }
+
+        // --- B-tree insert-and-split (real data keys, removed on promotion) ------
+
+        function bTreeModelInsert(node, key, order) {
+            const maxKeys = order - 1;
+
+            if (node.leaf) {
+                insertKeySorted(node.keys, key);
+            } else {
+                let i = 0;
+                while (i < node.keys.length && key > node.keys[i]) i++;
+                const result = bTreeModelInsert(node.children[i], key, order);
+                if (result) {
+                    node.keys.splice(i, 0, result.promotedKey);
+                    node.children.splice(i + 1, 0, result.newRightNode);
+                }
+            }
+
+            if (node.keys.length > maxKeys) {
+                return splitBTreeModelNode(node);
+            }
+            return null;
+        }
+
+        function splitBTreeModelNode(node) {
+            const mid = Math.floor(node.keys.length / 2);
+            const promotedKey = node.keys[mid];
+
+            const leftKeys = node.keys.slice(0, mid);
+            const rightKeys = node.keys.slice(mid + 1);
+
+            let leftChildren = [];
+            let rightChildren = [];
+            if (!node.leaf) {
+                leftChildren = node.children.slice(0, mid + 1);
+                rightChildren = node.children.slice(mid + 1);
+            }
+
+            node.keys = leftKeys;
+            node.children = leftChildren;
+            // node.domNode (and its x/y) stays with the left half — this keeps
+            // whichever original canvas node it was in place instead of jumping.
+
+            const newRightNode = { keys: rightKeys, children: rightChildren, leaf: node.leaf, domNode: null };
+            return { promotedKey, newRightNode };
+        }
+
+        // --- B+-tree insert-and-split (leaf split promotes a COPY) ---------------
+
+        function bPlusModelInsert(node, key, order) {
+            const maxKeys = order - 1;
+
+            if (node.leaf) {
+                insertKeySorted(node.keys, key);
+                if (node.keys.length > maxKeys) {
+                    return splitBPlusModelLeaf(node);
+                }
+                return null;
+            }
+
+            let i = 0;
+            while (i < node.keys.length && key >= node.keys[i]) i++;
+            const result = bPlusModelInsert(node.children[i], key, order);
+            if (result) {
+                node.keys.splice(i, 0, result.promotedKey);
+                node.children.splice(i + 1, 0, result.newRightNode);
+            }
+
+            if (node.keys.length > maxKeys) {
+                return splitBTreeModelNode(node); // internal nodes split like a plain B-tree
+            }
+            return null;
+        }
+
+        function splitBPlusModelLeaf(leaf) {
+            const mid = Math.floor(leaf.keys.length / 2);
+            const rightKeys = leaf.keys.slice(mid);
+            leaf.keys = leaf.keys.slice(0, mid);
+
+            const newRightLeaf = { keys: rightKeys, children: [], leaf: true, domNode: null };
+            // The leaf-sibling chain is rebuilt from scratch after the whole
+            // insert finishes (see insertBPlus), so no .next bookkeeping here.
+            return { promotedKey: rightKeys[0], newRightNode: newRightLeaf };
+        }
+
+        // --- turning the (possibly restructured) model back into canvas state ----
+
+        // Walks the model left-to-right, relabels/creates the corresponding canvas
+        // node for each tree node (mutating an existing node's `.id` in place
+        // whenever possible, which keeps its position and D3 binding stable —
+        // only genuinely new nodes from a split get a fresh object), and emits the
+        // parent/child edges. `leafIdsInOrder`, if passed, collects leaf ids in
+        // left-to-right order for the caller to chain into a B+-tree sibling list.
+        function finalizeBTreeModel(model, edgesOut, leafIdsInOrder, usedIds) {
+            usedIds = usedIds || new Set();
+            let label = model.keys.join(',');
+            let uniqueId = label;
+            let counter = 1;
+            while (usedIds.has(uniqueId)) uniqueId = `${label}_${counter++}`;
+            usedIds.add(uniqueId);
+
+            let domNode = model.domNode;
+            if (domNode) {
+                domNode.id = uniqueId; // mutate in place: preserves position + D3 identity
+            } else {
+                const svgRect = svg.node().getBoundingClientRect();
+                domNode = { id: uniqueId, x: (svgRect.width / 2) || 400, y: 50, vx: 0, vy: 0 };
+                nodes.push(domNode);
+            }
+
+            if (model.children.length === 0) {
+                if (leafIdsInOrder) leafIdsInOrder.push(uniqueId);
+                return uniqueId;
+            }
+
+            for (const child of model.children) {
+                const childId = finalizeBTreeModel(child, edgesOut, leafIdsInOrder, usedIds);
+                edgesOut.push({ source: uniqueId, target: childId, weight: 1 });
+            }
+
+            return uniqueId;
+        }
+
+        // --- shared canvas rebuild/rebind, mirroring balanceAVL's tail section ---
+
+        function rebuildGraphAfterTreeEdit() {
+            edges.length = 0;
+            edgesRaw.forEach(er => {
+                const srcNode = nodes.find(n => String(n.id) === String(er.source));
+                const tgtNode = nodes.find(n => String(n.id) === String(er.target));
+                if (srcNode && tgtNode) {
+                    edges.push({ source: srcNode, target: tgtNode, weight: er.weight });
+                }
+            });
+
+            const svgRect = svg.node().getBoundingClientRect();
+            const width = svgRect.width || 800;
+            const height = svgRect.height || 600;
+
+            autoLayoutNodes(nodes, simulation, width, height, edgesRaw, true);
+            adjustViewBox(svg, nodes, grid);
+
+            link = edgeLayer.selectAll('.link')
+                .data(edges, d => `${d.source.id}-${d.target.id}`)
+                .join(
+                    enter => enter.append('path')
+                        .attr('class', 'link')
+                        .attr('source-id', d => `${arrowId}${d.source.id}`)
+                        .attr('target-id', d => `${arrowId}${d.target.id}`)
+                        .attr('fill', 'none')
+                        .attr('stroke', edgeColor)
+                        .attr('stroke-width', 4)
+                        .on('mouseover', function () { handleEdgeMouseOver(this, edgeHoverColor, directed, svgElement); })
+                        .on('mouseout', function () { handleEdgeMouseOut(this, edgeColor, directed, svgElement); })
+                        .on('contextmenu', function (event, d) { showEdgeContextMenu(event, d, svg, edgeLabel, edges, edgesRaw, node, label, directed, weighted, arrowId, link, link2, updateStatistics); }),
+                    update => update
+                        .attr('source-id', d => `${arrowId}${d.source.id}`)
+                        .attr('target-id', d => `${arrowId}${d.target.id}`),
+                    exit => exit.remove()
+                );
+
+            link2 = edgeBufferLayer.selectAll('.link2')
+                .data(edges, d => `${d.source.id}-${d.target.id}`)
+                .join(
+                    enter => enter.append('path')
+                        .attr('class', 'link2')
+                        .attr('fill', 'none')
+                        .attr('stroke', 'transparent')
+                        .attr('stroke-width', 20)
+                        .style('pointer-events', 'stroke')
+                        .on('mouseover', function (event, d) {
+                            d3.select(`.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`).dispatch('mouseover');
+                        })
+                        .on('mouseout', function (event, d) {
+                            d3.select(`.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`).dispatch('mouseout');
+                        })
+                        .on('contextmenu', function (event, d) {
+                            d3.select(`.link[source-id='${arrowId}${d.source.id}'][target-id='${arrowId}${d.target.id}']`)
+                                .node().dispatchEvent(new MouseEvent('contextmenu', { bubbles: false, cancelable: true, clientX: event.clientX, clientY: event.clientY, view: window }));
+                        }),
+                    update => update,
+                    exit => exit.remove()
+                );
+
+            if (typeof weighted !== 'undefined' && weighted) {
+                edgeLabel = labelLayer.selectAll('.edge-label')
+                    .data(edges, d => `${d.source.id}-${d.target.id}`)
+                    .join(
+                        enter => enter.append('text').attr('class', 'edge-label').text(d => d.weight),
+                        update => update.text(d => d.weight),
+                        exit => exit.remove()
+                    );
+            }
+
+            let nodeSelection = nodeLayer.selectAll('rect').data(nodes, d => d.id);
+            let nodeEnter = nodeSelection.enter()
+                .append('rect')
+                .attr('class', 'node')
+                .attr('fill', nodeColor)
+                .attr('stroke', primaryBG)
+                .call(sizeNodeRect)
+                .call(positionNode)
+                .call(
+                    d3.drag()
+                        .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
+                        .on('drag', function (event, d) { dragged(event, d, this); })
+                        .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics(); })
+                )
+                .on('contextmenu', function (event, d) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                });
+
+            nodeSelection.exit().remove();
+            node = nodeEnter.merge(nodeSelection)
+                .transition().duration(500)
+                .call(positionNode);
+
+            node = nodeLayer.selectAll('rect');
+
+            let labelSelection = labelLayer.selectAll('.node-label').data(nodes, d => d.id);
+            let labelEnter = labelSelection.enter()
+                .append('text')
+                .attr('dy', 7)
+                .attr('text-anchor', 'middle')
+                .text(d => d.label !== undefined ? d.label : d.id)
+                .attr('class', 'node-label')
+                .style('pointer-events', 'none')
+                .style('font-weight', 'bold');
+
+            labelSelection.exit().remove();
+            label = labelEnter.merge(labelSelection);
+            // Existing labels may now show a different key list even though their
+            // node object (and D3 binding) stayed the same — refresh the text.
+            label.text(d => d.label !== undefined ? d.label : d.id);
+            label.transition().duration(500)
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+
+            setTimeout(() => {
+                setEdgePositions(link, edgeLabel, node, label, directed, weighted, svg, arrowId);
+                if (link2) setEdgePositions(link2, edgeLabel, node, label, directed, weighted, svg, arrowId);
+            }, 500);
+            updateStatistics();
+        }
+
+        function getBTreeOrder() {
+            return (typeof bTreeOrderInput !== 'undefined' && bTreeOrderInput.value)
+                ? Math.max(2, parseInt(bTreeOrderInput.value) || 4)
+                : 4;
+        }
+
+        // --- insertB ---------------------------------------------------------------
+
+        function insertB() {
+            const order = getBTreeOrder();
+
+            if (!isBJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed), order).valid) {
+                alert("This structure is not a B-tree.");
+                return;
+            }
+
+            const value = prompt("Enter numeric value to insert:");
+            if (!value) return; // User cancelled or entered empty string
+
+            const numericVal = Number(value);
+            if (Number.isNaN(numericVal)) {
+                alert("B-tree nodes must be numeric.");
+                return;
+            }
+
+            let root = buildBTreeModel(nodes, edgesRaw);
+
+            if (root && modelHasKey(root, numericVal)) {
+                alert("That value is already in the tree.");
+                return;
+            }
+
+            if (!root) {
+                root = { keys: [numericVal], children: [], leaf: true, domNode: null };
+            } else {
+                const result = bTreeModelInsert(root, numericVal, order);
+                if (result) {
+                    root = { keys: [result.promotedKey], children: [root, result.newRightNode], leaf: false, domNode: null };
+                }
+            }
+
+            const newEdgesRaw = [];
+            finalizeBTreeModel(root, newEdgesRaw);
+            edgesRaw = newEdgesRaw;
+
+            rebuildGraphAfterTreeEdit();
+        }
+
+        // --- insertBPlus -------------------------------------------------------------
+
+        function insertBPlus() {
+            const order = getBTreeOrder();
+
+            const treeOnlyEdges = filterTreeEdgesOnly(edgesRaw);
+            if (!isBPlusJSON(convertToTreeJSON(stringifyEdges(treeOnlyEdges), svg, directed), order).valid) {
+                alert("This structure is not a B+-tree.");
+                return;
+            }
+
+            const value = prompt("Enter numeric value to insert:");
+            if (!value) return;
+
+            const numericVal = Number(value);
+            if (Number.isNaN(numericVal)) {
+                alert("B+-tree nodes must be numeric.");
+                return;
+            }
+
+            let root = buildBTreeModel(nodes, treeOnlyEdges);
+
+            if (root && modelHasKey(root, numericVal)) {
+                alert("That value is already in the tree.");
+                return;
+            }
+
+            if (!root) {
+                root = { keys: [numericVal], children: [], leaf: true, domNode: null };
+            } else {
+                const result = bPlusModelInsert(root, numericVal, order);
+                if (result) {
+                    root = { keys: [result.promotedKey], children: [root, result.newRightNode], leaf: false, domNode: null };
+                }
+            }
+
+            const newEdgesRaw = [];
+            const leafIdsInOrder = [];
+            finalizeBTreeModel(root, newEdgesRaw, leafIdsInOrder);
+
+            // Re-link the leaves left-to-right — this fully replaces the old
+            // sibling chain rather than patching it, since a split can insert a
+            // brand-new leaf anywhere in the sequence.
+            for (let i = 0; i < leafIdsInOrder.length - 1; i++) {
+                newEdgesRaw.push({ source: leafIdsInOrder[i], target: leafIdsInOrder[i + 1], weight: 1 });
+            }
+
+            edgesRaw = newEdgesRaw;
+
+            rebuildGraphAfterTreeEdit();
+        }
 
         const optionBSTInsert = document.createElement('option');
         optionBSTInsert.value = 'BSTI';
@@ -1130,6 +1542,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         optionBSTDelete.dataset.algorithm = 'BSTD';
         methodsSelect.appendChild(optionBSTDelete);
 
+        const optionAVLBalance = document.createElement('option');
+        optionAVLBalance.value = 'AVLB';
+        optionAVLBalance.textContent = "AVL rearrangement";
+        optionAVLBalance.title = "Balance the current BST into an AVL tree."
+        optionAVLBalance.dataset.algorithm = 'AVLB';
+        methodsSelect.appendChild(optionAVLBalance);
+
         const optionAVLInsert = document.createElement('option');
         optionAVLInsert.value = 'AVLI';
         optionAVLInsert.textContent = "AVL insertion";
@@ -1144,15 +1563,13 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         optionAVLDelete.dataset.algorithm = 'AVLD';
         methodsSelect.appendChild(optionAVLDelete);
 
-        const optionAVLBalance = document.createElement('option');
-        optionAVLBalance.value = 'AVLB';
-        optionAVLBalance.textContent = "AVL rearrangement";
-        optionAVLBalance.title = "Balance the current BST into an AVL tree."
-        optionAVLBalance.dataset.algorithm = 'AVLB';
-        methodsSelect.appendChild(optionAVLBalance);
+        const optionBInsert = document.createElement('option');
+        optionBInsert.value = 'BI';
+        optionBInsert.textContent = "B tree insertion";
+        optionBInsert.title = "Insert element into B tree"
+        optionBInsert.dataset.algorithm = 'BI';
+        methodsSelect.appendChild(optionBInsert);
     }
-
-
 
     headerSpan.appendChild(methodsSelect);
 
@@ -1188,18 +1605,26 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                 deleteBST();
                 break;
 
-            case event.target.value === "AVLI":
-                insertBST();
+            case event.target.value === "AVLB":
                 balanceAVL();
                 break;
 
-            case event.target.value === "AVLB":
+            case event.target.value === "AVLI":
+                insertBST();
                 balanceAVL();
                 break;
 
             case event.target.value === "AVLD":
                 deleteBST();
                 balanceAVL();
+                break;
+
+            case event.target.value === "BI":
+                insertB();
+                break;
+
+            case event.target.value === "BPlusI":
+                insertBPlus();
                 break;
         }
 
@@ -1483,6 +1908,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                             link.attr('source-id', e => `${arrowId}${e.source.id}`)
                                 .attr('target-id', e => `${arrowId}${e.target.id}`);
                         }
+                        updateStatistics();
                     });
 
                     // Create new edge
@@ -2131,7 +2557,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
             d3.drag()
                 .on('start', function (event, d) { dragStarted(event, d, simulation, this); })
                 .on('drag', function (event, d) { dragged(event, d, this); })
-                .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics();})
+                .on('end', function (event, d) { dragEnded(event, d, simulation, this, convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)); updateStatistics(); })
         )
         .on('contextmenu', function (event, d) {
             event.preventDefault();
@@ -2188,6 +2614,7 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
                     link.attr('source-id', e => `${arrowId}${e.source.id}`)
                         .attr('target-id', e => `${arrowId}${e.target.id}`);
                 }
+                updateStatistics();
             });
 
             // Create new edge
@@ -2482,25 +2909,87 @@ function addGraph(edgesInput = null, nodes = null, inputName = null, directed = 
         aboutAVL.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
         aboutContent.append("AVL: ", aboutAVL, document.createElement("br"));
 
-        aboutB.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+        aboutB.textContent = isBJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
         aboutContent.append("B: ", aboutB, document.createElement("br"));
 
-        aboutBPlus.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+        aboutBPlus.textContent = isBPlusJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
         aboutContent.append("B+: ", aboutBPlus);
     }
 
     about.appendChild(aboutContent);
+    updateStatistics();
     /* End of graph statistics */
 
+    /* Dynamically update graph about section and algorithms */
     function updateStatistics() {
         aboutVC.textContent = nodes.length;
         aboutEC.textContent = edgesRaw.length;
         aboutCycle.textContent = hasCycle(edgesRaw) ? "Yes" : "No";
         if (isTreeType) {
-            aboutBST.textContent = isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
-            aboutAVL.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
-            aboutB.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
-            aboutBPlus.textContent = isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid ? "Yes" : "No";
+            if (isBSTJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+                aboutBST.textContent = "Yes";
+                for (const option of methodsSelect) {
+                    if (option.value === "BSTI" || option.value === "BSTD" || option.value === "AVLB") {
+                        option.style.display = "block";
+                    }
+                }
+            } else {
+                aboutBST.textContent = "No";
+                for (const option of methodsSelect) {
+                    if (option.value === "BSTI" || option.value === "BSTD" || option.value === "AVLB") {
+                        option.style.display = "none";
+                    }
+                }
+            }
+
+            if (isAVLJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+                aboutAVL.textContent = "Yes";
+                for (const option of methodsSelect) {
+                    if (option.value === "AVLI" || option.value === "AVLD") {
+                        option.style.display = "block";
+                    }
+                }
+            } else {
+                aboutAVL.textContent = "No";
+                for (const option of methodsSelect) {
+                    if (option.value === "AVLI" || option.value === "AVLD") {
+                        option.style.display = "none";
+                    }
+                }
+            }
+
+            if (isBJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+                aboutB.textContent = "Yes";
+                for (const option of methodsSelect) {
+                    if (option.value === "BI" || option.value === "BD") {
+                        option.style.display = "block";
+                    }
+                }
+            } else {
+                aboutB.textContent = "No";
+                for (const option of methodsSelect) {
+                    if (option.value === "BI" || option.value === "BD") {
+                        option.style.display = "none";
+                    }
+                }
+            }
+
+            if (isBPlusJSON(convertToTreeJSON(stringifyEdges(edgesRaw), svg, directed)).valid) {
+                aboutBPlus.textContent = "Yes";
+                for (const option of methodsSelect) {
+                    if (option.value === "BPlusI" || option.value === "BPlusD") {
+                        option.style.display = "block";
+                    }
+                }
+            } else {
+                aboutBPlus.textContent = "No";
+                for (const option of methodsSelect) {
+                    if (option.value === "BPlusI" || option.value === "BPlusD") {
+                        option.style.display = "none";
+                    }
+                }
+            }
         }
     }
+    /* End of dynamic stats updation */
 };

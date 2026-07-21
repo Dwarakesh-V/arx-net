@@ -1,13 +1,16 @@
+const safe = x => String(x).replace(/[^\w-]/g, "_");
+
 function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arrowId, directed) {
     if (algoGraphs.has(container)) {
         return;
     } else {
         algoGraphs.add(container);
     }
+
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -17,6 +20,8 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
     // Calculate BFS path
+    startNodeId = safe(startNodeId);
+
     const queue = [startNodeId];
     const visited = new Set();
     visited.add(startNodeId);
@@ -25,14 +30,19 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
     levels[startNodeId] = 0;
 
     const animationSteps = [];
-    animationSteps.push({ type: 'node', id: startNodeId, level: 0, fromEdge: null });
+    animationSteps.push({
+        type: 'node',
+        id: startNodeId,
+        level: 0,
+        fromEdge: null
+    });
 
     while (queue.length > 0) {
         const currentId = queue.shift();
 
         edges.forEach(edge => {
-            const sId = edge.source.id || edge.source;
-            const tId = edge.target.id || edge.target;
+            const sId = safe(edge.source.id || edge.source);
+            const tId = safe(edge.target.id || edge.target);
 
             let isTraversable = false;
             let nextNodeId = null;
@@ -51,7 +61,12 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
                 levels[nextNodeId] = levels[currentId] + 1;
 
-                animationSteps.push({ type: 'edge', sourceId: sId, targetId: tId });
+                animationSteps.push({
+                    type: 'edge',
+                    sourceId: sId,
+                    targetId: tId
+                });
+
                 animationSteps.push({
                     type: 'node',
                     id: nextNodeId,
@@ -78,8 +93,14 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
-            if (step.type === 'node') activeNodes.add(step.id);
-            if (step.type === 'edge') activeEdges.add(`${step.sourceId}-${step.targetId}`);
+
+            if (step.type === 'node') {
+                activeNodes.add(safe(step.id));
+            }
+
+            if (step.type === 'edge') {
+                activeEdges.add(`${safe(step.sourceId)}-${safe(step.targetId)}`);
+            }
 
             if (step.type === 'node') {
                 if (step.level === 0) {
@@ -90,22 +111,24 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
             }
         }
 
-
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
         // Apply Node Colors
         svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = activeNodes.has(d.id);
+            const nodeId = safe(d.id);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const isActive = activeNodes.has(nodeId);
+            const targetColor = isActive
+                ? nodeVisitColor
+                : originalNodeColors.get(nodeId);
 
-            // Check if this specific node is the one that was JUST added in the current step
             const lastStepIndex = targetStep - 1;
-            const isLatestNode = lastStepIndex >= 0 &&
+            const isLatestNode =
+                lastStepIndex >= 0 &&
                 animationSteps[lastStepIndex].type === 'node' &&
-                animationSteps[lastStepIndex].id === d.id;
+                safe(animationSteps[lastStepIndex].id) === nodeId;
 
             if (animate && isLatestNode) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -117,10 +140,11 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
         // Apply Edge & Arrow Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
-            const isActive = activeEdges.has(`${sId}-${tId}`);
 
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
+
+            const isActive = activeEdges.has(`${sId}-${tId}`);
             const targetColor = isActive ? nodeVisitColor : edgeColor;
 
             // Update edge path
@@ -132,8 +156,9 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
             // Update associated arrow head
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
+
                 if (!markerPath.empty()) {
                     if (animate && isActive) {
                         markerPath.transition().duration(300).attr('fill', targetColor);
@@ -151,7 +176,9 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
             playback.updateTimeline(0);
         }
 
-        if (currentStep === 0) renderGraphState(0, false);
+        if (currentStep === 0) {
+            renderGraphState(0, false);
+        }
 
         playInterval = setInterval(() => {
             if (currentStep < totalSteps) {
@@ -178,25 +205,25 @@ function visualizeBFS(graphName, startNodeId, container, nodes, edges, svg, arro
     const y = rect.top + window.scrollY;
 
     // Instantiate controller
-    const playback = new GraphPlaybackController(svg, totalSteps, container,
-        {
-            onPlay: startLoop,
-            onPause: stopLoop,
-            onSeek: (step) => {
-                currentStep = step;
-                renderGraphState(currentStep, false);
-            },
-            onSpeedChange: () => {
-                if (playInterval) {
-                    stopLoop();
-                    startLoop();
-                }
-            },
-            onEnd: () => {
+    const playback = new GraphPlaybackController(svg, totalSteps, container, {
+        onPlay: startLoop,
+        onPause: stopLoop,
+        onSeek: (step) => {
+            currentStep = step;
+            renderGraphState(currentStep, false);
+        },
+        onSpeedChange: () => {
+            if (playInterval) {
                 stopLoop();
-                renderGraphState(0, false);
+                startLoop();
             }
-        });
+        },
+        onEnd: () => {
+            stopLoop();
+            renderGraphState(0, false);
+        }
+    });
+
     startLoop();
     renderGraphState(0, false);
 }
@@ -211,7 +238,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -220,6 +247,8 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
+    startNodeId = safe(startNodeId);
+
     // Calculate DFS path using a Stack
     const stack = [{ id: startNodeId, level: 0, fromEdge: null }];
     const visited = new Set();
@@ -227,7 +256,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
     while (stack.length > 0) {
         const current = stack.pop();
-        const currentId = current.id;
+        const currentId = safe(current.id);
 
         // In DFS, we check if visited after popping
         if (!visited.has(currentId)) {
@@ -235,7 +264,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
             // Record edge traversal step if we came from another node
             if (current.fromEdge) {
-                animationSteps.push({ type: 'edge', sourceId: current.fromEdge.u, targetId: current.fromEdge.v });
+                animationSteps.push({ type: 'edge', sourceId: safe(current.fromEdge.u), targetId: safe(current.fromEdge.v) });
             }
 
             // Record node visitation step
@@ -243,14 +272,14 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
                 type: 'node',
                 id: currentId,
                 level: current.level,
-                fromEdge: current.fromEdge
+                fromEdge: current.fromEdge ? { u: safe(current.fromEdge.u), v: safe(current.fromEdge.v) } : null
             });
 
             // Gather all valid unvisited neighbors
             const neighbors = [];
             edges.forEach(edge => {
-                const sId = edge.source.id || edge.source;
-                const tId = edge.target.id || edge.target;
+                const sId = safe(edge.source.id || edge.source);
+                const tId = safe(edge.target.id || edge.target);
 
                 let isTraversable = false;
                 let nextNodeId = null;
@@ -273,7 +302,6 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
             });
 
             // Push neighbors to the stack in reverse order 
-            // so the first neighbor evaluated is popped first (mimics standard recursive DFS)
             for (let i = neighbors.length - 1; i >= 0; i--) {
                 stack.push(neighbors[i]);
             }
@@ -288,7 +316,6 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
     // Core Render Function
     const renderGraphState = (targetStep, animate = false) => {
-        // Build sets of all nodes and edges that should be highlighted up to targetStep
         const activeNodes = new Set();
         const activeEdges = new Set(); // Stored as "sourceId-targetId"
 
@@ -296,8 +323,8 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
-            if (step.type === 'node') activeNodes.add(step.id);
-            if (step.type === 'edge') activeEdges.add(`${step.sourceId}-${step.targetId}`);
+            if (step.type === 'node') activeNodes.add(safe(step.id));
+            if (step.type === 'edge') activeEdges.add(`${safe(step.sourceId)}-${safe(step.targetId)}`);
 
             if (step.type === 'node') {
                 if (step.level === 0) {
@@ -308,22 +335,21 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
             }
         }
 
-
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = activeNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isActive = activeNodes.has(nodeId);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(nodeId);
 
-            // Check if this specific node is the one that was JUST added in the current step
             const lastStepIndex = targetStep - 1;
             const isLatestNode = lastStepIndex >= 0 &&
                 animationSteps[lastStepIndex].type === 'node' &&
-                animationSteps[lastStepIndex].id === d.id;
+                safe(animationSteps[lastStepIndex].id) === nodeId;
 
             if (animate && isLatestNode) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -335,8 +361,8 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
         // Apply Edge & Arrow Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const isActive = activeEdges.has(`${sId}-${tId}`);
 
             const targetColor = isActive ? nodeVisitColor : edgeColor;
@@ -350,7 +376,7 @@ function visualizeDFS(graphName, startNodeId, container, nodes, edges, svg, arro
 
             // Update associated arrow head
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate && isActive) {
@@ -430,7 +456,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -439,10 +465,12 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
+    startNodeId = safe(startNodeId);
+
     // Initialize Dijkstra's requirements
     const distances = {};
     nodes.forEach(n => {
-        const nId = n.id !== undefined ? n.id : n;
+        const nId = safe(n.id !== undefined ? n.id : n);
         distances[nId] = Infinity;
     });
     distances[startNodeId] = 0;
@@ -456,7 +484,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
 
     while (!pq.isEmpty()) {
         const current = pq.dequeue();
-        const u = current.element.id;
+        const u = safe(current.element.id);
         const currentDist = current.priority;
         const fromEdge = current.element.fromEdge;
 
@@ -467,7 +495,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
 
         // Record the edge that successfully relaxed this node
         if (fromEdge) {
-            animationSteps.push({ type: 'edge', sourceId: fromEdge.u, targetId: fromEdge.v });
+            animationSteps.push({ type: 'edge', sourceId: safe(fromEdge.u), targetId: safe(fromEdge.v) });
         }
 
         // Record the node visitation (finalized shortest path)
@@ -475,13 +503,13 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
             type: 'node',
             id: u,
             dist: currentDist,
-            fromEdge: fromEdge
+            fromEdge: fromEdge ? { u: safe(fromEdge.u), v: safe(fromEdge.v), weight: fromEdge.weight } : null
         });
 
         // Evaluate all neighbors
         for (const { source, target, weight } of edges) {
-            const sId = source.id !== undefined ? source.id : source;
-            const tId = target.id !== undefined ? target.id : target;
+            const sId = safe(source.id !== undefined ? source.id : source);
+            const tId = safe(target.id !== undefined ? target.id : target);
             const edgeWeight = weight !== undefined ? weight : 1;
 
             let isTraversable = false;
@@ -526,8 +554,8 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
 
         for (let i = 0; i < targetStep; i++) {
             const step = animationSteps[i];
-            if (step.type === 'node') activeNodes.add(step.id);
-            if (step.type === 'edge') activeEdges.add(`${step.sourceId}-${step.targetId}`);
+            if (step.type === 'node') activeNodes.add(safe(step.id));
+            if (step.type === 'edge') activeEdges.add(`${safe(step.sourceId)}-${safe(step.targetId)}`);
 
             if (step.type === 'node') {
                 if (step.dist === 0) {
@@ -538,21 +566,24 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
             }
         }
 
-
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = activeNodes.has(d.id);
+            const nodeId = safe(d.id);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const isActive = activeNodes.has(nodeId);
+            const targetColor = isActive
+                ? nodeVisitColor
+                : originalNodeColors.get(nodeId);
 
             const lastStepIndex = targetStep - 1;
-            const isLatestNode = lastStepIndex >= 0 &&
+            const isLatestNode =
+                lastStepIndex >= 0 &&
                 animationSteps[lastStepIndex].type === 'node' &&
-                animationSteps[lastStepIndex].id === d.id;
+                safe(animationSteps[lastStepIndex].id) === nodeId;
 
             if (animate && isLatestNode) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -564,8 +595,8 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
         // Apply Edge & Arrow Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const isActive = activeEdges.has(`${sId}-${tId}`);
 
             const targetColor = isActive ? nodeVisitColor : edgeColor;
@@ -577,7 +608,7 @@ function visualizeDijkstra(graphName, startNodeId, container, nodes, edges, svg,
             }
 
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate && isActive) {
@@ -655,7 +686,7 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -664,7 +695,7 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
 
     const dist = {};
     nodeIds.forEach(u => {
@@ -676,8 +707,8 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
 
     // Populate matrix
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         const weight = edge.weight !== undefined ? edge.weight : 1;
 
         dist[u][v] = Math.min(dist[u][v], weight);
@@ -741,25 +772,25 @@ function visualizeFloydWarshall(graphName, startNodeId, container, nodes, edges,
             // Highlight the nodes involved in the exact CURRENT step.
             if (idx === targetStep - 1) {
                 if (step.type === 'pivot') {
-                    currentActiveNodes.add(step.k);
+                    currentActiveNodes.add(safe(step.k));
                 } else if (step.type === 'relax') {
-                    currentActiveNodes.add(step.k);
-                    currentActiveNodes.add(step.i);
-                    currentActiveNodes.add(step.j);
+                    currentActiveNodes.add(safe(step.k));
+                    currentActiveNodes.add(safe(step.i));
+                    currentActiveNodes.add(safe(step.j));
                 }
             }
         }
-
 
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
         // Apply Node Colors based on CURRENT frame isolated state
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = currentActiveNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isActive = currentActiveNodes.has(nodeId);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(nodeId);
 
             if (animate && isActive) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -840,7 +871,7 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -849,8 +880,10 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
+
+    startNodeId = safe(startNodeId);
 
     const distances = {};
     nodeIds.forEach(id => distances[id] = Infinity);
@@ -890,8 +923,8 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
         let relaxedInThisPhase = false;
 
         for (const edge of edges) {
-            const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-            const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+            const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+            const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
             const weight = edge.weight !== undefined ? edge.weight : 1;
 
             const relaxed = evaluateEdge(u, v, weight);
@@ -916,8 +949,8 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
     if (cycleCheckNeeded) {
         animationSteps.push({ type: 'cycle_check' });
         for (const edge of edges) {
-            const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-            const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+            const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+            const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
             const weight = edge.weight !== undefined ? edge.weight : 1;
 
             if (distances[u] !== Infinity && distances[u] + weight < distances[v]) {
@@ -968,9 +1001,9 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
             // Isolate active highlights to the exact current frame
             if (idx === targetStep - 1) {
                 if (step.type === 'eval' || step.type === 'relax' || step.type === 'cycle_found') {
-                    currentActiveNodes.add(step.u);
-                    currentActiveNodes.add(step.v);
-                    currentActiveEdges.add(`${step.u}-${step.v}`);
+                    currentActiveNodes.add(safe(step.u));
+                    currentActiveNodes.add(safe(step.v));
+                    currentActiveEdges.add(`${safe(step.u)}-${safe(step.v)}`);
                     if (step.type === 'relax' || step.type === 'cycle_found') {
                         isRelaxing = true;
                     }
@@ -981,17 +1014,17 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
         resultLog.innerHTML = logHTML;
         resultLog.scrollTop = resultLog.scrollHeight;
 
-
         // Dynamic Colors: standard highlight for 'eval', visit/accent color for 'relax'
         const highlightColor = isRelaxing ? nodeVisitColor : edgeEvalColor;
         const baseEdgeColor = edgeColor;
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = currentActiveNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isActive = currentActiveNodes.has(nodeId);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(nodeId);
 
             if (animate && isActive) {
                 el.transition().duration(200).attr('fill', targetColor);
@@ -1003,8 +1036,8 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
         // Apply Edge & Arrow Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const isActive = currentActiveEdges.has(`${sId}-${tId}`);
 
             const targetColor = isActive ? highlightColor : baseEdgeColor;
@@ -1016,7 +1049,7 @@ function visualizeBellmanFord(graphName, startNodeId, container, nodes, edges, s
             }
 
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate && isActive) {
@@ -1091,7 +1124,7 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -1100,15 +1133,15 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
     if (V === 0) return;
 
     // Extract and sort all edges by weight ascending
     let sortedEdges = edges.map(edge => {
         return {
-            u: edge.source.id !== undefined ? edge.source.id : edge.source,
-            v: edge.target.id !== undefined ? edge.target.id : edge.target,
+            u: safe(edge.source.id !== undefined ? edge.source.id : edge.source),
+            v: safe(edge.target.id !== undefined ? edge.target.id : edge.target),
             weight: edge.weight !== undefined ? edge.weight : 1
         };
     });
@@ -1194,18 +1227,18 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
                 logHTML += `<div>Sorted ${step.edgeCount} edges by weight. Processing from lowest to highest.</div><br>`;
             } else if (step.type === 'eval') {
                 logHTML += `<div>Evaluating edge <span style="color: #a3bf60">${step.u} - ${step.v}</span> (w: ${step.w})...</div>`;
-                evaluatingEdge = `${step.u}-${step.v}`;
+                evaluatingEdge = `${safe(step.u)}-${safe(step.v)}`;
             } else if (step.type === 'accept') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Accepted! Nodes ${step.u} and ${step.v} connected.</div><br>`;
-                mstEdges.add(`${step.u}-${step.v}`);
-                mstEdges.add(`${step.v}-${step.u}`);
-                mstNodes.add(step.u);
-                mstNodes.add(step.v);
+                mstEdges.add(`${safe(step.u)}-${safe(step.v)}`);
+                mstEdges.add(`${safe(step.v)}-${safe(step.u)}`);
+                mstNodes.add(safe(step.u));
+                mstNodes.add(safe(step.v));
                 totalWeight += step.w;
                 evaluatingEdge = null;
             } else if (step.type === 'reject') {
                 logHTML += `<div style="padding-left: 10px; color: #ff8a65;">↳ Rejected! Edge creates a cycle.</div><br>`;
-                rejectEdge = `${step.u}-${step.v}`;
+                rejectEdge = `${safe(step.u)}-${safe(step.v)}`;
                 evaluatingEdge = null;
             } else if (step.type === 'complete') {
                 logHTML += `<div style="color: #ff8a65; margin-top: 10px; font-weight: bold;">MST Complete! Total Weight: ${totalWeight}</div>`;
@@ -1224,16 +1257,17 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = mstNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isActive = mstNodes.has(nodeId);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(nodeId);
 
             // Animate node only if it was newly accepted in this exact step
             const justAccepted = animate && isActive && targetStep > 0
                 && animationSteps[targetStep - 1].type === 'accept'
-                && (animationSteps[targetStep - 1].u === d.id || animationSteps[targetStep - 1].v === d.id);
+                && (safe(animationSteps[targetStep - 1].u) === nodeId || safe(animationSteps[targetStep - 1].v) === nodeId);
 
             if (justAccepted) {
                 el.transition().duration(300).attr('fill', targetColor);
@@ -1245,8 +1279,8 @@ function visualizeMSTKruskal(graphName, container, nodes, edges, svg, arrowId) {
         // Apply Edge Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
             const reverseEdgeKey = `${tId}-${sId}`;
 
@@ -1327,7 +1361,7 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     svg.select('#interaction-blocker').remove();
@@ -1335,7 +1369,7 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
     if (V === 0) return;
 
@@ -1343,8 +1377,8 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
     const adj = {};
     nodeIds.forEach(id => adj[id] = []);
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         const w = edge.weight !== undefined ? edge.weight : 1;
         adj[u].push({ to: v, weight: w });
         adj[v].push({ to: u, weight: w });
@@ -1415,21 +1449,21 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
 
             if (step.type === 'start') {
                 logHTML += `<div>Started growing tree from node <span style="color: #ff8a65">${step.node}</span></div><br>`;
-                mstNodes.add(step.node);
+                mstNodes.add(safe(step.node));
             } else if (step.type === 'eval') {
                 logHTML += `<div>Evaluating frontier edge <span style="color: #a3bf60">${step.u} - ${step.v}</span> (w: ${step.w})...</div>`;
-                evaluatingEdge = `${step.u}-${step.v}`;
+                evaluatingEdge = `${safe(step.u)}-${safe(step.v)}`;
             } else if (step.type === 'accept') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Accepted! Added node ${step.newNode} to MST.</div><br>`;
-                mstEdges.add(`${step.u}-${step.v}`);
-                mstEdges.add(`${step.v}-${step.u}`);
-                mstNodes.add(step.u);
-                mstNodes.add(step.v);
+                mstEdges.add(`${safe(step.u)}-${safe(step.v)}`);
+                mstEdges.add(`${safe(step.v)}-${safe(step.u)}`);
+                mstNodes.add(safe(step.u));
+                mstNodes.add(safe(step.v));
                 totalWeight += step.w;
                 evaluatingEdge = null;
             } else if (step.type === 'reject') {
                 logHTML += `<div style="padding-left: 10px; color: #ff8a65;">↳ Rejected! Both nodes already in MST.</div><br>`;
-                rejectEdge = `${step.u}-${step.v}`;
+                rejectEdge = `${safe(step.u)}-${safe(step.v)}`;
                 evaluatingEdge = null;
             } else if (step.type === 'complete') {
                 logHTML += `<div style="color: #ff8a65; margin-top: 10px; font-weight: bold;">MST Complete! Total Weight: ${totalWeight}</div>`;
@@ -1447,13 +1481,14 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
         }
 
         // Apply node colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isActive = mstNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isActive = mstNodes.has(nodeId);
 
-            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            const targetColor = isActive ? nodeVisitColor : originalNodeColors.get(nodeId);
 
-            if (animate && isActive && targetStep > 0 && animationSteps[targetStep - 1].type === 'accept' && animationSteps[targetStep - 1].newNode === d.id) {
+            if (animate && isActive && targetStep > 0 && animationSteps[targetStep - 1].type === 'accept' && safe(animationSteps[targetStep - 1].newNode) === nodeId) {
                 el.transition().duration(300).attr('fill', targetColor);
             } else {
                 el.interrupt().attr('fill', targetColor);
@@ -1462,8 +1497,8 @@ function visualizeMSTPrim(graphName, container, nodes, edges, svg, arrowId) {
 
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
             const reverseEdgeKey = `${tId}-${sId}`;
 
@@ -1544,7 +1579,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
 
@@ -1554,7 +1589,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
 
     // Calculate In-Degrees and build Adjacency List
@@ -1566,8 +1601,8 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
     });
 
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
 
         // Only process as directed. Topo sort on undirected graphs isn't valid.
         adj[u].push(v);
@@ -1636,15 +1671,15 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
                 logHTML += `<div><strong>Initialization:</strong> Nodes with 0 in-degree: [ <span style="color: #a3bf60">${step.initialQueue.join(', ')}</span> ]</div><br>`;
             } else if (step.type === 'process_node') {
                 logHTML += `<div>Processing node <span style="color: #ff8a65">${step.u}</span>...</div>`;
-                evaluatingNode = step.u;
-                completedNodes.add(step.u);
+                evaluatingNode = safe(step.u);
+                completedNodes.add(safe(step.u));
                 currentTopoOrder = step.currentOrder;
             } else if (step.type === 'eval_edge') {
                 logHTML += `<div style="padding-left: 10px;">↳ Removing edge <span style="color: #ff8a65">${step.u} &rarr; ${step.v}</span> (Decrements ${step.v}'s in-degree)</div>`;
-                evaluatingEdge = `${step.u}-${step.v}`;
+                evaluatingEdge = `${safe(step.u)}-${safe(step.v)}`;
             } else if (step.type === 'enqueue') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Node ${step.v} now has 0 in-degree. Added to queue!</div>`;
-                enqueueNode = step.v;
+                enqueueNode = safe(step.v);
             } else if (step.type === 'cycle_error') {
                 logHTML += `<br><div style="color: #e74c3c; font-weight: bold;">Error: Cycle detected! A valid topological ordering is impossible.</div>`;
             } else if (step.type === 'complete') {
@@ -1672,13 +1707,14 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isCompleted = completedNodes.has(d.id);
-            const isEvaluating = evaluatingNode === d.id;
-            const isEnqueueing = enqueueNode === d.id;
+            const nodeId = safe(d.id);
+            const isCompleted = completedNodes.has(nodeId);
+            const isEvaluating = evaluatingNode === nodeId;
+            const isEnqueueing = enqueueNode === nodeId;
 
-            let targetColor = originalNodeColors.get(d.id);
+            let targetColor = originalNodeColors.get(nodeId);
             if (isEvaluating) targetColor = edgeEvalColor;
             else if (isEnqueueing) targetColor = '#a3bf60';
             else if (isCompleted) targetColor = nodeVisitColor;
@@ -1693,8 +1729,8 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
         // Apply Edge Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
 
             const isEval = evaluatingEdge === edgeKey;
@@ -1716,7 +1752,7 @@ function visualizeTopologicalSort(graphName, container, nodes, edges, svg, arrow
 
             // Arrowheads
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate) {
@@ -1784,7 +1820,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -1793,7 +1829,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
 
     // Build standard AND transposed adjacency lists
     const adj = {};
@@ -1804,8 +1840,8 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
     });
 
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         adj[u].push(v);
         revAdj[v].push(u); // Transposed edge for Phase 2
     });
@@ -1894,14 +1930,14 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
 
             if (step.type === 'p1_visit') {
                 logHTML += `<div>Phase 1: Discovered node <span style="color: #ff8a65">${step.u}</span>.</div>`;
-                activeNode = step.u;
+                activeNode = safe(step.u);
             } else if (step.type === 'p1_eval') {
                 logHTML += `<div style="padding-left: 10px;">Evaluating edge <span style="color: #a3bf60">${step.u} &rarr; ${step.v}</span>...</div>`;
-                evaluatingEdge = `${step.u}-${step.v}`;
-                activeNode = step.u;
+                evaluatingEdge = `${safe(step.u)}-${safe(step.v)}`;
+                activeNode = safe(step.u);
             } else if (step.type === 'p1_finish') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Finished ${step.u}. Added to stack.</div><br>`;
-                finishedNodesP1.add(step.u);
+                finishedNodesP1.add(safe(step.u));
                 activeNode = null;
             } else if (step.type === 'transpose') {
                 logHTML += `<div style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.05); border-left: 3px solid #fff;">
@@ -1912,19 +1948,19 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
                 activeNode = null;
             } else if (step.type === 'p2_visit') {
                 logHTML += `<div>Phase 2: Visiting node <span style="color: #ff8a65">${step.u}</span>...</div>`;
-                activeNode = step.u;
+                activeNode = safe(step.u);
             } else if (step.type === 'p2_eval') {
                 logHTML += `<div style="padding-left: 10px;">Evaluating reverse edge <span style="color: #a3bf60">${step.u} &rarr; ${step.v}</span> (Original: ${step.v} &rarr; ${step.u})...</div>`;
                 // To map the transposed traversal visually to the DOM edge, we swap u and v
-                evaluatingEdge = `${step.v}-${step.u}`;
-                activeNode = step.u;
+                evaluatingEdge = `${safe(step.v)}-${safe(step.u)}`;
+                activeNode = safe(step.u);
             } else if (step.type === 'scc_found') {
                 const color = disColors[step.sccIndex % disColors.length];
                 logHTML += `<div style="margin-top: 10px; padding: 5px; background: rgba(0,0,0,0.2); border-left: 3px solid ${color};">
                     <strong>SCC Found!</strong> Root: ${step.root}. Nodes: [ <span style="color: #a3bf60">${step.nodes.join(', ')}</span> ]
                 </div><br>`;
 
-                step.nodes.forEach(n => resolvedSCCs[n] = color);
+                step.nodes.forEach(n => resolvedSCCs[safe(n)] = color);
                 activeNode = null;
             }
 
@@ -1940,17 +1976,18 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isResolved = d.id in resolvedSCCs;
-            const isActive = activeNode === d.id;
-            const isFinishedP1 = currentPhase === 1 && finishedNodesP1.has(d.id);
+            const nodeId = safe(d.id);
+            const isResolved = nodeId in resolvedSCCs;
+            const isActive = activeNode === nodeId;
+            const isFinishedP1 = currentPhase === 1 && finishedNodesP1.has(nodeId);
 
-            let targetColor = originalNodeColors.get(d.id);
+            let targetColor = originalNodeColors.get(nodeId);
 
             if (isResolved) {
                 // Resolved SCC node
-                targetColor = resolvedSCCs[d.id];
+                targetColor = resolvedSCCs[nodeId];
             } else if (isActive) {
                 // Active node in either phase
                 targetColor = '#ff8a65';
@@ -1969,8 +2006,8 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
         // Apply Edge Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
 
             const isEval = evaluatingEdge === edgeKey;
@@ -1993,7 +2030,7 @@ function visualizeSCCKosaraju(graphName, container, nodes, edges, svg, arrowId, 
             }
 
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate) {
@@ -2061,7 +2098,7 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -2070,15 +2107,15 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
 
     // Build directed adjacency list
     const adj = {};
     nodeIds.forEach(id => adj[id] = []);
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         adj[u].push(v);
         // SCC is strictly for directed graphs
     });
@@ -2168,34 +2205,33 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
 
             if (step.type === 'visit') {
                 logHTML += `<div>Discovered node <span style="color: #ff8a65">${step.u}</span> [id: ${step.id}, low: ${step.low}]. Added to Stack.</div>`;
-                currentStack = new Set(step.stackState);
-                activeNode = step.u;
+                currentStack = new Set(step.stackState.map(safe));
+                activeNode = safe(step.u);
             } else if (step.type === 'eval_edge') {
                 logHTML += `<div style="padding-left: 10px;">Evaluating edge <span style="color: #a3bf60">${step.u} &rarr; ${step.v}</span>...</div>`;
-                evaluatingEdge = `${step.u}-${step.v}`;
-                activeNode = step.u;
+                evaluatingEdge = `${safe(step.u)}-${safe(step.v)}`;
+                activeNode = safe(step.u);
             } else if (step.type === 'update_low') {
                 logHTML += `<div style="padding-left: 10px; color: #ff8a65;">↳ Returned from ${step.v}. Updated ${step.u}'s low-link to ${step.newLow}.</div><br>`;
-                activeNode = step.u;
+                activeNode = safe(step.u);
             } else if (step.type === 'update_low_back') {
                 logHTML += `<div style="padding-left: 10px; color: #ff8a65;">↳ Back-edge to stack node ${step.v}! Updated ${step.u}'s low-link to ${step.newLow}.</div><br>`;
-                activeNode = step.u;
+                activeNode = safe(step.u);
             } else if (step.type === 'scc_found') {
                 logHTML += `<div style="margin-top: 10px; padding: 5px; background: rgba(0,0,0,0.2); border-left: 3px solid ${disColors[step.sccIndex % disColors.length]};">
                     <strong>SCC Found!</strong> Root: ${step.root}. Nodes popped: [ <span style="color: #a3bf60">${step.nodes.join(', ')}</span> ]
                 </div><br>`;
-                currentStack = new Set(step.stackState);
+                currentStack = new Set(step.stackState.map(safe));
 
                 // Assign color to all nodes in this SCC
                 const color = disColors[step.sccIndex % disColors.length];
-                step.nodes.forEach(n => resolvedSCCs[n] = color);
+                step.nodes.forEach(n => resolvedSCCs[safe(n)] = color);
                 activeNode = null;
             }
 
             // Reset ephemeral state if not on current step
             if (idx !== targetStep - 1) {
                 evaluatingEdge = null;
-                // activeNode is kept to highlight the node currently processing if it hasn't resolved an SCC
             }
         }
 
@@ -2205,20 +2241,21 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isResolved = d.id in resolvedSCCs;
-            const isOnStack = currentStack.has(d.id);
-            const isActive = activeNode === d.id;
+            const nodeId = safe(d.id);
+            const isResolved = nodeId in resolvedSCCs;
+            const isOnStack = currentStack.has(nodeId);
+            const isActive = activeNode === nodeId;
 
-            let targetColor = originalNodeColors.get(d.id);
+            let targetColor = originalNodeColors.get(nodeId);
 
             if (isResolved) {
                 // Node belongs to a completed SCC
-                targetColor = resolvedSCCs[d.id];
+                targetColor = resolvedSCCs[nodeId];
             } else if (isOnStack) {
                 // Node is on the recursion stack (visiting phase)
-                targetColor = '#ff8a65'; // Distinct green for stack memory
+                targetColor = '#ff8a65';
             }
 
             if (animate) {
@@ -2231,8 +2268,8 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
         // Apply Edge Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
 
             const isEval = evaluatingEdge === edgeKey;
@@ -2257,7 +2294,7 @@ function visualizeSCCTarjan(graphName, container, nodes, edges, svg, arrowId, di
 
             // Update associated arrow head
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate) {
@@ -2325,7 +2362,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -2334,14 +2371,14 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
 
     // Build undirected adjacency list
     const adj = {};
     nodeIds.forEach(id => adj[id] = []);
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         adj[u].push(v);
         adj[v].push(u);
     });
@@ -2450,26 +2487,26 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
 
             if (step.type === 'root_found') {
                 logHTML += `<div style="color: #9b59b6; font-weight: bold;">Starting new DFS component. Root: ${step.u}</div>`;
-                dfsRoots.add(step.u);
+                dfsRoots.add(safe(step.u));
             } else if (step.type === 'visit') {
                 logHTML += `<div>Discovered node <span style="color: #ff8a65">${step.u}</span> [id: ${step.id}].</div>`;
-                visitedNodes.add(step.u);
-                activeNode = step.u;
+                visitedNodes.add(safe(step.u));
+                activeNode = safe(step.u);
             } else if (step.type === 'eval_edge') {
                 const eType = step.edgeType === 'tree' ? 'Tree-edge' : 'Back-edge';
                 logHTML += `<div style="padding-left: 10px;">Evaluating ${eType}: <span style="color: #a3bf60">${step.u} - ${step.v}</span></div>`;
-                evaluatingEdge = `${step.u}-${step.v}`;
-                activeNode = step.u;
+                evaluatingEdge = `${safe(step.u)}-${safe(step.v)}`;
+                activeNode = safe(step.u);
                 if (step.edgeType === 'back') {
                     logHTML += `<div style="padding-left: 20px; color: #ff8a65;">↳ Updated ${step.u}'s low-link to ${step.newLow}.</div><br>`;
                 }
             } else if (step.type === 'update_low') {
                 logHTML += `<div style="padding-left: 10px; color: #ff8a65;">↳ Returned from ${step.v}. Updated ${step.u}'s low-link to ${step.newLow}.</div><br>`;
-                activeNode = step.u;
+                activeNode = safe(step.u);
             } else if (step.type === 'ap_found') {
                 const reason = step.isRootAP ? "Root with >1 children" : `low[v] >= ids[${step.u}]`;
                 logHTML += `<div style="color: #e67e22; font-weight: bold; margin-top: 5px;">Articulation Point Confirmed: ${step.u} (${reason})</div>`;
-                articulationPoints.add(step.u);
+                articulationPoints.add(safe(step.u));
             } else if (step.type === 'bcc_found') {
                 const color = disColors[step.bccIndex % disColors.length];
                 const edgeStrs = step.edges.map(e => `(${e.u}-${e.v})`);
@@ -2478,8 +2515,8 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
                 </div><br>`;
 
                 step.edges.forEach(e => {
-                    resolvedBCCEdges[`${e.u}-${e.v}`] = color;
-                    resolvedBCCEdges[`${e.v}-${e.u}`] = color;
+                    resolvedBCCEdges[`${safe(e.u)}-${safe(e.v)}`] = color;
+                    resolvedBCCEdges[`${safe(e.v)}-${safe(e.u)}`] = color;
                 });
                 activeNode = null;
             }
@@ -2495,15 +2532,16 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isVisited = visitedNodes.has(d.id);
-            const isRoot = dfsRoots.has(d.id);
-            const isAP = articulationPoints.has(d.id);
-            const isActive = activeNode === d.id;
+            const nodeId = safe(d.id);
+            const isVisited = visitedNodes.has(nodeId);
+            const isRoot = dfsRoots.has(nodeId);
+            const isAP = articulationPoints.has(nodeId);
+            const isActive = activeNode === nodeId;
 
             // Determine base fill color
-            let targetColor = isActive ? nodeVisitColor : originalNodeColors.get(d.id);
+            let targetColor = isActive ? nodeVisitColor : originalNodeColors.get(nodeId);
             if (isRoot) targetColor = '#b375ee'; // Purple for roots
             else if (isAP) targetColor = '#ffa454'; // Orange for Articulation points
 
@@ -2513,7 +2551,6 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
             if (isActive) {
                 targetStroke = edgeEvalColor; // Active yellow halo takes precedence
             } else if (isRoot && isAP) {
-                // If a root is ALSO an AP, outline it heavily in orange so both identities are visible
                 targetStroke = '#ffa454';
             }
 
@@ -2531,8 +2568,8 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
         // Apply Edge Colors and Marker Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey1 = `${sId}-${tId}`;
             const edgeKey2 = `${tId}-${sId}`;
 
@@ -2556,7 +2593,7 @@ function visualizeBCC(graphName, container, nodes, edges, svg, arrowId, directed
 
             // Animate Directed Arrow Marker (if applicable)
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate) {
@@ -2624,7 +2661,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
 
@@ -2634,13 +2671,13 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
     if (V < 2) return;
 
     // Use explicitly passed source and sink nodes
-    const source = startNodeId;
-    const sink = sinkNodeId;
+    const source = safe(startNodeId);
+    const sink = safe(sinkNodeId);
 
     // Build Capacity Matrix, Flow Matrix, and undirected adjacency list for residual graph
     const capacity = {};
@@ -2658,8 +2695,8 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
     });
 
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         // Treat edge weight as capacity. Default to 10 if missing.
         const w = edge.weight !== undefined ? edge.weight : (edge.capacity !== undefined ? edge.capacity : 10);
 
@@ -2780,9 +2817,9 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
                 logHTML += `<div style="padding-left: 10px;">Bottleneck Capacity (min residual): <strong>${step.bottleneck}</strong></div>`;
 
                 step.path.forEach(e => {
-                    activePathEdges.add(`${e.u}-${e.v}`);
-                    pathNodes.add(e.u);
-                    pathNodes.add(e.v);
+                    activePathEdges.add(`${safe(e.u)}-${safe(e.v)}`);
+                    pathNodes.add(safe(e.u));
+                    pathNodes.add(safe(e.v));
                 });
             } else if (step.type === 'augment') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Augmented flow by ${step.bottleneck}. Current Max Flow: ${step.currentMax}</div><br>`;
@@ -2806,15 +2843,16 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isSource = d.id === source;
-            const isSink = d.id === sink;
-            const isActive = pathNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isSource = nodeId === source;
+            const isSink = nodeId === sink;
+            const isActive = pathNodes.has(nodeId);
 
 
             const algorithmRunning = targetStep > 0 && targetStep < totalSteps;
-            let targetColor = originalNodeColors.get(d.id);
+            let targetColor = originalNodeColors.get(nodeId);
 
             if (algorithmRunning) {
                 if (isSource || isSink)
@@ -2833,8 +2871,8 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
         // Apply Edge Colors
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
 
             const isPath = activePathEdges.has(edgeKey);
@@ -2861,7 +2899,7 @@ function visualizeFordFulkerson(graphName, startNodeId, sinkNodeId, container, n
 
             // Update associated arrow head
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate) {
@@ -2929,7 +2967,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
     const originalNodeColors = new Map();
 
     svg.selectAll("rect.node").each(function (d) {
-        originalNodeColors.set(d.id, d3.select(this).attr("fill"));
+        originalNodeColors.set(safe(d.id), d3.select(this).attr("fill"));
     });
 
     // Block user interactions with the graph during visualization
@@ -2938,13 +2976,13 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         .attr('id', 'interaction-blocker')
         .text('rect.node, .link, .link2 { pointer-events: none !important; }');
 
-    const nodeIds = nodes.map(n => n.id !== undefined ? n.id : n);
+    const nodeIds = nodes.map(n => safe(n.id !== undefined ? n.id : n));
     const V = nodeIds.length;
     if (V < 2) return;
 
     // Use explicitly passed source and sink nodes
-    const source = startNodeId;
-    const sink = sinkNodeId;
+    const source = safe(startNodeId);
+    const sink = safe(sinkNodeId);
 
     // Build Capacity Matrix, Flow Matrix, and undirected adjacency list for residual graph
     const capacity = {};
@@ -2962,8 +3000,8 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
     });
 
     edges.forEach(edge => {
-        const u = edge.source.id !== undefined ? edge.source.id : edge.source;
-        const v = edge.target.id !== undefined ? edge.target.id : edge.target;
+        const u = safe(edge.source.id !== undefined ? edge.source.id : edge.source);
+        const v = safe(edge.target.id !== undefined ? edge.target.id : edge.target);
         // Treat edge weight as capacity. Default to 10 if missing.
         const w = edge.weight !== undefined ? edge.weight : (edge.capacity !== undefined ? edge.capacity : 10);
 
@@ -3082,9 +3120,9 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
                 logHTML += `<div style="padding-left: 10px;">Bottleneck Capacity (min residual): <strong>${step.bottleneck}</strong></div>`;
 
                 step.path.forEach(e => {
-                    activePathEdges.add(`${e.u}-${e.v}`);
-                    pathNodes.add(e.u);
-                    pathNodes.add(e.v);
+                    activePathEdges.add(`${safe(e.u)}-${safe(e.v)}`);
+                    pathNodes.add(safe(e.u));
+                    pathNodes.add(safe(e.v));
                 });
             } else if (step.type === 'augment') {
                 logHTML += `<div style="padding-left: 10px; color: #a3bf60;">↳ Augmented flow by ${step.bottleneck}. Current Max Flow: ${step.currentMax}</div><br>`;
@@ -3108,14 +3146,15 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         }
 
         // Apply Node Colors
-        svg.selectAll('circle').each(function (d) {
+        svg.selectAll('rect.node').each(function (d) {
             const el = d3.select(this);
-            const isSource = d.id === source;
-            const isSink = d.id === sink;
-            const isActive = pathNodes.has(d.id);
+            const nodeId = safe(d.id);
+            const isSource = nodeId === source;
+            const isSink = nodeId === sink;
+            const isActive = pathNodes.has(nodeId);
 
 
-            let targetColor = originalNodeColors.get(d.id);
+            let targetColor = originalNodeColors.get(nodeId);
             const algorithmRunning = targetStep > 0 && targetStep < totalSteps;
 
             if (algorithmRunning) {
@@ -3136,8 +3175,8 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
         // Apply Edge Colors and Weights
         svg.selectAll('.link').each(function () {
             const el = d3.select(this);
-            const sId = el.attr('source-id').replace(arrowId, '');
-            const tId = el.attr('target-id').replace(arrowId, '');
+            const sId = safe(el.attr('source-id').replace(arrowId, ''));
+            const tId = safe(el.attr('target-id').replace(arrowId, ''));
             const edgeKey = `${sId}-${tId}`;
 
             const isPath = activePathEdges.has(edgeKey);
@@ -3164,7 +3203,7 @@ function visualizeEdmondsKarp(graphName, startNodeId, sinkNodeId, container, nod
 
             // Update associated directed arrowheads
             if (directed) {
-                const uniqueMarkerId = `${arrowId}-${sId}-${tId}`;
+                const uniqueMarkerId = safe(`${arrowId}-${sId}-${tId}`);
                 const markerPath = svg.select(`#${uniqueMarkerId} path`);
                 if (!markerPath.empty()) {
                     if (animate) {
