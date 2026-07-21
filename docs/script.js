@@ -11,15 +11,22 @@ const routes = {
           run classical graph algorithms, and visualize step-by-step executions in real-time.
         </p>
         
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <img src="./dashboard.png" alt="Dashboard Showcase" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+        <div class="media-split-view">
+          <div class="media-container">
+            <img src="./dashboard.png" alt="Dashboard Showcase Laptop" />
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <img src="./dashboard_mobile.jpeg" alt="Dashboard Showcase Mobile" />
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
         
         <h3>Key Features</h3>
         <ul>
           <li><strong>Procedural Graph Generation:</strong> Quickly build massive randomized graphs or specific tree structures (BST, AVL, B+ Trees).</li>
           <li><strong>Real-Time Visualization:</strong> Watch algorithms like Dijkstra, Kruskal, and Tarjan's SCC evaluate networks visually.</li>
-          <li><strong>Interactive Sandbox:</strong> Drag, pan, zoom, and apply physics-based force layouts to your topologies.</li>
+          <li><strong>Interactive Sandbox:</strong> Drag, pan, and zoom topologies, and monitor real-time statistics like active Vertex and Edge counts.</li>
           <li><strong>Python Interoperability:</strong> Seamlessly integrate with Python's <code>networkx</code> library.</li>
         </ul>
       </div>
@@ -46,8 +53,15 @@ const routes = {
           Arx-Net allows you to manually input edge definitions to construct custom graphs. The parser supports multiple shorthand formats to streamline creation.
         </p>
         
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <img src="./edge_input_syntax.png" alt="Edge Input Syntax" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+        <div class="media-split-view">
+          <div class="media-container">
+            <img src="./edge_input_syntax.png" alt="Edge Input Syntax Laptop" />
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <img src="./edge_input_syntax_mobile.jpeg" alt="Edge Input Syntax Mobile" />
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
         
         <h3>Supported Edge Formats</h3>
@@ -59,7 +73,7 @@ const routes = {
           <li><code>[('A','B',2), ('B','C',1)]</code> - Python Edge List.</li>
         </ul>
         <p>
-          <strong>Note:</strong> Edges can be defined as directed/undirected or weighted/unweighted based on the active UI checkboxes.
+          <strong>Note:</strong> Edges can be defined as directed/undirected or weighted/unweighted based on the active UI checkboxes. If a Graph Name is left blank, the system assigns a sequential default tree or graph name automatically.
         </p>
       </div>
 
@@ -76,8 +90,15 @@ const routes = {
           <li>Force the graph to be mathematically <strong>Connected</strong>.</li>
         </ul>
 
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <img src="./tree_generation.png" alt="Tree Generation Menu" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+        <div class="media-split-view">
+          <div class="media-container">
+            <img src="./tree_generation.png" alt="Tree Generation Menu Laptop" />
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <img src="./tree_generation_mobile.jpeg" alt="Tree Generation Menu Mobile" />
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
 
         <h3>Random Tree Generator</h3>
@@ -104,6 +125,7 @@ const routes = {
         <ul>
           <li><strong>Light/Dark Mode:</strong> Switch the active theme palette.</li>
           <li><strong>Fullscreen:</strong> Expand the canvas to fill your monitor.</li>
+          <li><strong>Guide / About:</strong> Review default behaviors and usage rules directly in the app.</li>
           <li><strong>Import/Export:</strong> Upload previous JSON graphs or download your current workspace to a local file.</li>
         </ul>
       </div>
@@ -113,9 +135,18 @@ const routes = {
         <p>
           The Outliner acts as your workspace manager, displaying a hierarchical list of all instantiated graphs.
         </p>
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <img src="./outlier_menu.png" alt="Outliner Menu" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+        
+        <div class="media-split-view">
+          <div class="media-container">
+            <img src="./outlier_menu.png" alt="Outliner Menu Laptop" />
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <img src="./outlier_menu_mobile.jpeg" alt="Outliner Menu Mobile" />
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
+        
         <ul>
           <li><strong>Double-Click:</strong> Rename a graph instance. (Names must be globally unique).</li>
           <li><strong>Focus Button:</strong> Instantly move the camera to center the target graph.</li>
@@ -126,19 +157,25 @@ const routes = {
       <div class="content-box">
         <h2>Graph Viewport</h2>
         <p>
-          The central canvas is fully interactive, built natively with D3.js SVG manipulation.
+          The central canvas is fully interactive, built natively with D3.js SVG manipulation. The viewport also features a real-time statistical overlay detailing exactly how many vertices and edges are currently rendered.
         </p>
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <video src="./graph_viewport_control.webm" autoplay loop muted playsinline style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            Your browser does not support the video tag.
-          </video>
+        
+        <div class="media-split-view">
+          <div class="media-container">
+            <video src="./graph_viewport_control.webm" autoplay loop muted playsinline></video>
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <video src="./graph_viewport_control_mobile.mp4" autoplay loop muted playsinline></video>
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
+        
         <ul>
           <li><strong>Left Mouse Button (LMB):</strong> Select and interact directly with vertices or edges.</li>
           <li><strong>Middle Mouse / Ctrl + LMB:</strong> Click and drag to pan the camera across the workspace.</li>
           <li><strong>Scroll Wheel:</strong> Zoom in and out of the active topology.</li>
-          <li><strong>Double-Click Background:</strong> Reset camera transform and center the graph.</li>
-          <li><strong>Right-Click Canvas:</strong> Summon advanced viewport configurations.</li>
+          <li><strong>Right-Click Node Options:</strong> Access features like "Change node value", "Color this vertex", "Create new edge", "Delete this vertex", and the recursive "Delete this vertex and its subtree".</li>
         </ul>
       </div>
     </div>
@@ -186,15 +223,36 @@ const routes = {
       </div>
 
       <div class="content-box">
+        <h2>Tree Insertion Algorithms</h2>
+        <p>
+          While manipulating specific structural trees like BSTs, AVLs, or B-Trees, Arx-Net implements strict algorithmic logic during dynamic node insertions to ensure mathematical integrity.
+        </p>
+        <ul>
+          <li><strong>Binary Tree:</strong> Standard level-order Breadth-First traversal is used to find the next available child, keeping the tree structure compact.</li>
+          <li><strong>Binary Search Tree (BST):</strong> Values are compared recursively against the root. Smaller values traverse the left child; larger values traverse the right child. Insertions act as new leaf nodes.</li>
+          <li><strong>AVL Tree:</strong> Follows standard BST insertion, but recalculates the Balance Factor (Height Left - Height Right) for all ancestors. Unbalanced nodes trigger strict Left-Left (LL), Right-Right (RR), Left-Right (LR), or Right-Left (RL) rotations.</li>
+          <li><strong>B-Tree:</strong> Search traverses down to the appropriate leaf node. If a node overfills past its maximum order after insertion, it splits, promoting the median key up to the parent. This propagates up to the root if necessary.</li>
+          <li><strong>B+ Tree:</strong> Operates similarly to a B-Tree, but all data must remain at the leaf level. When a leaf splits, the median key is copied up to the parent rather than moved, preserving sequential linked access across the leaf layer.</li>
+        </ul>
+      </div>
+
+      <div class="content-box">
         <h2>Real-Time Playback</h2>
         <p>
           After running an algorithm, you can click the <strong>[Visualize]</strong> link. This isolates the target graph and opens the Playback Controller.
         </p>
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <video src="./algorithm%20playback.webm" autoplay loop muted playsinline style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            Your browser does not support the video tag.
-          </video>
+        
+        <div class="media-split-view">
+          <div class="media-container">
+            <video src="./algorithm playback.webm" autoplay loop muted playsinline></video>
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <video src="./algorithm_playback_mobile.mp4" autoplay loop muted playsinline></video>
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
+        
         <ul>
           <li>Watch algorithms traverse nodes step-by-step.</li>
           <li>Pause, rewind, and seek through the execution timeline.</li>
@@ -207,9 +265,18 @@ const routes = {
         <p>
           Arx-Net doesn't just show you the answer; it shows you exactly <em>how</em> it arrived there.
         </p>
-        <div style="display: flex; justify-content: center; margin: 1.5rem 0;">
-          <img src="./step_by_step_explanation.png" alt="Step-by-Step Explanation" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+        
+        <div class="media-split-view">
+          <div class="media-container">
+            <img src="./step_by_step_explanation.png" alt="Step-by-Step Explanation Laptop" />
+            <div class="media-label">Laptop View</div>
+          </div>
+          <div class="media-container">
+            <img src="./step_by_step_explanation.png" alt="Step-by-Step Explanation Mobile" />
+            <div class="media-label">Mobile View</div>
+          </div>
         </div>
+        
         <p>
           Opening the explanation panel reveals a detailed breakdown of the execution:
         </p>
